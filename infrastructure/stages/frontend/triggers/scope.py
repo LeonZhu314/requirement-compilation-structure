@@ -18,7 +18,7 @@ class TriggerCheckFailure(ValueError):
         super().__init__(f"{message}: {report}")
 
 
-def model_context(context):
+def model_context(context, *, implementation=False):
     """Supply selected triggers, complete page data, API contracts and derived DB effects."""
     selected = set(context["triggers"])
     triggers = {tid: context["triggers"][tid] for tid in sorted(selected)}
@@ -27,6 +27,16 @@ def model_context(context):
         "obligations": {tid: context["obligations"][tid] for tid in sorted(selected)},
         "target_trigger_ids": context["target_trigger_ids"],
         "backend_apis": {aid: context["backend_apis"][aid] for aid in sorted(called)}}
+    if implementation:
+        # Actual components and original requirements are already supplied. Repeating
+        # every decorative node/data declaration is expensive and not an implementation ABI.
+        relevant = {trigger['source'] for trigger in triggers.values()}
+        relevant.update(action['ui'] for trigger in triggers.values() for action in trigger['action']
+            if action['kind'] == 'ui')
+        result['page_subtrees'] = {pid: {**{key: page[key] for key in ('name', 'route', 'root') if key in page},
+            'elements': {uid: {key: node[key] for key in ('type', 'parent', 'prop') if key in node}
+                for uid, node in page['elements'].items() if uid in relevant}}
+            for pid, page in context['page_subtrees'].items()}
     if "requirement" in context:
         result["requirement"] = context["requirement"]
     if "regression_requirements" in context:

@@ -1,0 +1,124 @@
+{
+  "ir_kind": "database_lowering",
+  "dialect": "sqlite",
+  "tables": [
+    {
+      "name": "session",
+      "reqs": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "file_path": "backend/src/db/initialize.ts",
+      "columns": [
+        {
+          "name": "id",
+          "reqs": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "user_account_id",
+          "reqs": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "user_account",
+      "reqs": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "file_path": "backend/src/db/initialize.ts",
+      "columns": [
+        {
+          "name": "date_of_birth",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "email",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "gender",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "id",
+          "reqs": [
+            "REQ-1"
+          ]
+        },
+        {
+          "name": "name",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "nationality",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "passport_expiration_date",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "passport_number",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "password",
+          "reqs": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "username",
+          "reqs": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        }
+      ]
+    }
+  ],
+  "shared_modules": [
+    {
+      "id": "SYSTEM.DB_CLIENT",
+      "name": "Database connection",
+      "file_path": "backend/src/db/client.ts"
+    },
+    {
+      "id": "SYSTEM.DB_SCHEMA",
+      "name": "Database table initialization",
+      "file_path": "backend/src/db/initialize.ts"
+    },
+    {
+      "id": "SYSTEM.SEED",
+      "name": "Startup reset and cumulative seed",
+      "file_path": "backend/src/db/seed.ts"
+    }
+  ],
+  "retained_modified_files": [],
+  "files": [
+    "backend/src/db/client.ts",
+    "backend/src/db/initialize.ts",
+    "backend/src/db/seed.ts"
+  ]
+}

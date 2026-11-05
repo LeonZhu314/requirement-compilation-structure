@@ -1,6 +1,7 @@
 """All real passes reach a final report after one schema task exhausts retries."""
 from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from importlib import import_module
+from functools import partial
 from io import StringIO
 import json
 from pathlib import Path
@@ -27,6 +28,9 @@ class PipelineContinuation(unittest.TestCase):
                 calls.append(rid)
                 return {} if rid == 'BAD' else {'entities': {}, 'related_fields': []}
             with ExitStack() as stack, redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                stage = import_module('02_build_db_schema')
+                stack.enter_context(patch.object(stage, 'build_db_schema',
+                    partial(stage.build_db_schema, max_attempts=10)))
                 stack.enter_context(patch.object(import_module('02_build_db_schema'), 'TextModel',
                     return_value=Mock(generate_json=schema_proposal)))
                 stack.enter_context(patch.object(import_module('03_infer_db_obligations'), 'TextModel',

@@ -80,10 +80,10 @@ def requirement_nodes(root: dict):
     """Visit leaf requirements in document order; parents only organize the tree."""
     tree = RequirementTree(root)
     for rid in tree.leaves:
-        yield {**tree.requirements[rid], "steps": tree.concatenated_steps(rid)}
+        yield {**tree.context(rid), "steps": tree.concatenated_steps(rid)}
 
 
-def build_db_schema(arc_dir: Path, pause: bool = False, top_k: int = 6, max_attempts: int = 10) -> dict:
+def build_db_schema(arc_dir: Path, pause: bool = False, top_k: int = 6, max_attempts: int | None = None) -> dict:
     requirements_path = arc_dir / "requirements.json"
     if not requirements_path.is_file():
         raise ValueError("Run 01_explore_requirement.py first to create .arc/requirements.json")
@@ -157,7 +157,7 @@ def build_db_schema(arc_dir: Path, pause: bool = False, top_k: int = 6, max_atte
 def main() -> None:
     parser = create_parser("Step 02: Build DB Schema with RAG")
     parser.add_argument("--top-k", type=int, default=6, help="Number of BM25 entity/field hits (default: 6)")
-    parser.add_argument("--max-attempts", type=int, default=10, help="Maximum proposals per requirement; including the first proposal (default: 10)")
+    parser.add_argument("--max-attempts", type=int, default=None, help="Optional limit (default: unlimited). Maximum proposals per requirement; including the first proposal")
     args = parser.parse_args()
     with ExitStack() as stack:
         try:

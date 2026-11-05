@@ -7,5 +7,6 @@ slides/
 docs/
 /scripts/*
 !/scripts/package.py
+!/scripts/analyze_submit.py
 
 AGENTS.md

@@ -1,6 +1,7 @@
 """Isolate failed design tasks while preserving successful neighboring artifacts."""
 
 from contextlib import contextmanager
+from infrastructure.shared.models.errors import ModelServiceError
 
 
 class StageIncomplete(RuntimeError):
@@ -22,6 +23,9 @@ class TaskFailures:
         try:
             yield
         except Exception as error:
+            if isinstance(error, ModelServiceError):
+                error.feedback.update(stage=self.stage, task=identity)
+                raise
             if isinstance(error, OSError):
                 raise
             self.report['tasks'][identity] = {'status': 'FAILED', 'error': str(error),

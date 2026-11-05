@@ -1,0 +1,255 @@
+{
+  "ir_kind": "backend_design",
+  "types": [],
+  "modules": [
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "GET",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header. Absent for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"The saved account username rendered as text in the header after registration or login; null when no valid session is presented.\"}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "name": "GetCurrentSession",
+      "spec": "{no authentication precondition; session_id may be absent, unknown or expired} reads the session identifier supplied via the Cookie header and passes it to the session/account lookup {when the session exists and resolves to a user_account, responds authenticated=true with that account's username so the page header can display the saved username and offer Sign out; when session_id is absent, unknown, expired or resolves to no account, responds authenticated=false with username null so the header shows the Register and Login links} {no writes; creates, modifies and clears no session or account data}",
+      "id": "API_000001",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000001"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "DELETE",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "name": "SignOut",
+      "spec": "{invoked by an authenticated visitor clicking Sign out; session_id is read from the Cookie request header and may be absent or already unknown} deletes the persisted session identified by session_id and clears the session cookie carrier on the response by setting that cookie to an empty value with an expiry in the past, so the visitor returns to the unauthenticated state where the header again shows the Register and Login links {always responds with success, even when session_id is absent or unknown, and always clears the cookie} {no other session is affected; user_account rows, including the saved username, are preserved unchanged; no new session is created}",
+      "id": "API_000002",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000002"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"anyOf\": [{\"type\": \"string\", \"format\": \"uuid\"}, {\"type\": \"null\"}], \"description\": \"Session identifier supplied by GetCurrentSession.payload.session_id, taken from the Cookie request header; absent or null for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "shared": false,
+      "callees": [
+        "DB_000001"
+      ],
+      "name": "ResolveActiveSession",
+      "callers": [
+        "API_000001"
+      ],
+      "spec": "{no authentication precondition; input.session_id may be absent, null, unknown or expired} if input.session_id is absent or null, return authenticated=false and username=null without performing any lookup; otherwise read the persisted session row identified by input.session_id together with the user_account it belongs to, obtaining that account's stored username and the session's validity {when such a session exists, is not expired and resolves to a user_account, return authenticated=true and username = that account's stored username so GetCurrentSession can render the saved username as header text; when the session is absent, unknown, expired or resolves to no account, return authenticated=false and username=null so the header shows the Register and Login links} {frame: no writes occur; no session or user_account row is created, modified or deleted, and no cookie is altered by this module} {downstream data requirement for the storage pass: a lookup by session primary key that returns the owning account's username and session expiry/liveness}.",
+      "id": "FUNC_000001",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"anyOf\": [{\"type\": \"string\", \"format\": \"uuid\"}, {\"type\": \"null\"}], \"description\": \"Session identifier supplied by SignOut.payload.session_id, taken from the Cookie request header; may be absent or already unknown.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "shared": false,
+      "callees": [
+        "DB_000002"
+      ],
+      "name": "RevokeSession",
+      "callers": [
+        "API_000002"
+      ],
+      "spec": "{invoked for a visitor clicking Sign out; input.session_id may be absent, null, unknown or already revoked} if input.session_id is present and not null, delete the persisted session row identified by input.session_id; if it is absent, null or matches no row, perform no deletion and continue {always succeeds and returns an empty result, carrying no data; SignOut then clears the session cookie on the response so the visitor returns to the unauthenticated state} {frame: only the session row for input.session_id is removed; user_account rows, including the saved username, are preserved unchanged; no new session is created and no other session is affected} {downstream data requirement for the storage pass: a delete of a session by primary key that succeeds whether or not the row exists}.",
+      "id": "FUNC_000002",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"found\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"Stored user_account.username of the account that owns the matching session row; null when no session row matched.\"}}, \"required\": [\"found\", \"username\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Session identifier taken from ResolveActiveSession.input.session_id; the calling module has already confirmed it is present and not null before calling.\"}}, \"required\": [\"session_id\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[\"session\",\"user_account.username\"]",
+      "callees": [],
+      "name": "FindSessionAccountById",
+      "callers": [
+        "FUNC_000001"
+      ],
+      "write": "[]",
+      "spec": "{session_id is supplied by ResolveActiveSession.input.session_id after that module has already established that the value is present and not null; no other precondition} look up the persisted session row whose primary key equals input.session_id and, when such a row exists, resolve the owning user_account and read that account's stored username {when a session row matches input.session_id, return found=true and username = the owning account's stored username, which ResolveActiveSession maps directly to output.authenticated=true and output.username so GetCurrentSession can render the saved username as header text; when no session row matches input.session_id, return found=false and username=null, which ResolveActiveSession maps to output.authenticated=false and output.username=null so the header shows the Register and Login links} {the session row itself carries only its identifier, so existence of the row is the stored session state this lookup reports; this module performs no expiry comparison of its own} {frame: read-only; no session or user_account row is created, modified or deleted, and no cookie or other persistent state is altered} {callees: none; the lookup is executed directly against the session and user_account data}. ",
+      "id": "DB_000001",
+      "kind": "DB",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Session identifier taken from RevokeSession.input.session_id; the calling module has already confirmed it is present and not null before calling.\"}}, \"required\": [\"session_id\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[]",
+      "callees": [],
+      "name": "DeleteSessionById",
+      "callers": [
+        "FUNC_000002"
+      ],
+      "write": "[\"session\"]",
+      "spec": "{session_id is supplied by RevokeSession.input.session_id after that module has already established that the value is present and not null; the row may or may not exist} delete the persisted session row whose primary key equals input.session_id {returns an empty result and succeeds whether the row was removed or no row matched input.session_id, so RevokeSession always completes successfully and SignOut can clear the session cookie to return the visitor to the unauthenticated state where the header shows Register and Login} {frame: only the session row whose primary key equals input.session_id is removed; user_account rows, including the saved username that GetCurrentSession renders after the next login, are preserved unchanged; no new session or account row is created and no other session is affected} {callees: none; the deletion is executed directly against the session data}. ",
+      "id": "DB_000002",
+      "kind": "DB",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/register",
+      "shared": false,
+      "method": "POST",
+      "payload": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Selected nationality, e.g. \\\"Vietnam\\\".\"}, \"name\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Traveler full name as printed on the passport.\"}, \"passport_number\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Passport number: 6-30 ASCII letters, digits or hyphens.\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Passport expiry date; must be later than the current date.\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Traveler date of birth; must be earlier than the current date.\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"], \"source\": \"body\", \"description\": \"Selected gender radio option.\"}, \"username\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"3-32 ASCII letters, digits, hyphens or underscores; must be unique.\"}, \"password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"12-128 characters including uppercase, lowercase, digit and special character.\"}, \"confirm_password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Must be identical to password.\"}, \"email\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Valid email address, at most 254 characters; unique regardless of letter case.\"}, \"agreed_to_terms\": {\"type\": \"boolean\", \"source\": \"body\", \"description\": \"True when the visitor checked the Terms of Service and Privacy Policy agreement checkbox.\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "response": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"description\": \"Saved account username displayed as text in the header after automatic login.\"}, \"error\": {\"type\": \"string\", \"description\": \"Message describing the invalid or duplicate input; present only when no account was created.\"}}, \"required\": [], \"additionalProperties\": false}",
+      "name": "RegisterAccount",
+      "spec": "{any unauthenticated visitor may call; the body supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms, all of which are mandatory} validates the supplied values before any write: agreed_to_terms must be true; name must contain 2-100 non-whitespace characters; passport_number must consist of 6-30 ASCII letters, digits or hyphens; date_of_birth must be earlier than the current date read from the clock; passport_expiration_date must be later than the current date; username must be 3-32 ASCII letters, digits, hyphens or underscores; email must be syntactically valid and at most 254 characters; password must be 12-128 characters containing an uppercase letter, a lowercase letter, a digit and a special character; confirm_password must equal password; username must not already belong to an existing account and email must not already belong to an existing account under case-insensitive comparison. When every check passes, it persists a new user_account holding exactly these validated values (a locally hashed password derived from the supplied password is stored in place of the plain password, and a locally generated account identifier is assigned) and creates a new persisted session for that account identifier; it then sets the generated session identifier as the session cookie value on the Set-Cookie response header and responds with the saved username so the header can display it and offer Sign out. If any validation check fails or the username or email is already taken, it responds with an error description and creates no account and no session. {on success the new account and session exist, the session cookie is set, and username is returned; on failure no user_account row and no session row are created and no cookie is set} {rows of other accounts and sessions are left unchanged; the agreed_to_terms value itself is not persisted; no clear-text password is stored or returned}",
+      "id": "API_000003",
+      "kind": "API",
+      "reqs": [
+        "REQ-2"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000005"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"username_taken\": {\"type\": \"boolean\"}, \"email_taken\": {\"type\": \"boolean\"}}, \"required\": [\"username_taken\", \"email_taken\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}}, \"required\": [\"username\", \"email\"], \"additionalProperties\": false}",
+      "shared": false,
+      "callees": [
+        "DB_000003"
+      ],
+      "name": "CheckAccountUniqueness",
+      "callers": [
+        "FUNC_000004"
+      ],
+      "spec": "{username and email are supplied by ValidateRegistration.input.username and ValidateRegistration.input.email after all syntactic registration checks have already passed; no other precondition} look up the persisted user_account data for an existing account whose username equals input.username under exact comparison and for an existing account whose email equals input.email under case-insensitive comparison {return username_taken=true when an account with the exact username exists and false otherwise; return email_taken=true when an account with the same email ignoring letter case exists and false otherwise, so ValidateRegistration can reject duplicate usernames and duplicate emails before any write happens} {frame: read-only; no user_account or session row is created, modified or deleted, and no cookie or other persistent state is altered} {callees: none; the lookups are executed directly against user_account data} {downstream data requirement for the storage pass: an existence lookup by user_account.username with exact comparison and an existence lookup by user_account.email with case-insensitive comparison}. ",
+      "id": "FUNC_000003",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"valid\": {\"type\": \"boolean\"}, \"error\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}}, \"required\": [\"valid\", \"error\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\"}, \"name\": {\"type\": \"string\"}, \"passport_number\": {\"type\": \"string\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"]}, \"username\": {\"type\": \"string\"}, \"password\": {\"type\": \"string\"}, \"confirm_password\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"agreed_to_terms\": {\"type\": \"boolean\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "shared": false,
+      "callees": [
+        "FUNC_000003"
+      ],
+      "name": "ValidateRegistration",
+      "callers": [
+        "FUNC_000005"
+      ],
+      "spec": "{API_000003 supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms; any unauthenticated visitor may register} validate the supplied values in this order before any write: input.agreed_to_terms must be true; input.name must contain between 2 and 100 non-whitespace characters; input.passport_number must consist of 6 to 30 characters each being an ASCII letter, digit or hyphen; input.date_of_birth must be earlier than the current date read from the clock; input.passport_expiration_date must be later than the current date read from the clock; input.gender must be Male or Female; input.username must consist of 3 to 32 characters each being an ASCII letter, digit, hyphen or underscore; input.email must be syntactically valid and at most 254 characters; input.password must be 12 to 128 characters and contain at least one uppercase letter, one lowercase letter, one digit and one special character; input.confirm_password must equal input.password. Only after every preceding syntactic check passes, call CheckAccountUniqueness with input.username and input.email and use its result: if username_taken is true, fail with a duplicate-username error; otherwise if email_taken is true, fail with a duplicate-email error. {on any failed check return valid=false and error describing the first failure, and perform no writes; when every check passes including uniqueness, return valid=true and error=null} {frame: read-only; no user_account or session row is created, modified or deleted, and no cookie or other persistent state is altered}. ",
+      "id": "FUNC_000004",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}, \"session_id\": {\"anyOf\": [{\"type\": \"string\", \"format\": \"uuid\"}, {\"type\": \"null\"}]}, \"error\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}}, \"required\": [\"username\", \"session_id\", \"error\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\"}, \"name\": {\"type\": \"string\"}, \"passport_number\": {\"type\": \"string\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"]}, \"username\": {\"type\": \"string\"}, \"password\": {\"type\": \"string\"}, \"confirm_password\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"agreed_to_terms\": {\"type\": \"boolean\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "shared": false,
+      "callees": [
+        "FUNC_000004",
+        "DB_000004",
+        "DB_000005"
+      ],
+      "name": "CreateTravelerAccount",
+      "callers": [
+        "API_000003"
+      ],
+      "spec": "{API_000003 supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms for an unauthenticated visitor; the API has already received them from the registration form} pass all eleven supplied values unchanged to ValidateRegistration and inspect its result. {when ValidateRegistration returns valid=false, return username=null, session_id=null and error equal to ValidateRegistration.output.error, and create no account and no session} {when ValidateRegistration returns valid=true, locally compute a password hash from input.password using the application password-hashing routine, locally generate a new account identifier and a new session identifier, persist one new user_account row holding the generated account identifier, input.nationality, input.name, input.passport_number, input.passport_expiration_date, input.date_of_birth, input.gender, input.username, input.email and the computed password hash in place of the plain password, and persist one new session row with the generated session identifier associated with that new account so the session resolves to the account as required by ResolveActiveSession; perform both inserts in one transaction; return username=input.username, session_id=the generated session identifier and error=null so API_000003 can set the session cookie and respond with the saved username} {if persisting either row fails, roll back both inserts, return error=null username and null session_id with an error description, and leave no account and no session} {frame: on failure no user_account row and no session row are created; on success exactly one user_account row and one session row are created; rows of other accounts and sessions are left unchanged; agreed_to_terms itself is not persisted; no clear-text password is stored or returned} {callees: none besides validation for storage; the account and session inserts are executed directly against user_account and session data} {downstream data requirements for the storage pass: insert a user_account with all validated profile fields and a hashed password returning its generated identifier, and insert a session linked to that account returning its generated identifier, both participating in one transaction}. ",
+      "id": "FUNC_000005",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"username_taken\": {\"type\": \"boolean\"}, \"email_taken\": {\"type\": \"boolean\"}}, \"required\": [\"username_taken\", \"email_taken\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"description\": \"Candidate username taken from CheckAccountUniqueness.input.username.\"}, \"email\": {\"type\": \"string\", \"description\": \"Candidate email taken from CheckAccountUniqueness.input.email.\"}}, \"required\": [\"username\", \"email\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[\"user_account.username\",\"user_account.email\"]",
+      "callees": [],
+      "name": "FindAccountByUsernameOrEmail",
+      "callers": [
+        "FUNC_000003"
+      ],
+      "write": "[]",
+      "spec": "{username is supplied by CheckAccountUniqueness.input.username and email by CheckAccountUniqueness.input.email after every syntactic registration check has already passed; no other precondition} perform an existence lookup on the persisted user_account rows for a row whose username equals input.username under exact comparison, and an existence lookup for a row whose email equals input.email ignoring letter case {return username_taken=true when such a username row exists and false otherwise; return email_taken=true when such an email row exists under case-insensitive comparison and false otherwise; CheckAccountUniqueness maps these two flags directly to its own output.username_taken and output.email_taken so ValidateRegistration can reject duplicate usernames and duplicate emails before any write happens} {frame: read-only; no user_account or session row is created, modified or deleted, and no cookie or other persistent state is altered} {callees: none; both lookups are executed directly against the user_account data}",
+      "id": "DB_000003",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"account_id\": {\"type\": \"string\", \"format\": \"uuid\"}}, \"required\": [\"account_id\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"account_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Account identifier generated locally by CreateTravelerAccount.\"}, \"nationality\": {\"type\": \"string\"}, \"name\": {\"type\": \"string\"}, \"passport_number\": {\"type\": \"string\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"]}, \"username\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"password_hash\": {\"type\": \"string\", \"description\": \"Password hash computed locally by CreateTravelerAccount from input.password; the clear-text password is never supplied here.\"}}, \"required\": [\"account_id\", \"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"email\", \"password_hash\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[\"user_account.username\",\"user_account.email\"]",
+      "callees": [],
+      "name": "InsertUserAccount",
+      "callers": [
+        "FUNC_000005"
+      ],
+      "write": "[\"user_account\",\"user_account.username\",\"user_account.name\",\"user_account.passport_number\",\"user_account.passport_expiration_date\",\"user_account.date_of_birth\",\"user_account.gender\",\"user_account.nationality\",\"user_account.email\",\"user_account.password\"]",
+      "spec": "{the caller CreateTravelerAccount has already validated every value through ValidateRegistration and has locally generated input.account_id and computed input.password_hash from the supplied clear-text password; no other precondition} insert exactly one new user_account row whose primary key is input.account_id holding input.nationality, input.name, input.passport_number, input.passport_expiration_date, input.date_of_birth, input.gender, input.username, input.email and input.password_hash stored in the user_account.password field in place of the plain password; the agreement flag is not part of this input and is not persisted {return account_id=input.account_id so CreateTravelerAccount can pass the same identifier as the account linkage for the session it inserts next, keeping both writes in one transaction} {if the insert fails, no user_account row is created and the failure is reported to CreateTravelerAccount, which rolls back the transaction} {frame: on success exactly one user_account row is created; on failure none is created; rows of other accounts and all session rows are left unchanged; no session row is created here} {callees: none; the insertion is executed directly against the user_account data}",
+      "id": "DB_000004",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\"}}, \"required\": [\"session_id\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Session identifier generated locally by CreateTravelerAccount.\"}, \"account_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Identifier of the just-created user_account, taken from InsertUserAccount.output.account_id.\"}}, \"required\": [\"session_id\", \"account_id\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[]",
+      "callees": [],
+      "name": "InsertSession",
+      "callers": [
+        "FUNC_000005"
+      ],
+      "write": "[\"session\"]",
+      "spec": "{CreateTravelerAccount has already inserted the account, has locally generated input.session_id and passes as input.account_id the value it received from InsertUserAccount.output.account_id; no other precondition} insert exactly one new session row whose primary key is input.session_id and which is associated with the account identified by input.account_id, so that a later FindSessionAccountById lookup by this session identifier resolves to that account and its username {return session_id=input.session_id so CreateTravelerAccount can return the same value as output.session_id and API_000003 can set it as the session cookie value for the newly registered traveler} {if the insert fails, no session row is created and the failure is reported to CreateTravelerAccount, which rolls back the account insert of the same transaction} {frame: on success exactly one session row is created; on failure none is created; existing sessions of other accounts and all user_account rows other than the account created in this same transaction are left unchanged} {callees: none; the insertion is executed directly against the session data}",
+      "id": "DB_000005",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ]
+    }
+  ]
+}

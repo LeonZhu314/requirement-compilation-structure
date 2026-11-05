@@ -1,0 +1,2536 @@
+[2026-10-22T07:32:34.120981+00:00] [tdd_frontend_implementation] MODEL_CALL model=deepseek-flash attempt=1 status=SUCCEEDED
+[2026-10-22T07:32:34.120981+00:00] [tdd_frontend_implementation] MODEL_INPUT
+
+--- system ---
+## Requirement fidelity
+For design, test generation, implementation and repair, explicit requirement descriptions, scenarios
+and applicable ancestor constraints define the observable product contract. Visual references, generated
+IR, existing source and convenience choices must not override that contract.
+Preserve explicitly specified UI wording and accessible names exactly, including spelling, case,
+punctuation and dynamic naming patterns. Do not translate, paraphrase, abbreviate or substitute another
+spelling unless the document explicitly permits it. Use the same names in design, source and tests.
+Preserve explicitly specified UI roles and states. A required button is a button, not a link merely
+because it navigates; fields need their specified associated labels. Implement the actual control
+semantics, not just matching text or an aria-label on a different control. Use alternatives only when
+the requirement explicitly allows them.
+At each specified scenario step, required controls and navigation entries must exist, be visible and
+be operable in the stated scope. Do not invent prerequisite expansion, hover or navigation steps that
+hide an expected input or action. Preserve these contracts in shared forms and prerequisite flows too.
+Tests must exercise the specified names, roles and states; do not broaden selectors or expected values
+to accept an implementation that contradicts explicit requirements.
+Where the requirement is silent, choose suitable wording, roles and interaction details consistent
+with the supplied visual evidence and existing application conventions. Do not invent extra obligations.
+
+## Background and role
+You implement ONE leaf requirement in a generated TypeScript Express/React application using TDD.
+The database, backend and frontend symbol tables and lowering plans supply exact contracts and file paths.
+Parent descriptions constrain behavior; dependency requirements are not additional implementation tasks.
+Preserve previously implemented behavior, especially when files/components are shared.
+When current_task.recovery is present, design or lowering could not supply complete contracts.
+Its file_paths are loaded editable recovery files, not implemented modules. Derive missing interfaces
+and behavior from the requirement/scenarios, implement those files, and load shared app/router,
+page composition, types or database initialization to wire the real flows. Recovery placeholders
+impose no signatures or routes. Preserve valid existing behavior; do not treat an incomplete IR as
+a reason to abandon this requirement. Generate HTTP/browser acceptance tests from observable
+behavior without importing nonexistent recovery exports; source implementation follows test generation.
+During frontend recovery, the recovered backend files and app.ts may be supplied read-only so
+you can integrate actual routes even when design-stage API contracts were unavailable.
+
+## File scope and incremental loading
+editable_files contains current full text for the entire writable allowlist.
+always_loaded_files lists current requirement-associated module/UI files supplied in this invocation. Their
+FULL CONTENTS are already in editable_files or read_only_files, not merely available for discovery.
+Read those supplied contents directly. You can return edits on the FIRST invocation without a
+preliminary file request. Re-reading a supplied file is supported and returns its latest version.
+Their editability depends on this phase: editable_files is the ONLY write allowlist; read_only_files
+remains read-only. Shared files not directly associated with the current requirement (including schema,
+connection, seed, server entrypoints and styles) are listed with paths/summaries in shared_catalog;
+their source is loaded only after a request. Directly bound modules are initially supplied even
+when shared; released or budget-evicted files can be read again through file_index. Other modules are
+retrieved as summaries in related_catalog. Request exact paths via request_files before using/editing them.
+Catalogs omit files whose contents are already supplied. Summaries are compact discovery hints;
+load a record to obtain its complete source and contract. Backend/frontend implementation source and
+discovery catalogs are restricted to that layer; frontend additionally receives needed backend APIs
+as contracts only. Unit/integration tests accompany backend, browser tests accompany frontend.
+Discovery summaries do not authorize edits. Loading a module supplies its source on the next invocation;
+the compiler recomputes phase-specific permissions. Loading does not override read-only restrictions.
+Configurations are read-only. Tests are writable in test_generation and repair; initial implementation
+phases keep tests read-only. During repair, loaded current or regression acceptance tests can be
+corrected when their assumptions, setup, selectors or assertions contradict the governing requirement.
+Never guess source.
+Do not request a dependency closure or every component. Load the few files required by actual imports,
+call chains, composition or observed errors. Any file request must have no edits in that same response.
+No recursive context dump; no automatic dependency source inclusion. Preserve public contracts and IDs.
+file_index lists discoverable paths/symbols outside the current working set. Read through request_files;
+optionally use release_files to drop unneeded full source from context (not from disk). Reads and
+releases may be combined, but not combined with edits. Current/failing tests stay pinned. The compiler
+may release older optional files to fit the source budget; requested files are delivered whole, never
+truncated. Reload any released file before editing it. Permission rules remain phase-specific.
+context_state.last_operation pairs the latest read/release request with results and content_ref
+pointing into editable_files/read_only_files, where each source appears once with its current content.
+Every invocation refreshes source from disk; old source versions and full history remain in traces,
+not in this prompt. Context requests do not install rejected edits.
+
+## Patch protocol and corrections
+Return exactly the JSON schema: request_files, release_files, edits, blocked_reason, no Markdown.
+Include all four fields. Use [] for unused arrays and "" for an empty blocked_reason.
+These are the only allowed top-level keys. Never emit type, json_object, response_format,
+schema, status or explanatory fields. JSON Schema's type and the API transport's json_object mode
+describe the format; they are NOT fields to copy into your response. Start with {"request_files": ...}.
+Each edit supplies only the file path and full replacement content for a loaded writable file.
+The compiler manages source versions internally and refreshes context if a file changed during the call.
+Do not include unchanged files, delete files or modify .arc artifacts. Edit only the supplied allowlist.
+validation_feedback describes the last failure. rejected_patch lists only the files proposed by
+the rejected reply: installed:false means NONE of that reply's edits are installed. Their replacement
+contents are deliberately omitted. Use the freshly supplied editable_files/read_only_files as the
+actual source state; earlier accepted patches remain installed. If the failed proposal coordinated
+several files, inspect their actual contents and submit all necessary changes together.
+blocked_reason is empty unless a real design/dependency gap prevents implementation. Do not claim success
+from reasoning: the compiler runs compilation and tests. Test edits must preserve scenario coverage
+and the intended acceptance behavior; never weaken tests merely to match a faulty implementation.
+
+## Shared database and seed
+backend/src/db/seed.ts is the single cumulative seed module. Every application startup resets only its
+selected database connection, creates schema, then inserts all accumulated fixture data before listening.
+Load seed.ts when GIVEN or description explicitly needs existing records. Add fixtures from this leaf;
+preserve all earlier fixtures. Do not create a session merely because a user account exists. Use the same
+encoding/hashing as real authentication. Seed must not derive fixtures from test code or incoming requests.
+Database connection and table-creation source are shared modules that can be loaded and edited explicitly.
+Do not add per-requirement seeds, test-local inserts, endpoint seeding or lazy fixture hacks.
+## Task: implement the initial frontend version
+The initial backend implementation is available. Tests have NOT been executed yet. Implement the
+current leaf's UI, state, events and handlers, API calls, page composition and navigation; use the
+requirement's visual analysis for layout, content and style. Load shared components/App/styles as needed.
+Treat current_task.requirement.pages[*].analysis as the visual reference evidence for each named page
+and reference path. Follow its concrete visual style: page composition and proportions, alignment,
+spacing/padding, color palette and backgrounds, typography hierarchy/weight/size, borders, radii,
+shadows, icons, imagery and visible control states. Build a coherent page matching that evidence;
+do not substitute a generic dashboard/card layout or leave unstyled placeholder controls.
+Use regions/layout_cues for structure, style_cues for styling, and visible_controls/text_cues for
+presentation. Requirements/scenarios remain authoritative for behavior and actual business data;
+reference appearance does not authorize extra backend features or unrelated interactions.
+Preserve existing shared visual conventions and already implemented pages. Load shared CSS or
+components before changing them. When analysis is missing, use the established app style and the
+requirement evidence rather than claiming to have inspected an unavailable image.
+Only frontend source and frontend shared source are in scope. Backend implementation source is deliberately
+omitted; use the supplied backend API contracts for integration. Acceptance tests are read-only in this phase.
+Preserve contracts and earlier UI
+behavior. Wire the required interactions instead of leaving lowering's event.wired=false as completion.
+After this phase the compiler executes only the current requirement's acceptance tests, then repairs.
+Historical test sources are checked for compilation only; no runtime regression suite is executed.
+
+## Return format
+{"type": "object", "additionalProperties": false, "properties": {"request_files": {"type": "array", "items": {"type": "string"}}, "release_files": {"type": "array", "items": {"type": "string"}}, "edits": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"file": {"type": "string"}, "content": {"type": "string"}}, "required": ["file", "content"]}}, "blocked_reason": {"type": "string"}}, "required": ["request_files", "release_files", "edits", "blocked_reason"]}
+## Example: read a file when needed
+{"request_files": ["frontend/src/App.tsx"], "release_files": [], "edits": [], "blocked_reason": ""}
+## Example: replace a changed file (use actual allowed paths and contents)
+{"request_files": [], "release_files": [], "edits": [{"file": "frontend/src/App.tsx", "content": "<complete changed file contents>"}], "blocked_reason": ""}
+--- user ---
+## Current task
+
+```json
+{
+  "current_task": {
+    "requirement": {
+      "id": "REQ-1",
+      "name": "Public home page and account access",
+      "type": "ATOMIC",
+      "description": "未登录状态下，首页 / 显示 \"Register\"(role=link)，点击后打开 /register；同时显示 \"Login\"(role=link)，点击后打开 /login。注册或登录成功后，页头以文本显示已保存的用户名，并提供 \"Sign out\"(role=link)；点击 Sign out 清除持久保存的会话，恢复 Register 和 Login 链接。注册创建账户及会话；登录为已有账户重新建立会话。未登录状态的参考图片没有展示登录后的 Sign out 操作；其精确可见文案和可访问名称均为 \"Sign out\"。\n\n首页参考图还展示了可编辑的 \"From\"(role=textbox)、\"To\"(role=textbox) 和 \"Date\"(role=textbox)，各自使用上述可见标签和可访问名称；\"Search\"(role=button) 的可见文案为 \"Search\"，\"High-speed trains only\"(role=checkbox) 使用上述可见标签和可访问名称。交换车站图标的 role=button，可访问名称为 \"Swap stations\"，没有可见文本。三个横幅指示器的 role=button，可访问名称分别为 \"Show banner 1\"、\"Show banner 2\" 和 \"Show banner 3\"，没有可见文本。由于参考图片未提供文字标签，这里明确补充这些纯图标控件的名称。\n\nQuick Guide 区域提供 \"What ID documents are accepted by 12306.cn English website?\"(role=link)、\"What services does 12306.cn English website provide?\"(role=link)、\"What is endorsement?\"(role=link)、\"What are the rules of ticket endorsement?\"(role=link) 和 \"More>\"(role=link)，使用上述精确可见文案和可访问名称。账户需求未规定列车查询、横幅切换、交换车站和指南内容的行为；明确这些控件的身份，不会增加账户流程的验收条件。",
+      "parent_id": "ROOT",
+      "dependencies": [],
+      "pages": [
+        {
+          "name": "home",
+          "reference": "reference/homepage.png",
+          "analysis": "regions:\n- Page > Header: white top bar containing the railway brand block at the left and utility navigation at the right.\n- Page > Primary navigation bar: full-width blue bar directly beneath the header, containing Home, Booking and Travel guides entries.\n- Page > Hero banner: full-width nighttime railway photograph with three carousel indicators near the lower left and a wide search panel overlapping the banner's lower edge.\n- Hero banner > Search panel: white floating card containing an information notice, a horizontal From/To/Date/Search form row, and an unchecked High-speed trains only checkbox.\n- Page > Quick Guide section: white content area below the hero with a blue heading and two columns of FAQ links, plus a More link below the right column.\n- Page > Footer: pale gray full-width band with three centered lines of copyright, registration and policy text.\n- No sidebar, modal dialog, loading state, empty state or error message is visible.\n\nvisible_controls:\n- Header: China Railway 12306 brand mark at left, with a red circular railway emblem and product name block; Login and Register text links in the utility navigation.\n- Header utility navigation: My 12306 dropdown control with down chevron; 简体中文 language dropdown control with down chevron; Contact us link with telephone icon.\n- Primary navigation: Home link; Booking link with down chevron; Travel guides link with down chevron.\n- Hero banner: three carousel dot indicators; the first is filled/active and the next two are dimmed.\n- Search panel: From field with location-pin icon and visible value Beijing(北京).\n- Search panel: To field with location-pin icon and visible value Shanghai(上海).\n- Search panel: circular orange swap button with opposing arrows between the From and To fields.\n- Search panel: Date field with calendar icon and visible value Fri, May 29.\n- Search panel: large orange Search button.\n- Search panel: unchecked checkbox labeled High-speed trains only.\n- Quick Guide: four FAQ text links, each preceded by a small blue square bullet.\n- Quick Guide: More> text link below the right-hand FAQ column.\n- Footer: Privacy Policy and Cookie Statement links separated by a vertical bar.\n\nlayout_cues:\n- Header content sits in a wide horizontal container, with the brand block left-aligned and the utility navigation right-aligned; a thin separator divides the header from the navigation bar.\n- The primary navigation bar spans the full viewport width and is shallow; its items are left-aligned and separated by subtle vertical rules.\n- The hero banner is full-bleed and tall, occupying a major portion of the first screen, with the white search panel centered horizontally and overlapping its lower boundary.\n- The search panel is nearly as wide as the main content container, with generous internal padding; the notice spans the full card width above a single horizontal row of fields and button.\n- In the search form, From, To and Date occupy roughly equal columns, the orange Search button occupies the right end, and the checkbox sits alone below the fields at the left.\n- The Quick Guide section uses a wide centered content container; the heading is left-aligned, with two FAQ columns spaced widely apart and the More link under the right column.\n- There is substantial white space below the Quick Guide links before the footer begins.\n- The footer is full-width and centered; its three lines stack vertically with modest line spacing.\n\nstyle_cues:\n- Overall appearance is a corporate travel-booking interface: white header and content areas, a saturated blue navigation band and a dark photographic hero.\n- The header brand is prominent: a red circular railway emblem beside large dark Chinese characters and a smaller gray uppercase subtitle; utility links are smaller and muted dark gray.\n- The primary navigation uses white text on a medium-blue fill, with thin lighter vertical separators and no prominent individual button fills.\n- The hero image is a night scene dominated by dark sky, warm orange bokeh and light trails, and a silver-white high-speed train on an elevated structure; the image has high contrast against the white search card.\n- The search card is white with softly rounded corners and a light drop shadow; its notice text is small and gray with a gray circular information icon.\n- Search fields use thin light gray borders, white backgrounds, small gray labels with line icons, and larger dark values; the Search button is bright orange with white text.\n- Quick Guide uses a medium-large blue heading, small blue square list bullets, and dark gray link text; More> is lighter gray and lower emphasis.\n- The footer has a pale gray background with small centered gray text and links, creating low visual emphasis compared with the hero and search panel.\n\ntext_cues:\n- Header: 中国铁路12306; 12306 CHINA RAILWAY; Login; Register; My 12306; 简体中文; Contact us.\n- Primary navigation: Home; Booking; Travel guides.\n- Search panel notice: The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday).\n- Search panel fields: From; Beijing(北京); To; Shanghai(上海); Date; Fri, May 29.\n- Search panel action: Search.\n- Search panel checkbox: High-speed trains only.\n- Content section heading: Quick Guide.\n- Quick Guide links: What ID documents are accepted by 12306.cn English website?; What services does 12306.cn English website provide?\n- Quick Guide links: What is endorsement?; What are the rules of ticket endorsement?\n- Quick Guide action: More>.\n- Footer copyright: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED.\n- Footer registration: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证：京B2-20202537.\n- Footer links: Privacy Policy | Cookie Statement."
+        }
+      ],
+      "scenarios": [
+        {
+          "id": "REQ-1:scenario:1",
+          "name": "View the public home page and account entries",
+          "steps": [
+            {
+              "keyword": "GIVEN",
+              "content": "一位未登录访客打开首页 /。"
+            },
+            {
+              "keyword": "WHEN",
+              "content": "访客查看首页页头中的账户入口和导航。"
+            },
+            {
+              "keyword": "THEN",
+              "content": "首页显示 \"Register\"(role=link) 和 \"Login\"(role=link)，其可见文案和可访问名称精确匹配；两个链接分别指向 /register 和 /login。"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "document": "requirements.yaml",
+        "pointer": "/children/0"
+      },
+      "ancestor_constraints": [
+        {
+          "id": "ROOT",
+          "name": "Train Ticket Booking Demo",
+          "description": "这是一个小型网站，访客可以注册或登录。\n\n首页和注册页的共享导航提供 \"Home\"(role=link)、\"Booking\"(role=link)、\"Travel guides\"(role=link)、\"My 12306\"(role=link)、\"简体中文\"(role=button) 和 \"Contact us\"(role=link)，可见文案与参考图片完全一致。账户入口控件及其行为见 REQ-1。每个页面的页脚提供 \"Privacy Policy\"(role=link) 和 \"Cookie Statement\"(role=link)，可见文案和可访问名称相同。名称重复的控件通过其语义位置区分，例如注册协议区域与页脚。这里明确了参考控件的展示和交互身份；这次命名说明不增加下拉菜单内容、政策文档、联系服务或旅行指南的业务流程。"
+        }
+      ]
+    },
+    "phase": "frontend_implementation",
+    "data_access": {
+      "read": [
+        "session",
+        "user_account",
+        "user_account.username"
+      ],
+      "write": [
+        "session",
+        "user_account"
+      ]
+    }
+  }
+}
+```
+--- user ---
+## Current module contracts and types
+
+```json
+{
+  "current_contracts": [
+    {
+      "id": "UI_APP",
+      "name": "Application",
+      "kind": "app",
+      "reqs": [],
+      "description": "Application root.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000025",
+      "name": "Banner1Button",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 1.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000026",
+      "name": "Banner2Button",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 2.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000027",
+      "name": "Banner3Button",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 3.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000003",
+      "name": "BrandBlock",
+      "kind": "region",
+      "reqs": [],
+      "description": "China Railway 12306 brand mark block: red circular railway emblem with product name 中国铁路12306 and gray subtitle 12306 CHINA RAILWAY.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000004",
+      "name": "BrandEmblem",
+      "kind": "image",
+      "reqs": [],
+      "description": "Red circular railway emblem at the left of the header brand block.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000005",
+      "name": "BrandName",
+      "kind": "text",
+      "reqs": [],
+      "description": "Brand product name text 中国铁路12306.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000006",
+      "name": "BrandSubtitle",
+      "kind": "text",
+      "reqs": [],
+      "description": "Small gray uppercase subtitle 12306 CHINA RAILWAY.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000045",
+      "name": "PrivacyPolicyLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Ancestor constraint: footer provides Privacy Policy link with matching visible text and accessible name.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000046",
+      "name": "CookieStatementLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Ancestor constraint: footer provides Cookie Statement link with matching visible text and accessible name.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000002",
+      "name": "Header",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Home page header containing the account entries and navigation that the visitor views on the public home page.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000011",
+      "name": "HeaderAccountArea",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Account entry area at the right of the header. It takes exactly one of two states: guest (Register and Login links) or signed in (saved username text plus Sign out link).",
+      "data": [
+        "DATA_000001"
+      ],
+      "events": []
+    },
+    {
+      "id": "UI_000012",
+      "name": "GuestAccountLinks",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Unauthenticated visitor viewing the home header account area: Register and Login links are shown; the signed-in username and Sign out are hidden.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000013",
+      "name": "RegisterLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "User registration entry: Register link, role=link, with exact visible text and accessible name Register, opening /register.",
+      "data": [],
+      "events": [
+        "EVENT_000003"
+      ]
+    },
+    {
+      "id": "UI_000014",
+      "name": "LoginLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "User login entry: Login link, role=link, with exact visible text and accessible name Login, opening /login.",
+      "data": [],
+      "events": [
+        "EVENT_000004"
+      ]
+    },
+    {
+      "id": "UI_000015",
+      "name": "SignedInAccountArea",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "After a successful registration or login the header shows the saved username as plain text and a Sign out link instead of Register and Login.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000016",
+      "name": "UsernameDisplay",
+      "kind": "text",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Header displays the saved username of the registered or logged-in account as text.",
+      "data": [
+        "DATA_000001"
+      ],
+      "events": []
+    },
+    {
+      "id": "UI_000017",
+      "name": "SignOutLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Sign out link with exact visible text and accessible name Sign out; activating it clears the persisted session and restores the Register and Login state.",
+      "data": [],
+      "events": [
+        "EVENT_000002"
+      ]
+    },
+    {
+      "handler": "HANDLER_000002",
+      "ui": "UI_000017",
+      "name": "SignOutClicked",
+      "trigger": "click",
+      "id": "EVENT_000002",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "handler": "HANDLER_000003",
+      "ui": "UI_000013",
+      "name": "RegisterLinkClicked",
+      "trigger": "click",
+      "id": "EVENT_000003",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "handler": "HANDLER_000004",
+      "ui": "UI_000014",
+      "name": "LoginLinkClicked",
+      "trigger": "click",
+      "id": "EVENT_000004",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "id": "UI_000007",
+      "name": "HeaderUtilityNav",
+      "kind": "navigation",
+      "reqs": [],
+      "description": "Header utility navigation shown to every visitor: My 12306 link, 简体中文 language button and Contact us link with telephone icon.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000008",
+      "name": "MyAccountLink",
+      "kind": "button",
+      "reqs": [],
+      "description": "Header utility entry with visible text My 12306 and a down chevron, exposed as a link.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000009",
+      "name": "LanguageButton",
+      "kind": "button",
+      "reqs": [],
+      "description": "Language control with visible text 简体中文 and a down chevron, exposed as a button.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000010",
+      "name": "ContactUsLink",
+      "kind": "button",
+      "reqs": [],
+      "description": "Contact us link with telephone icon, visible text and accessible name Contact us.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000022",
+      "name": "HeroBanner",
+      "kind": "region",
+      "reqs": [],
+      "description": "Full-bleed nighttime railway photograph hero area with three carousel indicators near the lower left and the search panel overlapping its lower edge.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000023",
+      "name": "HeroImage",
+      "kind": "image",
+      "reqs": [],
+      "description": "Night scene railway photograph with a silver-white high-speed train on an elevated structure, warm orange bokeh and light trails.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000018",
+      "name": "PrimaryNavigation",
+      "kind": "navigation",
+      "reqs": [],
+      "description": "Full-width blue primary navigation bar beneath the header with white text entries and thin light vertical separators.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000019",
+      "name": "HomeNavLink",
+      "kind": "button",
+      "reqs": [],
+      "description": "Primary navigation entry Home, role=link, visible text and accessible name Home.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000020",
+      "name": "BookingNavLink",
+      "kind": "button",
+      "reqs": [],
+      "description": "Primary navigation entry Booking with down chevron, role=link, visible text and accessible name Booking.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000021",
+      "name": "TravelGuidesNavLink",
+      "kind": "button",
+      "reqs": [],
+      "description": "Primary navigation entry Travel guides with down chevron, role=link, visible text and accessible name Travel guides.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000038",
+      "name": "QuickGuideLinkList",
+      "kind": "list",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Quick Guide link with exact visible text and accessible name What services does 12306.cn English website provide?, matching the second FAQ item.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000040",
+      "name": "QuickGuideFaqLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Quick Guide link with exact visible text and accessible name What ID documents are accepted by 12306.cn English website?.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000041",
+      "name": "MoreLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Quick Guide link with exact visible text and accessible name More>.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000036",
+      "name": "QuickGuideSection",
+      "kind": "region",
+      "reqs": [],
+      "description": "White content section below the hero with a blue Quick Guide heading and two FAQ columns plus a More> link under the right column.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000037",
+      "name": "QuickGuideHeading",
+      "kind": "text",
+      "reqs": [],
+      "description": "Medium-large blue section heading Quick Guide.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000030",
+      "name": "FromInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Editable From textbox with visible label and accessible name From holding the station value Beijing(北京).",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000031",
+      "name": "SwapStationsButton",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Swap stations icon-only button with accessible name Swap stations and no visible text, between From and To.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000032",
+      "name": "ToInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Editable To textbox with visible label and accessible name To holding the station value Shanghai(上海).",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000033",
+      "name": "DateInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Editable Date textbox with visible label and accessible name Date holding Fri, May 29.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000034",
+      "name": "SearchButton",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Search button with exact visible text and accessible name Search.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000035",
+      "name": "HighSpeedTrainsOnlyCheckbox",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "High-speed trains only checkbox with exact visible label and accessible name.",
+      "data": [],
+      "events": []
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [
+        "API_000001"
+      ],
+      "name": "LoadSessionState",
+      "write": [
+        "DATA_000001"
+      ],
+      "spec": "{a visitor opens the home page at /, authenticated or not} requests GET /api/session, passing no session id when the browser holds no session cookie and otherwise the current session cookie value {on a response with authenticated=true, stores session_state = {authenticated:true, username:<response.username>} so the header account area renders the saved username as text plus the Sign out link instead of Register and Login; on a response with authenticated=false, stores session_state = {authenticated:false, username:null} so the header renders the Register link pointing to /register and the Login link pointing to /login; if the request fails, session_state retains its initial unauthenticated value {authenticated:false, username:null}} {writes only session_state; creates or clears no session and changes no account data}",
+      "id": "HANDLER_000001",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "handler": "HANDLER_000001",
+      "ui": "UI_000001",
+      "name": "HomePageLoaded",
+      "trigger": "load",
+      "id": "EVENT_000001",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "NavigateToHome",
+      "write": [],
+      "spec": "{the registration page breadcrumb shows \"Current location: HOME > Create an account\"} activating the \"HOME\" link navigates the visitor to / {the home page is opened; no session or account data is written and the current authentication state is unchanged}",
+      "id": "HANDLER_000005",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000005",
+      "ui": "UI_000061",
+      "name": "GoHomeFromBreadcrumb",
+      "trigger": "click",
+      "id": "EVENT_000006",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "NavigateToLogin",
+      "write": [],
+      "spec": "{the header account area shows the guest state with the Login link} activating the Login link navigates the visitor to /login {the login page is opened; no session or account data is written}",
+      "id": "HANDLER_000004",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "NavigateToRegister",
+      "write": [],
+      "spec": "{the header account area shows the guest state with the Register link} activating the Register link navigates the visitor to /register {the registration page is opened; no session or account data is written}",
+      "id": "HANDLER_000003",
+      "reqs": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [
+        "DATA_000001"
+      ],
+      "apis": [
+        "API_000002"
+      ],
+      "name": "SignOutAccount",
+      "write": [
+        "DATA_000001"
+      ],
+      "spec": "{the header currently shows the signed-in account area with the saved username text and the Sign out link} activating Sign out sends DELETE /api/session carrying the current session cookie so the server deletes the persisted session and clears the cookie {on success stores session_state = {authenticated:false, username:null}, so the header account area restores the Register link pointing to /register and the Login link pointing to /login and the username text and Sign out link are no longer shown; the visitor stays on the home page} {if the request fails, session_state is left unchanged so the signed-in header remains visible} {the account row and its saved username are preserved; no new session is created}",
+      "id": "HANDLER_000002",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "id": "UI_000001",
+      "name": "home",
+      "kind": "page",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Page: home.",
+      "data": [],
+      "events": [
+        "EVENT_000001"
+      ]
+    },
+    {
+      "owner": "UI_000001",
+      "schema": "{\"type\":\"object\",\"properties\":{\"authenticated\":{\"type\":\"boolean\"},\"username\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]}},\"required\":[\"authenticated\",\"username\"],\"additionalProperties\":false}",
+      "initial": "{\"authenticated\":false,\"username\":null}",
+      "name": "session_state",
+      "spec": "Current authentication state for the header account area, fetched from GET /api/session when the home page loads. authenticated=false with username null means show the Register and Login links; authenticated=true shows the saved username as text plus the Sign out link. Refreshed to the unauthenticated value after a successful Sign out (DELETE /api/session).",
+      "id": "DATA_000001",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "id": "UI_000047",
+      "name": "registration",
+      "kind": "page",
+      "reqs": [],
+      "description": "Page: registration.",
+      "data": [],
+      "events": []
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "nationality",
+      "spec": "Currently selected nationality value in the registration \"Nationality\" combobox; empty string until the visitor picks \"Vietnam\". Sent to RegisterAccount as nationality.",
+      "id": "DATA_000002",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "name",
+      "spec": "Current text of the registration \"Name\" textbox. Sent to RegisterAccount as name.",
+      "id": "DATA_000003",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "passport_number",
+      "spec": "Current text of the registration \"Passport number\" textbox. Sent to RegisterAccount as passport_number.",
+      "id": "DATA_000004",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "passport_expiration_date",
+      "spec": "Current value of the registration \"Passport expiration date\" date textbox, as an entered date string. Sent to RegisterAccount as passport_expiration_date.",
+      "id": "DATA_000005",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "date_of_birth",
+      "spec": "Current value of the registration \"Date of birth\" date textbox, as an entered date string. Sent to RegisterAccount as date_of_birth.",
+      "id": "DATA_000006",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "gender",
+      "spec": "Selected option of the registration \"Gender\" radiogroup: \"Male\", \"Female\", or empty string when nothing is selected. Sent to RegisterAccount as gender.",
+      "id": "DATA_000007",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "username",
+      "spec": "Current text of the registration \"Username\" textbox. Sent to RegisterAccount as username.",
+      "id": "DATA_000008",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "password",
+      "spec": "Current hidden text of the registration \"Password\" field. Sent to RegisterAccount as password.",
+      "id": "DATA_000009",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "confirm_password",
+      "spec": "Current hidden text of the registration \"Confirm Password\" field; must match password before submission. Sent to RegisterAccount as confirm_password.",
+      "id": "DATA_000010",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "email",
+      "spec": "Current text of the registration \"Email address\" textbox. Sent to RegisterAccount as email.",
+      "id": "DATA_000011",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"boolean\"}",
+      "initial": "false",
+      "name": "agreed_to_terms",
+      "spec": "Whether the registration agreement checkbox is checked; must be true before submission. Sent to RegisterAccount as agreed_to_terms.",
+      "id": "DATA_000012",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]}",
+      "initial": "null",
+      "name": "registration_error_message",
+      "spec": "Error message describing invalid or duplicate registration input returned when submission fails; null when there is no error. Shown in the form error area and no account or session is created while it is set.",
+      "id": "DATA_000013",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"boolean\"}",
+      "initial": "false",
+      "name": "registration_submitting",
+      "spec": "True while the registration submission is in flight after \"Next step\" is clicked; used to reflect the submitting state of the button until the request resolves.",
+      "id": "DATA_000014",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "GET",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header. Absent for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"The saved account username rendered as text in the header after registration or login; null when no valid session is presented.\"}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "name": "GetCurrentSession",
+      "spec": "{no authentication precondition; session_id may be absent, unknown or expired} reads the session identifier supplied via the Cookie header and passes it to the session/account lookup {when the session exists and resolves to a user_account, responds authenticated=true with that account's username so the page header can display the saved username and offer Sign out; when session_id is absent, unknown, expired or resolves to no account, responds authenticated=false with username null so the header shows the Register and Login links} {no writes; creates, modifies and clears no session or account data}",
+      "id": "API_000001",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000001"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "DELETE",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "name": "SignOut",
+      "spec": "{invoked by an authenticated visitor clicking Sign out; session_id is read from the Cookie request header and may be absent or already unknown} deletes the persisted session identified by session_id and clears the session cookie carrier on the response by setting that cookie to an empty value with an expiry in the past, so the visitor returns to the unauthenticated state where the header again shows the Register and Login links {always responds with success, even when session_id is absent or unknown, and always clears the cookie} {no other session is affected; user_account rows, including the saved username, are preserved unchanged; no new session is created}",
+      "id": "API_000002",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000002"
+      ]
+    }
+  ],
+  "types": []
+}
+```
+--- user ---
+## Always loaded requirement files
+
+```json
+{
+  "always_loaded_files": [
+    "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+    "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+    "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx"
+  ]
+}
+```
+--- user ---
+## Working context and latest read results
+
+```json
+{
+  "context_state": {
+    "file_chars": 11332,
+    "file_budget_chars": 400000,
+    "budget_exceeded": false,
+    "pinned_files": [
+      "tests/e2e/req-1-6aa2db3c.spec.ts"
+    ],
+    "automatically_released_files": [],
+    "last_operation": {
+      "source_call": 7,
+      "request": {
+        "request_files": [
+          "tests/tdd/playwright.config.ts",
+          "frontend/vite.config.ts",
+          "frontend/package.json",
+          "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx"
+        ],
+        "release_files": []
+      },
+      "results": [
+        {
+          "file": "frontend/package.json",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[frontend/package.json]"
+        },
+        {
+          "file": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "editable_files[frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx]"
+        },
+        {
+          "file": "frontend/vite.config.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[frontend/vite.config.ts]"
+        },
+        {
+          "file": "tests/tdd/playwright.config.ts",
+          "status": "outside_current_phase"
+        }
+      ],
+      "released_files": [],
+      "kept_pinned_files": []
+    }
+  }
+}
+```
+--- user ---
+## Editable files with current contents
+
+### editable_files
+
+```json
+{
+  "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx": {
+    "content": "import { RegistrationHeader } from \"../components/RegistrationHeader\";\nimport { RegistrationPrimaryNavigation } from \"../components/RegistrationPrimaryNavigation\";\nimport { BreadcrumbRegion } from \"../components/BreadcrumbRegion\";\nimport { RegistrationCard } from \"../components/RegistrationCard\";\nimport { RegistrationFooter } from \"../components/RegistrationFooter\";\nexport type RegistrationState = { \"nationality\": string; \"name\": string; \"passport_number\": string; \"passport_expiration_date\": string; \"date_of_birth\": string; \"gender\": string; \"username\": string; \"password\": string; \"confirm_password\": string; \"email\": string; \"agreed_to_terms\": boolean; \"registration_error_message\": (string | null); \"registration_submitting\": boolean; };\nexport type RegistrationProps = {};\nexport function Registration(_props: RegistrationProps) {\n  return <section data-ui-id=\"UI_000047\">\n    <RegistrationHeader />\n    <RegistrationPrimaryNavigation />\n    <BreadcrumbRegion />\n    <RegistrationCard />\n    <RegistrationFooter />\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx": {
+    "content": "export type BrandBlockState = {  };\nexport type BrandBlockProps = {};\nexport function BrandBlock(_props: BrandBlockProps) {\n  return <section data-ui-id=\"UI_000003\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx": {
+    "content": "export type HeaderUtilityNavState = {  };\nexport type HeaderUtilityNavProps = {};\nexport function HeaderUtilityNav(_props: HeaderUtilityNavProps) {\n  return <section data-ui-id=\"UI_000007\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx": {
+    "content": "import { BannerIndicators } from \"./BannerIndicators\";\nimport { SearchPanel } from \"./SearchPanel\";\nexport type HeroBannerState = {  };\nexport type HeroBannerProps = {};\nexport function HeroBanner(_props: HeroBannerProps) {\n  return <section data-ui-id=\"UI_000022\">\n    <BannerIndicators />\n    <SearchPanel />\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx": {
+    "content": "export type PrimaryNavigationState = {  };\nexport type PrimaryNavigationProps = {};\nexport function PrimaryNavigation(_props: PrimaryNavigationProps) {\n  return <section data-ui-id=\"UI_000018\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx": {
+    "content": "import { QuickGuideLinkList } from \"./QuickGuideLinkList\";\nexport type QuickGuideSectionState = {  };\nexport type QuickGuideSectionProps = {};\nexport function QuickGuideSection(_props: QuickGuideSectionProps) {\n  return <section data-ui-id=\"UI_000036\">\n    <QuickGuideLinkList />\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts": {
+    "content": "export type NavigateToHomeInput = {  };\nexport type NavigateToHomeOutput = {  };\nexport async function NavigateToHome(_input: NavigateToHomeInput): Promise<NavigateToHomeOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/index.css": {
+    "content": "@import \"tailwindcss\";\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/types/contracts.ts": {
+    "content": "// Generated type contracts.\n\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/App.tsx": {
+    "content": "import { Home } from \"./features/train-ticket-booking-demo/pages/Home\";\nimport { Registration } from \"./features/train-ticket-booking-demo/pages/Registration\";\nexport type AppState = {  };\nexport function App() {\n  return <>\n    <Home />\n    <Registration />\n  </>;\n}\nexport default App;\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/main.tsx": {
+    "content": "import \"./index.css\";\nimport { createRoot } from \"react-dom/client\";\nimport App from \"./App\";\nconst root = document.getElementById(\"root\");\nif (root) createRoot(root).render(<App />);\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx": {
+    "content": "export type BannerIndicatorsState = {  };\nexport type BannerIndicatorsProps = {};\nexport function BannerIndicators(_props: BannerIndicatorsProps) {\n  return <section data-ui-id=\"UI_000024\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx": {
+    "content": "export type FooterState = {  };\nexport type FooterProps = {};\nexport function Footer(_props: FooterProps) {\n  return <section data-ui-id=\"UI_000042\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/Header.tsx": {
+    "content": "import { BrandBlock } from \"./BrandBlock\";\nimport { HeaderUtilityNav } from \"./HeaderUtilityNav\";\nimport { HeaderAccountArea } from \"./HeaderAccountArea\";\nexport type HeaderState = {  };\nexport type HeaderProps = {};\nexport function Header(_props: HeaderProps) {\n  return <section data-ui-id=\"UI_000002\">\n    <BrandBlock />\n    <HeaderUtilityNav />\n    <HeaderAccountArea />\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx": {
+    "content": "export type HeaderAccountAreaState = {  };\nexport type HeaderAccountAreaProps = {};\nexport function HeaderAccountArea(_props: HeaderAccountAreaProps) {\n  return <section data-ui-id=\"UI_000011\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx": {
+    "content": "export type QuickGuideLinkListState = {  };\nexport type QuickGuideLinkListProps = {};\nexport function QuickGuideLinkList(_props: QuickGuideLinkListProps) {\n  return <section data-ui-id=\"UI_000038\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx": {
+    "content": "export type SearchPanelState = {  };\nexport type SearchPanelProps = {};\nexport function SearchPanel(_props: SearchPanelProps) {\n  return <section data-ui-id=\"UI_000028\">\n\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts": {
+    "content": "export type LoadSessionStateInput = {  };\nexport type LoadSessionStateOutput = {  };\nexport async function LoadSessionState(_input: LoadSessionStateInput): Promise<LoadSessionStateOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts": {
+    "content": "export type NavigateToLoginInput = {  };\nexport type NavigateToLoginOutput = {  };\nexport async function NavigateToLogin(_input: NavigateToLoginInput): Promise<NavigateToLoginOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts": {
+    "content": "export type NavigateToRegisterInput = {  };\nexport type NavigateToRegisterOutput = {  };\nexport async function NavigateToRegister(_input: NavigateToRegisterInput): Promise<NavigateToRegisterOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts": {
+    "content": "export type SignOutAccountInput = {  };\nexport type SignOutAccountOutput = {  };\nexport async function SignOutAccount(_input: SignOutAccountInput): Promise<SignOutAccountOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  },
+  "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx": {
+    "content": "import { Header } from \"../components/Header\";\nimport { PrimaryNavigation } from \"../components/PrimaryNavigation\";\nimport { HeroBanner } from \"../components/HeroBanner\";\nimport { QuickGuideSection } from \"../components/QuickGuideSection\";\nimport { Footer } from \"../components/Footer\";\nexport type HomeState = { \"session_state\": { \"authenticated\": boolean; \"username\": (string | null); }; };\nexport type HomeProps = {};\nexport function Home(_props: HomeProps) {\n  return <section data-ui-id=\"UI_000001\">\n    <Header />\n    <PrimaryNavigation />\n    <HeroBanner />\n    <QuickGuideSection />\n    <Footer />\n  </section>;\n}\n",
+    "exists": true,
+    "context_location": "editable_files"
+  }
+}
+```
+--- user ---
+## Read-only source and phase-protected tests
+
+```json
+{
+  "read_only_files": {
+    "frontend/package.json": {
+      "content": "{\n  \"name\": \"@arc/frontend\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"build\": \"tsc --noEmit -p tsconfig.app.json && vite build\",\n    \"typecheck\": \"tsc --noEmit -p tsconfig.app.json\",\n    \"dev\": \"vite\"\n  },\n  \"dependencies\": {\n    \"react\": \"18.3.1\",\n    \"react-dom\": \"18.3.1\",\n    \"react-router-dom\": \"7.8.2\"\n  },\n  \"devDependencies\": {\n    \"typescript\": \"5.9.2\",\n    \"@types/react\": \"18.3.23\",\n    \"@types/react-dom\": \"18.3.7\",\n    \"@types/node\": \"22.18.0\",\n    \"vite\": \"7.1.4\",\n    \"@vitejs/plugin-react\": \"5.0.2\",\n    \"tailwindcss\": \"4.1.13\",\n    \"@tailwindcss/vite\": \"4.1.13\"\n  }\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/vite.config.ts": {
+      "content": "import { defineConfig } from \"vite\";\nimport react from \"@vitejs/plugin-react\";\nimport tailwindcss from \"@tailwindcss/vite\";\nexport default defineConfig({ plugins: [react(), tailwindcss()], server: { proxy: {\"/api\": \"http://127.0.0.1:3000\"} } });\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "tests/e2e/req-1-6aa2db3c.spec.ts": {
+      "content": "import { test, expect } from \"@playwright/test\";\n\ntest.describe(\"REQ-1 public home page account access\", () => {\n  test(\"guest header shows Register and Login links to the account pages\", async ({ page }) => {\n    await page.goto(\"/\");\n    const register = page.getByRole(\"link\", { name: \"Register\", exact: true });\n    const login = page.getByRole(\"link\", { name: \"Login\", exact: true });\n\n    await expect(register).toBeVisible();\n    await expect(login).toBeVisible();\n    await expect(register).toHaveAttribute(\"href\", \"/register\");\n    await expect(login).toHaveAttribute(\"href\", \"/login\");\n  });\n\n  test(\"home page exposes the specified search and banner controls\", async ({ page }) => {\n    await page.goto(\"/\");\n\n    await expect(page.getByRole(\"textbox\", { name: \"From\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"textbox\", { name: \"To\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"textbox\", { name: \"Date\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"button\", { name: \"Search\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"checkbox\", { name: \"High-speed trains only\", exact: true })).toBeVisible();\n\n    await expect(page.getByRole(\"button\", { name: \"Swap stations\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"button\", { name: \"Show banner 1\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"button\", { name: \"Show banner 2\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"button\", { name: \"Show banner 3\", exact: true })).toBeVisible();\n  });\n\n  test(\"quick guide and footer entries use the specified accessible names\", async ({ page }) => {\n    await page.goto(\"/\");\n\n    await expect(\n      page.getByRole(\"link\", { name: \"What ID documents are accepted by 12306.cn English website?\", exact: true }),\n    ).toBeVisible();\n    await expect(\n      page.getByRole(\"link\", { name: \"What services does 12306.cn English website provide?\", exact: true }),\n    ).toBeVisible();\n    await expect(page.getByRole(\"link\", { name: \"What is endorsement?\", exact: true })).toBeVisible();\n    await expect(\n      page.getByRole(\"link\", { name: \"What are the rules of ticket endorsement?\", exact: true }),\n    ).toBeVisible();\n    await expect(page.getByRole(\"link\", { name: \"More>\", exact: true })).toBeVisible();\n\n    await expect(page.getByRole(\"link\", { name: \"Privacy Policy\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"link\", { name: \"Cookie Statement\", exact: true })).toBeVisible();\n  });\n\n  test(\"shared navigation entries use the specified roles\", async ({ page }) => {\n    await page.goto(\"/\");\n\n    await expect(page.getByRole(\"link\", { name: \"Home\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"link\", { name: \"Booking\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"link\", { name: \"Travel guides\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"link\", { name: \"My 12306\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"button\", { name: \"简体中文\", exact: true })).toBeVisible();\n    await expect(page.getByRole(\"link\", { name: \"Contact us\", exact: true })).toBeVisible();\n  });\n});\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    }
+  }
+}
+```
+--- user ---
+## All shared module summaries
+
+```json
+{
+  "shared_catalog": []
+}
+```
+--- user ---
+## Related module discovery
+
+```json
+{
+  "related_catalog": [
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "symbol_ids": [
+        "EVENT_000006",
+        "UI_000059",
+        "UI_000060",
+        "UI_000061",
+        "UI_000062",
+        "UI_000063"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "BreadcrumbRegion: The breadcrumb strip realizes the visible \"Current location: HOME > Create an account\" path specified for /register.",
+        "BreadcrumbCurrentLocationText: Breadcrumb label with exact visible text \"Current location:\".",
+        "BreadcrumbHomeLink: The breadcrumb \"HOME\" entry is a link with the exact visible text \"HOME\" and returns to /.",
+        "BreadcrumbSeparator: Breadcrumb separator showing the visible text \">\"."
+      ],
+      "symbol_count": 6
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "symbol_ids": [
+        "UI_000111",
+        "UI_000112",
+        "UI_000113",
+        "UI_000114",
+        "UI_000115",
+        "UI_000116"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "RegistrationFooter: Full-width pale footer below the registration card, containing copyright, registration-number and policy-link text.",
+        "FooterCopyrightText: Footer line with the exact visible copyright text \"COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\".",
+        "FooterRegistrationNumbersText: Footer line with the exact visible registration-number text \"京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\".",
+        "FooterPolicyLinks: Footer policy-link row centered in the footer."
+      ],
+      "symbol_count": 6
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "symbol_ids": [
+        "EVENT_000007",
+        "EVENT_000008",
+        "EVENT_000009",
+        "EVENT_000010",
+        "EVENT_000011",
+        "EVENT_000012",
+        "EVENT_000013",
+        "EVENT_000014",
+        "EVENT_000015",
+        "EVENT_000016",
+        "EVENT_000017",
+        "EVENT_000018",
+        "UI_000065",
+        "UI_000066",
+        "UI_000067",
+        "UI_000068",
+        "UI_000069",
+        "UI_000070",
+        "UI_000071",
+        "UI_000072",
+        "UI_000073",
+        "UI_000074",
+        "UI_000075",
+        "UI_000076",
+        "UI_000077",
+        "UI_000078",
+        "UI_000079",
+        "UI_000080",
+        "UI_000081",
+        "UI_000082",
+        "UI_000083",
+        "UI_000084",
+        "UI_000085",
+        "UI_000086",
+        "UI_000087",
+        "UI_000088",
+        "UI_000089",
+        "UI_000090",
+        "UI_000091",
+        "UI_000092",
+        "UI_000093",
+        "UI_000094",
+        "UI_000095",
+        "UI_000096",
+        "UI_000097",
+        "UI_000098",
+        "UI_000099",
+        "UI_000100",
+        "UI_000101",
+        "UI_000102",
+        "UI_000103",
+        "UI_000104",
+        "UI_000105",
+        "UI_000106",
+        "UI_000107",
+        "UI_000108",
+        "UI_000109",
+        "UI_000110"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "RegistrationForm: The registration form groups all required account fields and the consent block in the reference display order.",
+        "NationalityRow: Form row for selecting nationality.",
+        "NationalityLabel: Visible field label \"Nationality\" for the nationality control.",
+        "NationalitySelect: \"Nationality\" is a combobox with the visible label \"Nationality\", initially displays \"Please select\", and supports choosing \"Vietnam\"; the scenario selects Vietnam."
+      ],
+      "symbol_count": 58
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "symbol_ids": [
+        "EVENT_000005",
+        "UI_000048",
+        "UI_000049",
+        "UI_000050",
+        "UI_000051",
+        "UI_000052",
+        "UI_000053",
+        "UI_000054"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "RegistrationHeader: Top white header containing the China Railway 12306 brand and the account, language and contact utilities.",
+        "BrandLogo: Railway emblem with the visible 中国铁路12306 and 12306 CHINA RAILWAY branding at the left of the header.",
+        "LoginLink: Header account entry with visible text \"Login\".",
+        "RegisterLink: The unauthenticated page header provides \"Register\" (role=link) with the exact visible name; the scenario starts by clicking it to open /register."
+      ],
+      "symbol_count": 8
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+      "symbol_ids": [
+        "EVENT_000015",
+        "HANDLER_000014"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration \"Confirm Password\" field is displayed empty with hidden input content} the visitor types the confirmation password {confirm_password equals the entered hidden text; no API calls and the match with password is evaluated on submission}",
+        "ConfirmPasswordEntered"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+      "symbol_ids": [
+        "EVENT_000011",
+        "HANDLER_000010"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration \"Date of birth\" textbox is displayed empty} the visitor types or picks a date, either directly in the textbox or through the \"Choose date of birth\" calendar button {date_of_birth equals the entered date string; no API calls}",
+        "DateOfBirthEntered"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+      "symbol_ids": [
+        "EVENT_000016",
+        "HANDLER_000015"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration \"Email address\" textbox is displayed empty} the visitor types an email address {email equals the entered text; no API calls and format or uniqueness is only checked on submission}",
+        "EmailAddressEntered"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+      "symbol_ids": [
+        "EVENT_000012",
+        "HANDLER_000011"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the \"Gender\" radiogroup is displayed with neither \"Male\" nor \"Female\" selected} the visitor selects \"Male\" or \"Female\" {gender equals the selected radio option's label (\"Male\" or \"Female\"); no API calls}",
+        "GenderSelected"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+      "symbol_ids": [
+        "EVENT_000008",
+        "HANDLER_000007"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration \"Name\" textbox is displayed empty} the visitor types a name {name equals the entered text; no API calls}",
+        "NameEntered"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+      "symbol_ids": [
+        "EVENT_000007",
+        "HANDLER_000006"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration form is displayed with the \"Nationality\" combobox showing \"Please select\"} the visitor picks an option such as \"Vietnam\" {nationality equals the selected option value; no API calls and no validation error is produced at this point}",
+        "NationalitySelected"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+      "symbol_ids": [
+        "EVENT_000010",
+        "HANDLER_000009"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration \"Passport expiration date\" textbox is displayed empty} the visitor types or picks a date, either directly in the textbox or through the \"Choose passport expiration date\" calendar button {passport_expiration_date equals the entered date string; no API calls}",
+        "PassportExpirationDateEntered"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+      "symbol_ids": [
+        "EVENT_000009",
+        "HANDLER_000008"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration \"Passport number\" textbox is displayed empty} the visitor types a passport number {passport_number equals the entered text; no API calls}",
+        "PassportNumberEntered"
+      ],
+      "symbol_count": 2
+    }
+  ]
+}
+```
+--- user ---
+## Discoverable file index
+
+```json
+{
+  "file_index": [
+    {
+      "file": "frontend/package.json",
+      "symbols": [
+        "CONFIG.package.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/src/App.tsx",
+      "symbols": [
+        "SYSTEM.APP",
+        "UI_APP"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "symbols": [
+        "UI_000024",
+        "UI_000025",
+        "UI_000026",
+        "UI_000027"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "symbols": [
+        "UI_000003",
+        "UI_000004",
+        "UI_000005",
+        "UI_000006"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "symbols": [
+        "EVENT_000006",
+        "UI_000059",
+        "UI_000060",
+        "UI_000061",
+        "UI_000062",
+        "UI_000063"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "symbols": [
+        "UI_000042",
+        "UI_000043",
+        "UI_000044",
+        "UI_000045",
+        "UI_000046"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+      "symbols": [
+        "UI_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "symbols": [
+        "EVENT_000002",
+        "EVENT_000003",
+        "EVENT_000004",
+        "UI_000011",
+        "UI_000012",
+        "UI_000013",
+        "UI_000014",
+        "UI_000015",
+        "UI_000016",
+        "UI_000017"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "symbols": [
+        "UI_000007",
+        "UI_000008",
+        "UI_000009",
+        "UI_000010"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx",
+      "symbols": [
+        "UI_000022",
+        "UI_000023"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "symbols": [
+        "UI_000018",
+        "UI_000019",
+        "UI_000020",
+        "UI_000021"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "symbols": [
+        "UI_000038",
+        "UI_000039",
+        "UI_000040",
+        "UI_000041"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx",
+      "symbols": [
+        "UI_000036",
+        "UI_000037"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationCard.tsx",
+      "symbols": [
+        "UI_000064"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "symbols": [
+        "UI_000111",
+        "UI_000112",
+        "UI_000113",
+        "UI_000114",
+        "UI_000115",
+        "UI_000116"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "symbols": [
+        "EVENT_000007",
+        "EVENT_000008",
+        "EVENT_000009",
+        "EVENT_000010",
+        "EVENT_000011",
+        "EVENT_000012",
+        "EVENT_000013",
+        "EVENT_000014",
+        "EVENT_000015",
+        "EVENT_000016",
+        "EVENT_000017",
+        "EVENT_000018",
+        "UI_000065",
+        "UI_000066",
+        "UI_000067",
+        "UI_000068",
+        "UI_000069",
+        "UI_000070",
+        "UI_000071",
+        "UI_000072",
+        "UI_000073",
+        "UI_000074",
+        "UI_000075",
+        "UI_000076",
+        "UI_000077",
+        "UI_000078",
+        "UI_000079",
+        "UI_000080",
+        "UI_000081",
+        "UI_000082",
+        "UI_000083",
+        "UI_000084",
+        "UI_000085",
+        "UI_000086",
+        "UI_000087",
+        "UI_000088",
+        "UI_000089",
+        "UI_000090",
+        "UI_000091",
+        "UI_000092",
+        "UI_000093",
+        "UI_000094",
+        "UI_000095",
+        "UI_000096",
+        "UI_000097",
+        "UI_000098",
+        "UI_000099",
+        "UI_000100",
+        "UI_000101",
+        "UI_000102",
+        "UI_000103",
+        "UI_000104",
+        "UI_000105",
+        "UI_000106",
+        "UI_000107",
+        "UI_000108",
+        "UI_000109",
+        "UI_000110"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "symbols": [
+        "EVENT_000005",
+        "UI_000048",
+        "UI_000049",
+        "UI_000050",
+        "UI_000051",
+        "UI_000052",
+        "UI_000053",
+        "UI_000054"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "symbols": [
+        "UI_000055",
+        "UI_000056",
+        "UI_000057",
+        "UI_000058"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "symbols": [
+        "UI_000028",
+        "UI_000029",
+        "UI_000030",
+        "UI_000031",
+        "UI_000032",
+        "UI_000033",
+        "UI_000034",
+        "UI_000035"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+      "symbols": [
+        "EVENT_000015",
+        "HANDLER_000014"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+      "symbols": [
+        "EVENT_000011",
+        "HANDLER_000010"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+      "symbols": [
+        "EVENT_000016",
+        "HANDLER_000015"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+      "symbols": [
+        "EVENT_000012",
+        "HANDLER_000011"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+      "symbols": [
+        "EVENT_000008",
+        "HANDLER_000007"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+      "symbols": [
+        "EVENT_000007",
+        "HANDLER_000006"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+      "symbols": [
+        "EVENT_000010",
+        "HANDLER_000009"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+      "symbols": [
+        "EVENT_000009",
+        "HANDLER_000008"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts",
+      "symbols": [
+        "EVENT_000014",
+        "HANDLER_000013"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts",
+      "symbols": [
+        "EVENT_000017",
+        "HANDLER_000016"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts",
+      "symbols": [
+        "EVENT_000013",
+        "HANDLER_000012"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+      "symbols": [
+        "EVENT_000001",
+        "HANDLER_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts",
+      "symbols": [
+        "EVENT_000006",
+        "HANDLER_000005"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+      "symbols": [
+        "EVENT_000004",
+        "HANDLER_000004"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+      "symbols": [
+        "EVENT_000003",
+        "EVENT_000005",
+        "HANDLER_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+      "symbols": [
+        "EVENT_000002",
+        "HANDLER_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts",
+      "symbols": [
+        "EVENT_000018",
+        "HANDLER_000017"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+      "symbols": [
+        "DATA_000001",
+        "EVENT_000001",
+        "UI_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "symbols": [
+        "DATA_000002",
+        "DATA_000003",
+        "DATA_000004",
+        "DATA_000005",
+        "DATA_000006",
+        "DATA_000007",
+        "DATA_000008",
+        "DATA_000009",
+        "DATA_000010",
+        "DATA_000011",
+        "DATA_000012",
+        "DATA_000013",
+        "DATA_000014",
+        "UI_000047"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/index.css",
+      "symbols": [
+        "SYSTEM.STYLES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/main.tsx",
+      "symbols": [
+        "SYSTEM.FRONTEND_ENTRY"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/types/contracts.ts",
+      "symbols": [
+        "SYSTEM.FRONTEND_TYPES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/tsconfig.app.json",
+      "symbols": [
+        "CONFIG.tsconfig.app.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/tsconfig.json",
+      "symbols": [
+        "CONFIG.tsconfig.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/vite.config.ts",
+      "symbols": [
+        "CONFIG.vite.config.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/e2e/req-1-6aa2db3c.spec.ts",
+      "symbols": [
+        "TEST.tests/e2e/req-1-6aa2db3c.spec.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/tdd/playwright.config.ts",
+      "symbols": [
+        "SYSTEM.TEST.playwright.config.ts"
+      ],
+      "kind": "configuration"
+    }
+  ]
+}
+```
+--- user ---
+## Acceptance test targets
+
+```json
+{
+  "test_targets": [
+    "tests/e2e/req-1-6aa2db3c.spec.ts"
+  ]
+}
+```
+--- user ---
+## Observed gates, failing test context and correction feedback
+
+```json
+{
+  "gate_results": [],
+  "failure_context": {
+    "test_files": [],
+    "regression_requirements": []
+  }
+}
+```
+
+[2026-10-22T07:32:34.120981+00:00] [tdd_frontend_implementation] MODEL_OUTPUT
+{"request_files":[],"blocked_reason":"","release_files":[],"edits":[{"file":"frontend/src/App.tsx","content":"import { BrowserRouter, Routes, Route } from \"react-router-dom\";\nimport { Home } from \"./features/train-ticket-booking-demo/pages/Home\";\nimport { Registration } from \"./features/train-ticket-booking-demo/pages/Registration\";\n\nexport type AppState = {  };\n\nexport function App() {\n  return (\n    <BrowserRouter>\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/register\" element={<Registration />} />\n        <Route path=\"*\" element={<Home />} />\n      </Routes>\n    </BrowserRouter>\n  );\n}\n\nexport default App;\n"},{"file":"frontend/src/index.css","content":"@import \"tailwindcss\";\n\nhtml,\nbody,\n#root {\n  min-height: 100%;\n}\n\nbody {\n  margin: 0;\n  background: #ffffff;\n  color: #1f2937;\n  font-family: Arial, \"Helvetica Neue\", Helvetica, \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx","content":"export type BrandBlockState = {  };\nexport type BrandBlockProps = {};\n\nexport function BrandBlock(_props: BrandBlockProps) {\n  return (\n    <div data-ui-id=\"UI_000003\" className=\"flex items-center gap-3\">\n      <div data-ui-id=\"UI_000004\" aria-hidden=\"true\" className=\"flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[#c62430] text-white shadow-sm\">\n        <svg viewBox=\"0 0 48 48\" className=\"h-9 w-9\" fill=\"none\" aria-hidden=\"true\">\n          <path d=\"M24 7c8.2 0 15 6.7 15 15 0 9.7-10.9 16.9-14.1 18.8a1.7 1.7 0 0 1-1.8 0C19.9 38.9 9 31.7 9 22 9 13.7 15.8 7 24 7Z\" stroke=\"currentColor\" strokeWidth=\"2.3\" />\n          <path d=\"M16 23.5h16M24 15v17M18.5 18.2 29.5 27M29.5 18.2 18.5 27\" stroke=\"currentColor\" strokeWidth=\"2.1\" strokeLinecap=\"round\" />\n        </svg>\n      </div>\n      <div className=\"leading-tight\">\n        <div data-ui-id=\"UI_000005\" className=\"text-[23px] font-bold tracking-tight text-[#1f2937]\">中国铁路12306</div>\n        <div data-ui-id=\"UI_000006\" className=\"mt-0.5 text-[9px] font-semibold uppercase tracking-[0.24em] text-gray-500\">12306 CHINA RAILWAY</div>\n      </div>\n    </div>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx","content":"function ChevronDown() {\n  return (\n    <svg viewBox=\"0 0 12 12\" className=\"h-3 w-3\" fill=\"none\" aria-hidden=\"true\">\n      <path d=\"m2.5 4.25 3.5 3.5 3.5-3.5\" stroke=\"currentColor\" strokeWidth=\"1.3\" strokeLinecap=\"round\" strokeLinejoin=\"round\" />\n    </svg>\n  );\n}\n\nfunction PhoneIcon() {\n  return (\n    <svg viewBox=\"0 0 20 20\" className=\"h-4 w-4\" fill=\"none\" aria-hidden=\"true\">\n      <path d=\"M4.3 3.5h3l1.2 3-1.8 1.4a11.3 11.3 0 0 0 5.4 5.4l1.4-1.8 3 1.2v3c0 .8-.7 1.5-1.5 1.5C8 17.2 2.8 12 2.8 5c0-.8.7-1.5 1.5-1.5Z\" stroke=\"currentColor\" strokeWidth=\"1.4\" strokeLinejoin=\"round\" />\n    </svg>\n  );\n}\n\nexport type HeaderUtilityNavState = {  };\nexport type HeaderUtilityNavProps = {};\n\nexport function HeaderUtilityNav(_props: HeaderUtilityNavProps) {\n  return (\n    <nav data-ui-id=\"UI_000007\" className=\"flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-700\">\n      <a href=\"#\" data-ui-id=\"UI_000008\" className=\"flex items-center gap-1.5 transition-colors hover:text-[#2f74c0]\">\n        My 12306\n        <ChevronDown />\n      </a>\n      <button type=\"button\" data-ui-id=\"UI_000009\" className=\"flex items-center gap-1.5 text-sm text-gray-700 transition-colors hover:text-[#2f74c0]\">\n        简体中文\n        <ChevronDown />\n      </button>\n      <a href=\"#\" data-ui-id=\"UI_000010\" className=\"flex items-center gap-1.5 transition-colors hover:text-[#2f74c0]\">\n        <PhoneIcon />\n        Contact us\n      </a>\n    </nav>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx","content":"import type { SessionState } from \"../handlers/LoadSessionState\";\n\nexport type HeaderAccountAreaState = {  };\nexport type HeaderAccountAreaProps = {\n  session: SessionState;\n  onSignOut: () => void;\n};\n\nexport function HeaderAccountArea({ session, onSignOut }: HeaderAccountAreaProps) {\n  return (\n    <div data-ui-id=\"UI_000011\" className=\"flex items-center text-sm text-[#2f74c0]\">\n      {session.authenticated ? (\n        <div data-ui-id=\"UI_000015\" className=\"flex items-center gap-3\">\n          <span data-ui-id=\"UI_000016\" className=\"max-w-[180px] truncate text-gray-800\">\n            {session.username}\n          </span>\n          <a\n            data-ui-id=\"UI_000017\"\n            href=\"#\"\n            onClick={(event) => {\n              event.preventDefault();\n              onSignOut();\n            }}\n            className=\"font-medium transition-colors hover:text-[#c62430]\"\n          >\n            Sign out\n          </a>\n        </div>\n      ) : (\n        <div data-ui-id=\"UI_000012\" className=\"flex items-center gap-2\">\n          <a data-ui-id=\"UI_000013\" href=\"/register\" className=\"font-medium transition-colors hover:text-[#c62430]\">\n            Register\n          </a>\n          <span aria-hidden=\"true\" className=\"text-gray-300\">|</span>\n          <a data-ui-id=\"UI_000014\" href=\"/login\" className=\"font-medium transition-colors hover:text-[#c62430]\">\n            Login\n          </a>\n        </div>\n      )}\n    </div>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/Header.tsx","content":"import { BrandBlock } from \"./BrandBlock\";\nimport { HeaderUtilityNav } from \"./HeaderUtilityNav\";\nimport { HeaderAccountArea } from \"./HeaderAccountArea\";\nimport type { SessionState } from \"../handlers/LoadSessionState\";\n\nexport type HeaderState = {  };\nexport type HeaderProps = {\n  session: SessionState;\n  onSignOut: () => void;\n};\n\nexport function Header({ session, onSignOut }: HeaderProps) {\n  return (\n    <header data-ui-id=\"UI_000002\" className=\"border-b border-gray-200 bg-white\">\n      <div className=\"mx-auto flex w-full max-w-[1200px] flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between\">\n        <BrandBlock />\n        <div className=\"flex flex-wrap items-center gap-x-8 gap-y-2 lg:justify-end\">\n          <HeaderUtilityNav />\n          <HeaderAccountArea session={session} onSignOut={onSignOut} />\n        </div>\n      </div>\n    </header>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx","content":"function ChevronDown() {\n  return (\n    <svg viewBox=\"0 0 12 12\" className=\"h-3 w-3\" fill=\"none\" aria-hidden=\"true\">\n      <path d=\"m2.5 4.25 3.5 3.5 3.5-3.5\" stroke=\"currentColor\" strokeWidth=\"1.3\" strokeLinecap=\"round\" strokeLinejoin=\"round\" />\n    </svg>\n  );\n}\n\nexport type PrimaryNavigationState = {  };\nexport type PrimaryNavigationProps = {};\n\nexport function PrimaryNavigation(_props: PrimaryNavigationProps) {\n  return (\n    <nav data-ui-id=\"UI_000018\" className=\"w-full bg-[#2f74c0] text-white\">\n      <div className=\"mx-auto flex w-full max-w-[1200px] items-stretch px-4 sm:px-6\">\n        <a data-ui-id=\"UI_000019\" href=\"/\" className=\"border-r border-white/25 px-7 py-3 text-sm font-medium transition-colors hover:bg-[#255f9e]\">\n          Home\n        </a>\n        <a data-ui-id=\"UI_000020\" href=\"#\" className=\"flex items-center gap-1.5 border-r border-white/25 px-7 py-3 text-sm font-medium transition-colors hover:bg-[#255f9e]\">\n          Booking\n          <ChevronDown />\n        </a>\n        <a data-ui-id=\"UI_000021\" href=\"#\" className=\"flex items-center gap-1.5 px-7 py-3 text-sm font-medium transition-colors hover:bg-[#255f9e]\">\n          Travel guides\n          <ChevronDown />\n        </a>\n      </div>\n    </nav>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx","content":"export type BannerIndicatorsState = {  };\nexport type BannerIndicatorsProps = {};\n\nconst indicators = [\"Show banner 1\", \"Show banner 2\", \"Show banner 3\"];\n\nexport function BannerIndicators(_props: BannerIndicatorsProps) {\n  return (\n    <div data-ui-id=\"UI_000024\" className=\"absolute bottom-[9.5rem] left-6 z-10 flex items-center gap-3 md:left-16 lg:left-[calc((100%-1200px)/2+24px)]\">\n      {indicators.map((label, index) => (\n        <button\n          key={label}\n          type=\"button\"\n          aria-label={label}\n          aria-pressed={index === 0}\n          data-ui-id={index === 0 ? \"UI_000025\" : index === 1 ? \"UI_000026\" : \"UI_000027\"}\n          className={index === 0 ? \"h-2.5 w-2.5 rounded-full bg-white shadow-sm\" : \"h-2.5 w-2.5 rounded-full bg-white/40 transition-colors hover:bg-white/70\"}\n        />\n      ))}\n    </div>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx","content":"import { useState } from \"react\";\n\nfunction InfoIcon() {\n  return (\n    <svg viewBox=\"0 0 18 18\" className=\"mt-0.5 h-4 w-4 flex-none text-gray-400\" fill=\"none\" aria-hidden=\"true\">\n      <circle cx=\"9\" cy=\"9\" r=\"7\" stroke=\"currentColor\" strokeWidth=\"1.4\" />\n      <path d=\"M9 8v4M9 5.6v.2\" stroke=\"currentColor\" strokeWidth=\"1.6\" strokeLinecap=\"round\" />\n    </svg>\n  );\n}\n\nfunction PinIcon() {\n  return (\n    <svg viewBox=\"0 0 18 18\" className=\"h-4 w-4\" fill=\"none\" aria-hidden=\"true\">\n      <path d=\"M9 16s5-4.6 5-9A5 5 0 0 0 4 7c0 4.4 5 9 5 9Z\" stroke=\"currentColor\" strokeWidth=\"1.4\" />\n      <circle cx=\"9\" cy=\"7\" r=\"1.7\" stroke=\"currentColor\" strokeWidth=\"1.4\" />\n    </svg>\n  );\n}\n\nfunction CalendarIcon() {\n  return (\n    <svg viewBox=\"0 0 18 18\" className=\"h-4 w-4\" fill=\"none\" aria-hidden=\"true\">\n      <rect x=\"3\" y=\"4.5\" width=\"12\" height=\"11\" rx=\"1.5\" stroke=\"currentColor\" strokeWidth=\"1.4\" />\n      <path d=\"M6 3v3M12 3v3M3 8h12\" stroke=\"currentColor\" strokeWidth=\"1.4\" strokeLinecap=\"round\" />\n    </svg>\n  );\n}\n\nfunction SwapIcon() {\n  return (\n    <svg viewBox=\"0 0 20 20\" className=\"h-4 w-4\" fill=\"none\" aria-hidden=\"true\">\n      <path d=\"M6 7h9m0 0-2.5-2.5M15 7l-2.5 2.5M14 13H5m0 0 2.5-2.5M5 13l2.5 2.5\" stroke=\"currentColor\" strokeWidth=\"1.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\" />\n    </svg>\n  );\n}\n\nconst fieldClass = \"h-[52px] w-full rounded border border-gray-300 bg-white pl-10 pr-3 text-base text-gray-900 outline-none transition-colors focus:border-[#2f74c0] focus:ring-1 focus:ring-[#2f74c0]/30\";\n\nexport type SearchPanelState = {  };\nexport type SearchPanelProps = {};\n\nexport function SearchPanel(_props: SearchPanelProps) {\n  const [from, setFrom] = useState(\"Beijing(北京)\");\n  const [to, setTo] = useState(\"Shanghai(上海)\");\n  const [date, setDate] = useState(\"Fri, May 29\");\n\n  const swapStations = () => {\n    setFrom(to);\n    setTo(from);\n  };\n\n  return (\n    <section data-ui-id=\"UI_000028\" className=\"rounded-xl bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.20)] sm:p-7 lg:p-8\">\n      <div className=\"flex items-start gap-3 text-[13px] leading-relaxed text-gray-500\">\n        <InfoIcon />\n        <p>\n          The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday).\n        </p>\n      </div>\n\n      <form className=\"mt-5\" onSubmit={(event) => event.preventDefault()}>\n        <div className=\"flex flex-col gap-4 lg:flex-row lg:items-end\">\n          <div className=\"min-w-0 flex-1\">\n            <label htmlFor=\"home-from\" className=\"mb-1 block text-xs text-gray-500\">\n              From\n            </label>\n            <div className=\"relative\">\n              <span className=\"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400\">\n                <PinIcon />\n              </span>\n              <input\n                id=\"home-from\"\n                data-ui-id=\"UI_000030\"\n                type=\"text\"\n                value={from}\n                onChange={(event) => setFrom(event.target.value)}\n                className={fieldClass}\n              />\n            </div>\n          </div>\n\n          <div className=\"flex justify-center pb-1 lg:pb-2\">\n            <button\n              data-ui-id=\"UI_000031\"\n              type=\"button\"\n              aria-label=\"Swap stations\"\n              onClick={swapStations}\n              className=\"flex h-10 w-10 items-center justify-center rounded-full bg-[#f28a2e] text-white shadow-sm transition-colors hover:bg-[#dc7720]\"\n            >\n              <SwapIcon />\n            </button>\n          </div>\n\n          <div className=\"min-w-0 flex-1\">\n            <label htmlFor=\"home-to\" className=\"mb-1 block text-xs text-gray-500\">\n              To\n            </label>\n            <div className=\"relative\">\n              <span className=\"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400\">\n                <PinIcon />\n              </span>\n              <input\n                id=\"home-to\"\n                data-ui-id=\"UI_000032\"\n                type=\"text\"\n                value={to}\n                onChange={(event) => setTo(event.target.value)}\n                className={fieldClass}\n              />\n            </div>\n          </div>\n\n          <div className=\"min-w-0 flex-1\">\n            <label htmlFor=\"home-date\" className=\"mb-1 block text-xs text-gray-500\">\n              Date\n            </label>\n            <div className=\"relative\">\n              <span className=\"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400\">\n                <CalendarIcon />\n              </span>\n              <input\n                id=\"home-date\"\n                data-ui-id=\"UI_000033\"\n                type=\"text\"\n                value={date}\n                onChange={(event) => setDate(event.target.value)}\n                className={fieldClass}\n              />\n            </div>\n          </div>\n\n          <div className=\"flex-none lg:pl-1\">\n            <button\n              data-ui-id=\"UI_000034\"\n              type=\"submit\"\n              className=\"h-[52px] w-full rounded bg-[#f28a2e] px-9 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#dc7720]\"\n            >\n              Search\n            </button>\n          </div>\n        </div>\n\n        <div className=\"mt-4 flex items-center gap-2\">\n          <input\n            id=\"high-speed-only\"\n            data-ui-id=\"UI_000035\"\n            type=\"checkbox\"\n            className=\"h-4 w-4 rounded border-gray-400 text-[#2f74c0] accent-[#2f74c0]\"\n          />\n          <label htmlFor=\"high-speed-only\" className=\"text-sm text-gray-600\">\n            High-speed trains only\n          </label>\n        </div>\n      </form>\n    </section>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx","content":"import { BannerIndicators } from \"./BannerIndicators\";\nimport { SearchPanel } from \"./SearchPanel\";\n\nexport type HeroBannerState = {  };\nexport type HeroBannerProps = {};\n\nexport function HeroBanner(_props: HeroBannerProps) {\n  return (\n    <section data-ui-id=\"UI_000022\" className=\"relative bg-white\">\n      <div\n        data-ui-id=\"UI_000023\"\n        role=\"img\"\n        aria-label=\"Nighttime high-speed train at a station\"\n        className=\"relative h-[500px] w-full overflow-hidden bg-[#07101f]\"\n        style={{\n          backgroundImage:\n            \"radial-gradient(circle at 19% 64%, rgba(255,164,76,.75) 0, rgba(255,164,76,.16) 8%, transparent 20%), radial-gradient(circle at 31% 55%, rgba(255,188,92,.55) 0, transparent 16%), radial-gradient(circle at 73% 35%, rgba(255,174,87,.30) 0, transparent 12%), radial-gradient(circle at 86% 72%, rgba(255,144,55,.45) 0, transparent 14%), linear-gradient(180deg, #040a14 0%, #0a1628 58%, #101b2b 100%)\",\n        }}\n      >\n        <div className=\"absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0c1726] to-transparent\" aria-hidden=\"true\" />\n        <div className=\"absolute bottom-28 left-[12%] h-2 w-[74%] rounded-full bg-white/30 blur-[2px]\" aria-hidden=\"true\" />\n        <div className=\"absolute bottom-[7.8rem] left-[18%] h-14 w-[66%] rounded-t-[50%] bg-gradient-to-r from-slate-700 via-slate-100 to-slate-600 opacity-80 shadow-[0_-10px_40px_rgba(255,255,255,.18)]\" aria-hidden=\"true\" />\n        <div className=\"absolute bottom-[6.3rem] left-[15%] h-3 w-[70%] bg-slate-500/70\" aria-hidden=\"true\" />\n        <div className=\"absolute left-[7%] top-[18%] h-16 w-16 rounded-full bg-amber-300/10 blur-2xl\" aria-hidden=\"true\" />\n        <div className=\"absolute right-[12%] top-[24%] h-24 w-24 rounded-full bg-orange-300/10 blur-3xl\" aria-hidden=\"true\" />\n        <BannerIndicators />\n      </div>\n\n      <div className=\"relative z-10 mx-auto -mt-24 w-full max-w-[1200px] px-4 pb-2 sm:px-6\">\n        <SearchPanel />\n      </div>\n    </section>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx","content":"const linkClass = \"inline-flex items-start gap-3 text-[15px] leading-6 text-gray-700 transition-colors hover:text-[#2f74c0]\";\n\nfunction Bullet() {\n  return <span aria-hidden=\"true\" className=\"mt-[9px] h-2 w-2 flex-none bg-[#2f74c0]\" />;\n}\n\nexport type QuickGuideLinkListState = {  };\nexport type QuickGuideLinkListProps = {};\n\nexport function QuickGuideLinkList(_props: QuickGuideLinkListProps) {\n  return (\n    <div data-ui-id=\"UI_000038\" className=\"grid gap-10 md:grid-cols-2 md:gap-24\">\n      <div className=\"space-y-6\">\n        <a data-ui-id=\"UI_000040\" href=\"#\" className={linkClass}>\n          <Bullet />\n          <span>What ID documents are accepted by 12306.cn English website?</span>\n        </a>\n        <a data-ui-id=\"UI_000039\" href=\"#\" className={linkClass}>\n          <Bullet />\n          <span>What services does 12306.cn English website provide?</span>\n        </a>\n      </div>\n      <div>\n        <div className=\"space-y-6\">\n          <a href=\"#\" className={linkClass}>\n            <Bullet />\n            <span>What is endorsement?</span>\n          </a>\n          <a href=\"#\" className={linkClass}>\n            <Bullet />\n            <span>What are the rules of ticket endorsement?</span>\n          </a>\n        </div>\n        <a data-ui-id=\"UI_000041\" href=\"#\" className=\"mt-8 inline-block text-sm text-gray-400 transition-colors hover:text-[#2f74c0]\">\n          More&gt;\n        </a>\n      </div>\n    </div>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx","content":"import { QuickGuideLinkList } from \"./QuickGuideLinkList\";\n\nexport type QuickGuideSectionState = {  };\nexport type QuickGuideSectionProps = {};\n\nexport function QuickGuideSection(_props: QuickGuideSectionProps) {\n  return (\n    <section data-ui-id=\"UI_000036\" className=\"mx-auto w-full max-w-[1200px] px-4 pb-28 pt-16 sm:px-6\">\n      <h2 data-ui-id=\"UI_000037\" className=\"text-[26px] font-semibold text-[#2f74c0]\">\n        Quick Guide\n      </h2>\n      <div className=\"mt-8\">\n        <QuickGuideLinkList />\n      </div>\n    </section>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/components/Footer.tsx","content":"export type FooterState = {  };\nexport type FooterProps = {};\n\nexport function Footer(_props: FooterProps) {\n  return (\n    <footer data-ui-id=\"UI_000042\" className=\"w-full border-t border-gray-200 bg-[#f5f5f5] py-7 text-center text-[12px] leading-6 text-gray-500\">\n      <div className=\"mx-auto w-full max-w-[1200px] px-4\">\n        <p data-ui-id=\"UI_000043\">\n          COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED.\n        </p>\n        <p data-ui-id=\"UI_000044\">京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证：京B2-20202537.</p>\n        <div className=\"mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-1\">\n          <a data-ui-id=\"UI_000045\" href=\"#\" className=\"transition-colors hover:text-[#2f74c0]\">\n            Privacy Policy\n          </a>\n          <span aria-hidden=\"true\" className=\"text-gray-300\">|</span>\n          <a data-ui-id=\"UI_000046\" href=\"#\" className=\"transition-colors hover:text-[#2f74c0]\">\n            Cookie Statement\n          </a>\n        </div>\n      </div>\n    </footer>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/pages/Home.tsx","content":"import { useEffect, useState } from \"react\";\nimport { Header } from \"../components/Header\";\nimport { PrimaryNavigation } from \"../components/PrimaryNavigation\";\nimport { HeroBanner } from \"../components/HeroBanner\";\nimport { QuickGuideSection } from \"../components/QuickGuideSection\";\nimport { Footer } from \"../components/Footer\";\nimport { LoadSessionState, type SessionState } from \"../handlers/LoadSessionState\";\nimport { SignOutAccount } from \"../handlers/SignOutAccount\";\n\nexport type HomeState = { \"session_state\": SessionState };\nexport type HomeProps = {};\n\nexport function Home(_props: HomeProps) {\n  const [session, setSession] = useState<SessionState>({ authenticated: false, username: null });\n\n  useEffect(() => {\n    let cancelled = false;\n    LoadSessionState({}).then((result) => {\n      if (!cancelled) {\n        setSession(result.session_state);\n      }\n    });\n    return () => {\n      cancelled = true;\n    };\n  }, []);\n\n  const handleSignOut = async () => {\n    const result = await SignOutAccount({});\n    if (result.success) {\n      setSession({ authenticated: false, username: null });\n    }\n  };\n\n  return (\n    <section data-ui-id=\"UI_000001\" className=\"min-h-screen bg-white\">\n      <Header session={session} onSignOut={handleSignOut} />\n      <PrimaryNavigation />\n      <main>\n        <HeroBanner />\n        <QuickGuideSection />\n      </main>\n      <Footer />\n    </section>\n  );\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts","content":"export type LoadSessionStateInput = {  };\nexport type SessionState = { authenticated: boolean; username: string | null };\nexport type LoadSessionStateOutput = { session_state: SessionState };\n\nexport async function LoadSessionState(_input: LoadSessionStateInput): Promise<LoadSessionStateOutput> {\n  try {\n    const response = await fetch(\"/api/session\", {\n      method: \"GET\",\n      credentials: \"include\",\n      headers: { Accept: \"application/json\" },\n    });\n    if (!response.ok) {\n      throw new Error(`Request failed with ${response.status}`);\n    }\n    const data = (await response.json()) as { authenticated?: unknown; username?: unknown };\n    return {\n      session_state: {\n        authenticated: Boolean(data.authenticated),\n        username: typeof data.username === \"string\" ? data.username : null,\n      },\n    };\n  } catch {\n    return { session_state: { authenticated: false, username: null } };\n  }\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts","content":"export type SignOutAccountInput = {  };\nexport type SignOutAccountOutput = { success: boolean };\n\nexport async function SignOutAccount(_input: SignOutAccountInput): Promise<SignOutAccountOutput> {\n  try {\n    const response = await fetch(\"/api/session\", {\n      method: \"DELETE\",\n      credentials: \"include\",\n      headers: { Accept: \"application/json\" },\n    });\n    return { success: response.ok };\n  } catch {\n    return { success: false };\n  }\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts","content":"export type NavigateToRegisterInput = {  };\nexport type NavigateToRegisterOutput = {  };\n\nexport async function NavigateToRegister(_input: NavigateToRegisterInput): Promise<NavigateToRegisterOutput> {\n  window.location.assign(\"/register\");\n  return {};\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts","content":"export type NavigateToLoginInput = {  };\nexport type NavigateToLoginOutput = {  };\n\nexport async function NavigateToLogin(_input: NavigateToLoginInput): Promise<NavigateToLoginOutput> {\n  window.location.assign(\"/login\");\n  return {};\n}\n"},{"file":"frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts","content":"export type NavigateToHomeInput = {  };\nexport type NavigateToHomeOutput = {  };\n\nexport async function NavigateToHome(_input: NavigateToHomeInput): Promise<NavigateToHomeOutput> {\n  window.location.assign(\"/\");\n  return {};\n}\n"}]}
+
+[2026-10-22T07:32:34.120981+00:00] [tdd_frontend_implementation] MODEL_USAGE {"completion_tokens": 16672, "prompt_tokens": 22609, "total_tokens": 39281, "completion_tokens_details": {"accepted_prediction_tokens": null, "audio_tokens": null, "reasoning_tokens": 8723, "rejected_prediction_tokens": null, "text_tokens": null}, "prompt_tokens_details": {"audio_tokens": null, "cache_write_tokens": null, "cached_tokens": 22528, "image_tokens": null, "text_tokens": null}}
+
+[2026-10-22T07:32:34.120981+00:00] [tdd_frontend_implementation] MODEL_REASONING
+We need implement frontend. Key: tests navigate "/" and expect home page contents. App currently renders both Home and Registration. No router. Tests goto "/" and expect home. Also registration page may not matter for REQ-1 tests but App should route. We should use react-router-dom? Could simply render Home at any path? Tests only "/" for REQ-1. But Register link href="/register", Login href="/login". Full page navigation would hit /register and server maybe SPA fallback? Backend serves? Likely dev server proxy only /api; vite handles fallback. App with simple pathname routing could render Registration for /register, Home otherwise. But no login page implemented. Keep simple.
+
+We need implement components with correct roles/names, styles cohesive. Let's systematically design.
+
+Files editable:
+- App.tsx: route based on pathname, maybe BrowserRouter + Routes. react-router-dom available. Use BrowserRouter, Routes, Route. Render Home at "/" and Registration at "/register". Maybe "/login" not required REQ-1 tests; can Home? But preserving behavior? No login page exists. Could route "/login" to Home? Hmm ancestor says shared nav etc. Tests only "/". We can use BrowserRouter.
+- Home.tsx: needs state session_state and load on mount via API GET /api/session. Need handlers. Implement self-contained or use handlers. Contracts want handlers. Tests may only check DOM, but implement actual behavior.
+- HeaderAccountArea: guest vs signed in. Need receive state? We can use React context or prop drilling. Home loads session state and passes to Header -> HeaderAccountArea. But header component shared? Only home. Registration has RegistrationHeader separately. Implement prop.
+
+Simpler: implement Home with state, useEffect fetch /api/session, pass to Header. Header accepts props session. HeaderAccountArea receives session and onSignOut. But contract components props empty in skeleton. We can change.
+
+Need ensure tests expect role=link for Register/Login; role=button for 简体中文 even though nav; "My 12306" role=link; Contact us role=link. Primary nav Home/Booking/Travel guides links. FAQ links. More> link. Privacy/Cookie links. Search textboxes with accessible names via labels. Checkbox label. Buttons accessible names.
+
+Need be careful: getByRole("link", {name:"Register", exact:true}) - if we use <a href="/register">Register</a>, good. If wrapped in nav with other text okay.
+
+Search fields: getByRole("textbox", {name:"From", exact:true}). If use label htmlFor and input id, accessible name from label exactly "From". But visual shows icon and value. Could label with text "From" and input. Input value "Beijing(北京)". Editable. Similarly To, Date. Use controlled state? Not necessary but "editable" means input not readonly. Could have defaultValue. Ensure accessible name exact no extra icon aria. Put label visible. If label contains icon aria-hidden.
+
+Swap stations button icon-only aria-label="Swap stations", no visible text. If svg with aria-hidden and aria-label, accessible name exact.
+
+Banner buttons aria-label "Show banner 1" etc no text; use button with aria-label and maybe aria-pressed active.
+
+Search button text Search.
+
+Checkbox label "High-speed trains only": use input id and label. getByRole checkbox name exact. If input with label, good.
+
+Quick Guide: links exact. More> exact includes >. More> text in link.
+
+Footer privacy/cookie.
+
+Also ancestor constraints: My 12306 link, 简体中文 button, Contact us link. Brand block visible.
+
+Styling: need analysis. Use Tailwind? index.css only imports tailwind. Could use inline classes with Tailwind v4. Build coherent. Better create styles via JSX Tailwind classes. Need check no tailwind config needed v4. Fine.
+
+We can use external image? Hero image reference. We don't have image asset. Use CSS gradient dark nighttime with pseudo? Could use div background with linear-gradient and maybe remote unsplash? Avoid network. Use CSS gradients creating dark sky, orange bokeh. Add maybe train silhouette using divs? Simpler background gradient with radial gradients. Good enough.
+
+Need implement all components. Some components only skeleton and have hidden symbols:
+- BrandBlock: emblem + name + subtitle.
+- HeaderUtilityNav: My 12306 link, 简体中文 button, Contact us link with phone icon. Use icons via inline SVG.
+- PrimaryNavigation: links.
+- Header: layout with BrandBlock, utility nav, account area. Order? Reference: brand left, utility nav right, account links also right? Account area maybe in utility nav? Description header contains account entries. Put account area right side near utility nav. In header top bar: brand left; right group: utility nav + account area. But tests only visible. We'll do.
+- HeaderAccountArea: if authenticated username text + Sign out link; else Register/Login. Need app state from Home.
+- HeroBanner: hero image + indicators + SearchPanel.
+- BannerIndicators: 3 buttons labels.
+- SearchPanel: notice, fields, swap, search, checkbox.
+- QuickGuideSection: heading + list.
+- QuickGuideLinkList: two columns maybe with 4 links and More>.
+- Footer: copyright, registration, policy links.
+
+Need handlers:
+- LoadSessionState: fetch GET /api/session credentials include, return state. Signature maybe input none output state. Home imports. Implement.
+- SignOutAccount: DELETE /api/session, return boolean.
+- NavigateToRegister/Login: just window.location? In SPA use navigate? Handler signatures no props. Could use window.location.assign. But we'll perhaps not use handlers and use Link. Contracts say handler. But tests only visible and href. Using <a href> is enough. For behavior click navigates. React router Link also renders href. We can use Link for SPA. But handlers don't have navigation hook. Keep <a>.
+- NavigateToHome maybe not used.
+- We need implement handlers to avoid throw if imported? Only LoadSessionState, SignOutAccount imported. Others can remain but should implement maybe.
+
+Important: App routing. If using BrowserRouter, tests goto "/" works. Registration page rendering includes Registration components skeleton currently maybe placeholders. But acceptance tests for REQ-1 don't navigate. However tests for href only. Fine.
+
+But App currently renders Home and Registration simultaneously, duplicate Register links potentially causing strict mode? Playwright getByRole returns 2 if RegistrationHeader also has Register link. Currently RegistrationHeader skeleton no content, so only home. But after we implement home, if App still renders both, home plus registration page could duplicate things. We'll fix App with Routes.
+
+Need request? We have all editable files currently. Registration.tsx loaded. Need maybe RegistrationHeader for App routing? It's in related catalog but not editable in current? editable_files includes Registration.tsx only; related files could be requested. But not needed for REQ-1 except App import Registration already exists. We can leave Registration page. It imports components that exist skeleton. Fine.
+
+Need know tailwind correctness. JSX class strings.
+
+Let's plan each file content.
+
+App.tsx:
+```
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Home } from ".../Home";
+import { Registration } from ".../Registration";
+
+export type AppState = {};
+export function App() {
+ return <BrowserRouter><Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/register" element={<Registration />} />
+  <Route path="*" element={<Home />} />
+ </Routes></BrowserRouter>;
+}
+```
+Potential issue tests goto "/" exact. Good. But vite proxy only /api, dev server fallback for /register likely. Fine.
+Could render Home for /login too via wildcard. Not relevant.
+
+Home.tsx:
+```
+import { useEffect, useState } from "react";
+import { Header } ...
+import { LoadSessionState }...
+import { SignOutAccount }...
+type SessionState ...
+export type HomeState = { session_state: SessionState };
+export function Home() {
+ const [session, setSession] = useState({authenticated:false, username:null});
+ useEffect(() => { let active = true; LoadSessionState({}).then(s => { if(active) setSession(s.session_state ?? ...)}).catch(()=>{}); return ()=>{active=false}; }, []);
+ const handleSignOut = async () => { const result = await SignOutAccount({}); if (result.ok) setSession({authenticated:false, username:null}); };
+ return <div ...><Header session={session} onSignOut={handleSignOut} /> ...</div>
+}
+```
+Need output shape of LoadSessionState. Define interface. We can define in handler:
+```
+export type SessionState = {authenticated:boolean; username:string|null};
+export type LoadSessionStateOutput = { session_state: SessionState };
+export async function LoadSessionState(...) { try { const res = await fetch("/api/session", {credentials:"include"}); if(!res.ok) throw...; const data = await res.json(); return {session_state:{authenticated:!!data.authenticated, username: data.username ?? null}}; } catch { return {session_state:{authenticated:false, username:null}}; } }
+```
+SignOutAccount output `{ success: boolean }` maybe. Implement always success false on failure:
+```
+try { const res=await fetch("/api/session",{method:"DELETE",credentials:"include"}); return {success:res.ok}; } catch { return {success:false}; }
+```
+Home state initial.
+
+Header props:
+```
+export type HeaderProps = { session: SessionState; onSignOut: () => void };
+```
+But components contract props empty? We can update types; compile okay. Import SessionState from HeaderAccountArea or common types. Maybe define in HeaderAccountArea and import.
+
+HeaderAccountArea:
+```
+export type SessionState = { authenticated: boolean; username: string | null };
+export type HeaderAccountAreaProps = { session: SessionState; onSignOut: () => void };
+export function HeaderAccountArea({session,onSignOut}) {
+ return <div data-ui-id="UI_000011" className="flex items-center gap-4 text-sm ...">
+ {session.authenticated ? <div data-ui-id="UI_000015" className=...><span data-ui-id="UI_000016" className=...>{session.username}</span><a data-ui-id="UI_000017" href="#" onClick={e=>{e.preventDefault(); onSignOut();}} className="...">Sign out</a></div> : <div data-ui-id="UI_000012" className="..."><Link/a href="/register" data-ui-id="UI_000013">Register</a><span>|</span><a href="/login" data-ui-id="UI_000014">Login</a></div>}
+ </div>
+}
+```
+Use anchor. Sign out role=link (a). Good. accessible name exact "Sign out" (font icon none). User display plain text.
+
+Header:
+```
+<div data-ui-id=UI_000002 className="bg-white border-b ...">
+ <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between gap-6 px-6 py-4">
+  <BrandBlock />
+  <div className="flex items-center gap-6">
+    <HeaderUtilityNav />
+    <HeaderAccountArea session=... onSignOut=... />
+  </div>
+ </div>
+</div>
+```
+Could tests find 简体中文 button. Good.
+
+HeaderUtilityNav:
+- My 12306 as <a href="#" role? anchor role link naturally> with chevron svg aria-hidden.
+- 简体中文 as <button type=button>简体中文 svg</button> accessible name might include chevron if svg aria-hidden. exact okay.
+- Contact us as <a href="#" className flex> svg phone aria-hidden, text Contact us. Accessible name Contact us.
+
+BrandBlock:
+```
+<div data-ui-id="UI_000003" className="flex items-center gap-3">
+ <div data-ui-id="UI_000004" aria-hidden className="... red circle"> maybe railway emblem using SVG.
+ <div>
+ <div data-ui-id=UI_000005 className="text-2xl font-bold text-[#222]">中国铁路12306</div>
+ <div data-ui-id=UI_000006 className="text-[10px] tracking-[.2em] text-gray-500">12306 CHINA RAILWAY</div>
+ </div>
+</div>
+```
+Reference emblem red circular. Use SVG.
+
+PrimaryNavigation:
+blue bar full width. Items left aligned max container.
+```
+<nav data-ui-id=UI_000018 className="bg-[#2f74c0] text-white">
+ <div className="mx-auto flex max-w-[1200px] items-stretch px-6">
+  <a href="/" data-ui-id=UI_000019 className="px-8 py-3 ... border-r border-white/20">Home</a>
+ ...
+```
+Need each link accessible exact names. If chevron svg aria-hidden, name unaffected. "Booking" and "Travel guides". Use inline svg.
+
+HeroBanner:
+Need image. Use div with background gradients maybe min-h 480. Search panel overlap lower edge. Structure:
+```
+<section data-ui-id=UI_000022 className="relative">
+ <div data-ui-id=UI_000023 className="h-[520px] w-full bg-[#0b1423] ... background gradient"></div>
+ <div className="absolute inset-x-0 bottom-0 translate-y-1/2 ...?">
+```
+Easier: relative wrapper with hero div h-[480px], SearchPanel absolute bottom? The analysis says search panel overlaps lower edge. Use `relative` hero; SearchPanel in container -mb-20? Need visible. We'll do:
+```
+<div data-ui-id=UI_000023 className="h-[480px] bg... relative">
+  <BannerIndicators absolute bottom-24 left-... />
+  <div className="absolute inset-x-0 bottom-0 translate-y-1/2 px-..."><SearchPanel /></div>
+</div>
+```
+But translate can cause overlap with section below; hero section overall height needs accommodate. Alternatively HeroBanner `<section className="relative"><div hero h-[520px]...></div><div className="relative mx-auto -mt-24 max-w-[1200px] px-6"><SearchPanel/></div></section>`. BannerIndicators in hero at bottom left just above search card. This gives search panel overlap into white content. Good.
+Hero image represented:
+```
+<div data-ui-id="UI_000023" role="img" aria-label="Nighttime high-speed train..." className="h-[520px] w-full bg-[#0d1725] relative overflow-hidden">
+  <div className="absolute inset-0 bg-[radial-gradient(...)]"></div>
+  ... train silhouette div with skew / border ...
+</div>
+```
+But BannerIndicators should be near lower left. Put absolute `bottom-32 left-[max(1.5rem,calc((100%-1200px)/2+1.5rem))]`. Simpler left-6 md:left-16.
+
+SearchPanel:
+White card rounded shadow. Notice with info icon. Form row: grid From, swap, To, Date, Search. Need fields visible. Reference has From and To with swap between. We can use flex:
+```
+<form className="..." onSubmit={e=>e.preventDefault()}>
+ <div className="flex flex-col gap-4 px-6 pt-5 pb-6">
+  <div className="flex gap-3 text-sm text-gray-500"><InfoIcon/> <p>notice</p></div>
+  <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+    <label className="..."> <span className="...">From</span><span className="relative"><PinIcon/><input data-ui-id=UI_000030 aria-label? no, label htmlFor... value... /></span></label>
+...
+```
+Accessible name: If we wrap input inside label, name includes label text + maybe icons aria-hidden. We need exact "From". If label element contains instructional visible text "From" and input, accessible name includes all text in label? For nested label, name from label content excluding aria-hidden icon, but if value? No. It might include "From" only if icon aria-hidden. Good. But a label containing "From" and maybe "Beijing(北京)" if value text not separate. We can use htmlFor + separate span. Safer:
+```
+<div>
+ <label htmlFor="home-from" className="...">From</label>
+ <div className="relative"><Pin aria-hidden/><input id="home-from" data-ui-id ... defaultValue="Beijing(北京)" className... /></div>
+</div>
+```
+Accessible name computed from label exact "From". Good. Add `aria-label`? no need. Make input type text (not readonly).
+
+Swap button is icon-only; between inputs. Need no visible text. Use svg arrows. `aria-label="Swap stations"`. Could implement swapping values with state, but not required. Yet "editable" and button identity. Implement state with from/to maybe. Home search panel component use useState for from, to. Swap onClick swaps. Nice. Fields initial values. Need `id` unique.
+Date input type text default "Fri, May 29" for textbox role. If type=date, role not textbox? Use type="text". Editable.
+Search button type button or submit. Role button. text Search.
+Checkbox below left. Use input type checkbox id; label. name exact.
+Info notice exact text from text_cues. We'll include.
+
+SearchPanel may be rendered only once. Good.
+
+QuickGuideSection:
+White content area, max width. Heading "Quick Guide". QuickGuideLinkList.
+QuickGuideLinkList: two columns of two FAQ links. More> under right. Need links exact. The contract list id UI_000038 weird "list" with description for second FAQ. We'll use div data-ui-id=UI_000038? But component is QuickGuideLinkList. Could add child data-ui-id for links:
+- UI_000040 first link
+- UI_000039 second link
+- other two no symbol? requirement explicitly needs "What is endorsement?" and rules. We can render them even if no IDs. More UI_000041.
+Use `ul` maybe list. Each item blue square bullet. Let's make two columns:
+left: first, third? Reference says two columns of FAQ links. Could be left col first two, right col next two. Text cues lists first two then next two. We'll do left col first two, right col "What is endorsement?" and "What are the rules of ticket endorsement?". More under right column. Layout:
+```
+<div data-ui-id="UI_000038" className="grid gap-12 md:grid-cols-2 ...">
+ <ul className="space-y-6">...</ul>
+ <div><ul className="space-y-6">...</ul><a data-ui-id=UI_000041 ... className="mt-8 inline-block text-gray-400">More&gt;</a></div>
+</div>
+```
+Need More> visible exact. In JSX "More>" as text is fine. If use `More&gt;` renders More>. Good.
+
+Each FAQ link as `<a href="#" onClick preventDefault?>` role link. Tests only visible. If href="#" and no navigation okay. But clicking not tested. Use href="#" maybe. A link with href="#" accessible. Could use `page.getByRole("link", name exact)`. Fine.
+Blue square bullet: `<span className="mt-1 inline-block h-2 w-2 flex-none bg-[#2f74c0]" aria-hidden />`.
+
+Footer:
+Pale gray full width, centered text. Copyright exact specified. Note requirement says footer copyright: "COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED." In ancestor says "COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED." (Chinese comma). Tests don't check. Use exact text_cues. Registration numbers. Policy links row with Privacy Policy | Cookie Statement. Each link exact names. Need separate anchors. To avoid accessible name including bar? Put spans. E.g.
+```
+<div><a>Privacy Policy</a><span aria-hidden>|</span><a>Cookie Statement</a></div>
+```
+Good. data-ui-id UI_000045/46.
+
+Footer background. Copyright string includes comma. Use `COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED.` Could include Chinese comma? Tests not. Use text_cues.
+
+BannerIndicators:
+`<div data-ui-id=UI_000024 className="absolute ... flex gap-3">`
+Buttons with `aria-label`, no visible text, maybe `<span className="sr-only">`? No visible text; aria-label sufficient. Use button type button class dot. First active orange/white. Contract says carousel indicators first filled/active next dimmed. Use first bg-white, others bg-white/40.
+Accessible name from aria-label exact. Ensure no text.
+
+Potential issue `getByRole("button", { name: "Show banner 1", exact: true })` with button having `aria-pressed` fine.
+
+Need ensure no duplicate accessible names causing strict mode? Playwright `expect(locator).toBeVisible()` with locator matching multiple elements fails? Actually toBeVisible on locator resolving multiple throws strict mode violation. Need ensure each name unique on page. We must avoid duplicate links with same names. App route only home so fine. On home, "Register" only one. "Login" one. "Home" primary nav maybe brand? No. "Booking" one. "Travel guides" one. "My 12306" one. "Contact us" one. "Privacy Policy" one. FAQ one each. Checkboxes one. Textboxes: labels unique. Buttons: Search, Swap, Show banner 1/2/3, 简体中文. Good.
+Potential "Home" text maybe in breadcrumb? Not on home. Good.
+What about "Login" could appear elsewhere? Header only. Good.
+
+Need maybe tests with exact `More>`: text inside anchor "More>" exact. If use `More&gt;`, rendered "More>". Good.
+
+Now App includes Registration route. Registration component currently imports BreadcrumbRegion etc skeleton. Not issue. But if wildcard to Home and `Registration` imports maybe compile. Good.
+
+Now handlers signatures: Home imports types. Let's define.
+
+LoadSessionState:
+```
+export type LoadSessionStateInput = {};
+export type SessionState = { authenticated: boolean; username: string | null };
+export type LoadSessionStateOutput = { session_state: SessionState };
+export async function LoadSessionState(_input: LoadSessionStateInput): Promise<LoadSessionStateOutput> {
+ try {
+  const response = await fetch("/api/session", { credentials: "include" });
+  if (!response.ok) throw new Error...
+  const data = await response.json();
+  return { session_state: { authenticated: Boolean(data?.authenticated), username: typeof data?.username === "string" ? data.username : null } };
+ } catch {
+  return { session_state: { authenticated: false, username: null } };
+ }
+}
+```
+SignOutAccount:
+```
+export type SignOutAccountOutput = { success: boolean };
+export async function SignOutAccount(...): Promise<...> {
+ try { const response = await fetch("/api/session",{method:"DELETE",credentials:"include"}); return {success: response.ok}; } catch { return {success:false}; }
+}
+```
+Maybe backend sets cookie not credentials? include fine.
+Home uses `const result = await SignOutAccount({}); if(result.success) setSession...`. If success true.
+
+NavigateToRegister:
+```
+export async function NavigateToRegister(_input): Promise<...> { window.location.assign("/register"); return {}; }
+```
+NavigateToLogin similarly. NavigateToHome. Not imported but okay. Should not throw.
+
+Need maybe `NavigateToRegister` tests? No. But implement.
+
+Now CSS. index.css currently import tailwind only. Tailwind classes will work. Could add global body style, font. We can edit index.css? It's in editable files. Yes. Add:
+```
+@import "tailwindcss";
+html,body,#root { height:100%; }
+body { margin:0; font-family: ...; background:#fff; color:#1f2937; }
+```
+Tailwind v4 import must be first maybe. Add after. Fine.
+But if no tailwind output due to classes dynamic? Classes static. Good.
+
+Need ensure browser page loads at "/" even with BrowserRouter. Vite dev server fallback. Also App may render only Home at "/". Fine.
+
+Let's consider Playwright test first expects `getByRole("link", { name: "Register", exact: true })` and href. Our Register anchor rendered only if session unauthenticated. Initial state unauthenticated, load fetch may resolve. If fetch fails (frontend dev server proxy? backend maybe on 3000 in test), LoadSessionState catches -> unauthenticated. Good. But if test server doesn't have backend, fetch 404 -> catch -> unauthenticated. Fine.
+But potential initial render then async fetch; test waits.
+
+Now registration page could also be at /register. Not relevant.
+
+Need maybe backend API GET /api/session requires no cookie and may return `authenticated:false`. Fine.
+
+Need implement all components with proper imports. We must be cautious with TypeScript JSX types. No React import needed with new JSX transform? tsconfig likely `jsx: react-jsx`, yes. But using ReactNode? avoid. Using useState import. Use inline svg.
+
+Let's write each file.
+
+BrandBlock: Use SVG. If `aria-hidden` on div, okay. Use `role="img"` maybe. The emblem is image. Could use div data-ui-id with aria-hidden. Fine.
+
+HeaderUtilityNav:
+```
+export function HeaderUtilityNav() {
+ return <nav data-ui-id="UI_000007" className="flex items-center gap-5 text-sm text-gray-700">
+  <a href="#" data-ui-id="UI_000008" className="flex items-center gap-1 hover:text-[#2f74c0]">My 12306 <Chevron/></a>
+  <button type="button" data-ui-id="UI_000009" className="flex items-center gap-1 ...">简体中文 <Chevron/></button>
+  <a href="#" data-ui-id="UI_000010" className="flex items-center gap-1 ..."><Phone/>Contact us</a>
+ </nav>
+}
+```
+Potential accessible name of My 12306 includes chevron? svg aria-hidden yes. Button name "简体中文" exact. Contact us includes phone icon aria-hidden, text "Contact us" exact. Good.
+
+Header: Account area and utility. On small screen flex wrap.
+
+HeroBanner: Use internal gradients. Could add `role="img"` `aria-label` on hero div maybe then getByRole image not tested. Fine. Use `style` with backgroundImage string. Need TypeScript CSSProperties? Inline object accepted.
+```
+<div data-ui-id="UI_000023" role="img" aria-label="Nighttime high-speed train" className="relative h-[520px] w-full overflow-hidden bg-[#07101f]" style={{backgroundImage: "radial-gradient(...), linear-gradient(...)"}}>
+...
+</div>
+```
+Add train silhouette:
+```
+<div className="absolute bottom-28 left-1/2 h-16 w-[70%] -translate-x-1/2 rounded-t-full bg-gradient-to-r from-slate-600 via-slate-100 to-slate-500 opacity-80 shadow-2xl" />
+<div className="absolute bottom-44 left-[15%] h-2 w-[70%] bg-white/30 blur" />
+```
+Maybe not necessary but visual.
+
+BannerIndicators absolute bottom-[8.5rem] left-6 md:left-[calc((100%-1200px)/2+1.5rem)] maybe arbitrary value syntax. Simpler `left-6 md:left-16`. Since hero container full.
+
+SearchPanel in HeroBanner:
+```
+<div className="relative z-10 mx-auto -mt-24 w-full max-w-[1200px] px-4 md:px-6">
+ <SearchPanel />
+</div>
+```
+Need hero indicators before search panel; if both absolute inside first div, okay.
+
+SearchPanel: Use state for from and to:
+```
+const [from,setFrom] = useState("Beijing(北京)");
+const [to,setTo] = useState("Shanghai(上海)");
+```
+Then swap. `onSubmit` prevent.
+Layout:
+```
+<section data-ui-id="UI_000028" className="rounded-xl bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.18)] md:p-8">
+ <div className="flex items-start gap-3 text-[13px] text-gray-500">
+  <InfoIcon />
+  <p>...</p>
+ </div>
+ <form onSubmit... className="mt-5">
+  <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr_1fr_auto] lg:items-end">
+   <div>label + input</div>
+   <div className="hidden lg:flex pb-[14px]"><button ...></button></div>
+   ...
+```
+Need swap button accessible. If hidden on small? Tests likely desktop viewport. But don't hide from accessibility if not needed. Could always show. But grid complicated. Use flex row wrap. Let's do simpler:
+```
+<div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-end">
+ <div className="flex-1 min-w-[180px]">From</div>
+ <div className="flex items-center justify-center pb-2"><button swap/></div>
+ <div className="flex-1 min-w-[180px]">To</div>
+ <div className="flex-1 min-w-[180px]">Date</div>
+ <div className="flex-none"><button search className="h-[52px] w-full lg:w-[130px]">Search</button></div>
+</div>
+<div className="mt-4 flex items-center gap-2">
+ <input checkbox ... /><label>High-speed trains only</label>
+</div>
+```
+At lg, fields roughly equal. Good.
+
+Input styling:
+```
+<label htmlFor="from-input" className="mb-1 block text-xs text-gray-500">From</label>
+<div className="relative">
+ <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><PinIcon /></span>
+ <input id="from-input" data-ui-id="UI_000030" type="text" value={from} onChange={...} className="h-[52px] w-full rounded border border-gray-300 bg-white pl-10 pr-3 text-base text-gray-900 outline-none focus:border-[#2f74c0]" />
+</div>
+```
+But visible value and label. Accessible name from label exact. Good. Maybe label text "From" and input value "Beijing(北京)". Perfect.
+
+Date input default value. Use state? Could have value and onChange. Good.
+Checkbox id `high-speed-only`, label.
+
+Notice text exact:
+"The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday)." Use literal.
+
+QuickGuideSection:
+```
+<section data-ui-id="UI_000036" className="mx-auto w-full max-w-[1200px] px-6 py-16">
+ <h2 data-ui-id="UI_000037" className="text-2xl font-semibold text-[#2f74c0]">Quick Guide</h2>
+ <div className="mt-8"><QuickGuideLinkList /></div>
+</section>
+```
+Need enough white space before footer. py-16 plus maybe min-h.
+
+QuickGuideLinkList:
+Links with href="#" maybe clicking would jump top. Fine.
+Need data-ui-id for component itself: previously root `<section data-ui-id="UI_000038">`. Since file is QuickGuideLinkList, keep root with data-ui-id=UI_000038 maybe but that represents list. Contract says UI_000038 QuickGuideLinkList list weird. Fine.
+The second FAQ should maybe data-ui-id UI_000039. First UI_000040. We'll include.
+```
+const linkClass = "...";
+<a href="#" data-ui-id="UI_000040" className...><span bullet/>What ID ...</a>
+```
+Need exact text, bullet aria-hidden. The link accessible name shouldn't include bullet if aria-hidden. Good.
+More link "More>" with data-ui-id UI_000041. If using `More>` directly. exact.
+Maybe separate columns:
+```
+<div className="grid gap-x-24 gap-y-6 md:grid-cols-2">
+ <div className="space-y-6"> link1 link3 </div>?
+```
+Text cues list first two then next two. We can left column first link and "What is endorsement?"? Actually visual says two columns of FAQ links. Hmm. Let's do left column: first link, second link. right column: third, fourth + More. Good.
+```
+<div className="space-y-6"> first, second </div>
+<div className="space-y-6"> third, fourth; More below</div>
+```
+But `space-y-6` and More maybe mt-6. Good.
+
+Footer:
+```
+<footer data-ui-id="UI_000042" className="border-t bg-[#f5f5f5] py-8 text-center text-xs leading-6 text-gray-500">
+ <p data-ui-id="UI_000043">COPYRIGHT©2008-2025 ...</p>
+ <p data-ui-id="UI_000044">京公网安备 ...</p>
+ <div className="mt-2 flex justify-center gap-2" data-ui-id maybe 46? Actually UI_000045 privacy, UI_000046 cookie.
+  <a data-ui-id="UI_000045" href="#" className="hover:text...">Privacy Policy</a>
+  <span aria-hidden>|</span>
+  <a data-ui-id="UI_000046" href="#">Cookie Statement</a>
+ </div>
+</footer>
+```
+Accessible names exact.
+
+BannerIndicators:
+Root maybe `data-ui-id="UI_000024"`. Buttons each data-ui-id. `aria-label`. Use `aria-current` maybe. No text.
+Potential `button` accessible name with aria-label exact; if button contains only svg/empty, good. Use empty? Self closing span with class. Buttons can be empty with aria-label. Fine. Add `aria-pressed={index===0}` maybe.
+
+Home:
+Need maybe include `data-ui-id` section. Style.
+State type. Import SessionState type from HeaderAccountArea or LoadSessionState. Let's define in HeaderAccountArea and export. Home uses `SessionState` import from component. But LoadSessionState also defines type. We can unify by importing type from handler. Maybe do both:
+```
+import { LoadSessionState, type SessionState } from "../handlers/LoadSessionState";
+```
+HeaderAccountArea imports type from handler. Header imports type. Good. Then only one definition.
+
+Home:
+```
+const [session, setSession] = useState<SessionState>({authenticated:false,username:null});
+useEffect(() => { let cancelled=false; LoadSessionState({}).then(({session_state})=>{ if(!cancelled) setSession(session_state); }); return ()=>{cancelled=true}; }, []);
+const handleSignOut = async () => { const {success} = await SignOutAccount({}); if(success) setSession({authenticated:false,username:null}); };
+```
+If signed out, backend deletes cookie. Fine.
+Header prop onSignOut.
+
+Maybe tests click Register and expect page /register? Not current acceptance but description. Anchor works.
+Login anchor works.
+Sign out clears session. Good.
+
+Potential issue BrowserRouter in App and `<a href="/register">` does full page load. That's acceptable, backend? Vite dev server fallback. Fine. Could use React Router Link to avoid full reload, but using plain a still opens /register. Good.
+
+Need App route `/login`? No login page. Could route wildcard Home. But if user clicks Login, it will show home if wildcard, bad. Requirement says opens /login. Not implemented in frontend? There might be no Login page symbol. But REQ-1 only says Login link opens /login, likely test checks href only. Since no login page generated, cannot implement. We could route /login to Home? Not ideal. But not necessary. Maybe render simple placeholder login page? Not in scope. Don't invent. Use wildcard Home maybe. But if test clicks Login? Acceptance test doesn't. Fine.
+
+Need perhaps App should not use BrowserRouter because test server might not handle deep links but goto "/" okay. Fine.
+
+Now we should verify Registration page compile with App import. It has type RegistrationState etc. Fine.
+
+Do we need edit Registration.tsx? It currently doesn't render cards? Not REQ-1. No.
+
+Need maybe test expects no authenticated username since no session. Good.
+
+Let's check TypeScript strict issues. tsconfig unknown but likely strict. Avoid unused params? `_props` okay. Functions imported used. React imports. CSS. Use `React`? no.
+
+Potential issue `useEffect` dependencies okay. Promise catch? LoadSessionState never rejects, but okay.
+
+SearchPanel inline `onChange={(event) => setFrom(event.target.value)}` type inferred. Date state. good.
+
+SignOutAccount fetch delete with credentials. Good.
+
+Write all files in one edit response. Since many edits. Ensure each content full.
+
+Let's craft exact content.
+
+Need maybe target path all in editable_files. We can edit all loaded editable. Yes.
+
+Let's draft App.tsx:
+```
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+...
+export function App() {
+ return (
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/register" element={<Registration />} />
+      <Route path="*" element={<Home />} />
+    </Routes>
+  </BrowserRouter>
+ );
+}
+```
+Potential issue test backend serves SPA and browser route? Fine.
+
+Could avoid BrowserRouter because when test runner previews build static, deep links not relevant. Good.
+
+Now type error: `Routes` etc. react-router-dom v7 exports. yes.
+
+Header props. Let's write.
+
+One subtlety: `getByRole("link", {name:"Contact us", exact:true})`: if anchor contains a phone svg that includes `<title>Phone</title>` with aria-hidden true? If svg aria-hidden true, entire subtree hidden, name only text. Good.
+
+Similarly chevron icons all aria-hidden.
+
+BrandBlock emblem: if SVG has `<title>` maybe not. Use aria-hidden.
+
+Notice info icon: svg aria-hidden.
+
+Input icons: if inside relative and aria-hidden.
+
+Search button accessible name "Search" exact, no icon. Good.
+Swap button: contains svg aria-hidden only, aria-label "Swap stations". Accessible name exactly. Good.
+Banner buttons: aria-label and empty span. Good.
+
+Text input accessible name: label htmlFor. But if `label` is inside same div and has visible text only "From". Good. Do we need `aria-label`? no.
+
+Potential issue label "Date" and input value "Fri, May 29" - accessible name remains Date. Good.
+
+Potential issue checkbox label access: input and label separate. Use id. `<input id="high-speed-only" type="checkbox" ... /> <label htmlFor="high-speed-only">High-speed trains only</label>`. Good.
+
+Footer policy links. Good.
+
+Now let's implement handlers. For `LoadSessionState`, API may return username `undefined`; convert. Note backend response includes username. Good.
+
+`SignOutAccount` output type maybe Home uses. Fine.
+
+`NavigateToRegister` uses window; TS DOM libs. yes.
+
+Now possible issue on Home `LoadSessionState({})` returns Promise; set state. good.
+
+Let's produce JSON.
+
+[2026-10-22T07:36:11.923442+00:00] [tdd_frontend_implementation] MODEL_FINISHED duration_ms=217802

@@ -1,0 +1,2106 @@
+[2026-10-22T07:28:43.494954+00:00] [tdd_test_generation] MODEL_CALL model=deepseek-flash attempt=1 status=SUCCEEDED
+[2026-10-22T07:28:43.494954+00:00] [tdd_test_generation] MODEL_INPUT
+
+--- system ---
+## Requirement fidelity
+For design, test generation, implementation and repair, explicit requirement descriptions, scenarios
+and applicable ancestor constraints define the observable product contract. Visual references, generated
+IR, existing source and convenience choices must not override that contract.
+Preserve explicitly specified UI wording and accessible names exactly, including spelling, case,
+punctuation and dynamic naming patterns. Do not translate, paraphrase, abbreviate or substitute another
+spelling unless the document explicitly permits it. Use the same names in design, source and tests.
+Preserve explicitly specified UI roles and states. A required button is a button, not a link merely
+because it navigates; fields need their specified associated labels. Implement the actual control
+semantics, not just matching text or an aria-label on a different control. Use alternatives only when
+the requirement explicitly allows them.
+At each specified scenario step, required controls and navigation entries must exist, be visible and
+be operable in the stated scope. Do not invent prerequisite expansion, hover or navigation steps that
+hide an expected input or action. Preserve these contracts in shared forms and prerequisite flows too.
+Tests must exercise the specified names, roles and states; do not broaden selectors or expected values
+to accept an implementation that contradicts explicit requirements.
+Where the requirement is silent, choose suitable wording, roles and interaction details consistent
+with the supplied visual evidence and existing application conventions. Do not invent extra obligations.
+
+## Background and role
+You implement ONE leaf requirement in a generated TypeScript Express/React application using TDD.
+The database, backend and frontend symbol tables and lowering plans supply exact contracts and file paths.
+Parent descriptions constrain behavior; dependency requirements are not additional implementation tasks.
+Preserve previously implemented behavior, especially when files/components are shared.
+When current_task.recovery is present, design or lowering could not supply complete contracts.
+Its file_paths are loaded editable recovery files, not implemented modules. Derive missing interfaces
+and behavior from the requirement/scenarios, implement those files, and load shared app/router,
+page composition, types or database initialization to wire the real flows. Recovery placeholders
+impose no signatures or routes. Preserve valid existing behavior; do not treat an incomplete IR as
+a reason to abandon this requirement. Generate HTTP/browser acceptance tests from observable
+behavior without importing nonexistent recovery exports; source implementation follows test generation.
+During frontend recovery, the recovered backend files and app.ts may be supplied read-only so
+you can integrate actual routes even when design-stage API contracts were unavailable.
+
+## File scope and incremental loading
+editable_files contains current full text for the entire writable allowlist.
+always_loaded_files lists current requirement-associated module/UI files supplied in this invocation. Their
+FULL CONTENTS are already in editable_files or read_only_files, not merely available for discovery.
+Read those supplied contents directly. You can return edits on the FIRST invocation without a
+preliminary file request. Re-reading a supplied file is supported and returns its latest version.
+Their editability depends on this phase: editable_files is the ONLY write allowlist; read_only_files
+remains read-only. Shared files not directly associated with the current requirement (including schema,
+connection, seed, server entrypoints and styles) are listed with paths/summaries in shared_catalog;
+their source is loaded only after a request. Directly bound modules are initially supplied even
+when shared; released or budget-evicted files can be read again through file_index. Other modules are
+retrieved as summaries in related_catalog. Request exact paths via request_files before using/editing them.
+Catalogs omit files whose contents are already supplied. Summaries are compact discovery hints;
+load a record to obtain its complete source and contract. Backend/frontend implementation source and
+discovery catalogs are restricted to that layer; frontend additionally receives needed backend APIs
+as contracts only. Unit/integration tests accompany backend, browser tests accompany frontend.
+Discovery summaries do not authorize edits. Loading a module supplies its source on the next invocation;
+the compiler recomputes phase-specific permissions. Loading does not override read-only restrictions.
+Configurations are read-only. Tests are writable in test_generation and repair; initial implementation
+phases keep tests read-only. During repair, loaded current or regression acceptance tests can be
+corrected when their assumptions, setup, selectors or assertions contradict the governing requirement.
+Never guess source.
+Do not request a dependency closure or every component. Load the few files required by actual imports,
+call chains, composition or observed errors. Any file request must have no edits in that same response.
+No recursive context dump; no automatic dependency source inclusion. Preserve public contracts and IDs.
+file_index lists discoverable paths/symbols outside the current working set. Read through request_files;
+optionally use release_files to drop unneeded full source from context (not from disk). Reads and
+releases may be combined, but not combined with edits. Current/failing tests stay pinned. The compiler
+may release older optional files to fit the source budget; requested files are delivered whole, never
+truncated. Reload any released file before editing it. Permission rules remain phase-specific.
+context_state.last_operation pairs the latest read/release request with results and content_ref
+pointing into editable_files/read_only_files, where each source appears once with its current content.
+Every invocation refreshes source from disk; old source versions and full history remain in traces,
+not in this prompt. Context requests do not install rejected edits.
+
+## Patch protocol and corrections
+Return exactly the JSON schema: request_files, release_files, edits, blocked_reason, no Markdown.
+Include all four fields. Use [] for unused arrays and "" for an empty blocked_reason.
+These are the only allowed top-level keys. Never emit type, json_object, response_format,
+schema, status or explanatory fields. JSON Schema's type and the API transport's json_object mode
+describe the format; they are NOT fields to copy into your response. Start with {"request_files": ...}.
+Each edit supplies only the file path and full replacement content for a loaded writable file.
+The compiler manages source versions internally and refreshes context if a file changed during the call.
+Do not include unchanged files, delete files or modify .arc artifacts. Edit only the supplied allowlist.
+validation_feedback describes the last failure. rejected_patch lists only the files proposed by
+the rejected reply: installed:false means NONE of that reply's edits are installed. Their replacement
+contents are deliberately omitted. Use the freshly supplied editable_files/read_only_files as the
+actual source state; earlier accepted patches remain installed. If the failed proposal coordinated
+several files, inspect their actual contents and submit all necessary changes together.
+blocked_reason is empty unless a real design/dependency gap prevents implementation. Do not claim success
+from reasoning: the compiler runs compilation and tests. Test edits must preserve scenario coverage
+and the intended acceptance behavior; never weaken tests merely to match a faulty implementation.
+
+## Shared database and seed
+backend/src/db/seed.ts is the single cumulative seed module. Every application startup resets only its
+selected database connection, creates schema, then inserts all accumulated fixture data before listening.
+Load seed.ts when GIVEN or description explicitly needs existing records. Add fixtures from this leaf;
+preserve all earlier fixtures. Do not create a session merely because a user account exists. Use the same
+encoding/hashing as real authentication. Seed must not derive fixtures from test code or incoming requests.
+Database connection and table-creation source are shared modules that can be loaded and edited explicitly.
+Do not add per-requirement seeds, test-local inserts, endpoint seeding or lazy fixture hacks.
+## Task: generate acceptance tests before implementing
+Write tests only at test_targets. Derive observable expected results from this requirement's scenarios.
+Requirements, scenarios and ancestor constraints define acceptance behavior. IR contracts identify typed
+seams and paths; visual analysis describes presentation. Neither implementation placeholders nor IR
+details may create new acceptance requirements. Do not test every visible control merely because the
+UI pass discovered the complete screenshot; test behavior covered by this leaf. If evidence is genuinely
+contradictory, explain it in blocked_reason instead of inventing policy, fixture data or exact outcomes.
+Do not edit application source yet, nor import seed to insert data inside tests. Assert real behavior,
+not placeholders, snapshots of generated skeletons, or the fact that an implementation throws.
+Write assertions for the FINISHED product even though current source is a scaffold: successful actions
+must assert the expected data, persistence, response and visible interaction from the scenarios.
+Never expect Not implemented/NotImplementedError, placeholder HTTP 501, empty placeholder UI or
+missing behavior as a successful outcome. Legitimate requirement-defined validation/authentication
+errors are still testable. Current source supplies import paths/signatures, never the acceptance oracle.
+Generated tests are compiled without execution first; implementation is completed before their first
+runtime execution. Do not make tests pass against the scaffold or suppress an expected future failure.
+unit: test business contracts when isolated seams are sufficient. integration: HTTP/DB interactions.
+e2e: user-visible browser behavior when this leaf has frontend UI. Use the loaded project test runner
+configuration and contracts. Tests must compile and be discovered; do not use skip/todo/fixme or mocks
+that replace the behavior under test. Pure compilation is not an acceptance assertion.
+Application starts in an isolated database with the cumulative startup seed; assertions never preseed
+inside test code. Initially create every assigned target; on correction return only changed files,
+with full replacement text. Preserve valid existing tests; unchanged targets need no edit.
+Unsupported test layers have no target. Infrastructure failures are repaired by the executor,
+not by weakening tests or changing expected behavior.
+
+## Return format
+{"type": "object", "additionalProperties": false, "properties": {"request_files": {"type": "array", "items": {"type": "string"}}, "release_files": {"type": "array", "items": {"type": "string"}}, "edits": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"file": {"type": "string"}, "content": {"type": "string"}}, "required": ["file", "content"]}}, "blocked_reason": {"type": "string"}}, "required": ["request_files", "release_files", "edits", "blocked_reason"]}
+## Example: read a file when needed
+{"request_files": ["tests/tdd/vitest.config.ts"], "release_files": [], "edits": [], "blocked_reason": ""}
+## Example: replace a changed file (use actual allowed paths and contents)
+{"request_files": [], "release_files": [], "edits": [{"file": "tests/unit/example.test.ts", "content": "<complete changed file contents>"}], "blocked_reason": ""}
+--- user ---
+## Current task
+
+```json
+{
+  "current_task": {
+    "requirement": {
+      "id": "REQ-1",
+      "name": "Public home page and account access",
+      "type": "ATOMIC",
+      "description": "未登录状态下，首页 / 显示 \"Register\"(role=link)，点击后打开 /register；同时显示 \"Login\"(role=link)，点击后打开 /login。注册或登录成功后，页头以文本显示已保存的用户名，并提供 \"Sign out\"(role=link)；点击 Sign out 清除持久保存的会话，恢复 Register 和 Login 链接。注册创建账户及会话；登录为已有账户重新建立会话。未登录状态的参考图片没有展示登录后的 Sign out 操作；其精确可见文案和可访问名称均为 \"Sign out\"。\n\n首页参考图还展示了可编辑的 \"From\"(role=textbox)、\"To\"(role=textbox) 和 \"Date\"(role=textbox)，各自使用上述可见标签和可访问名称；\"Search\"(role=button) 的可见文案为 \"Search\"，\"High-speed trains only\"(role=checkbox) 使用上述可见标签和可访问名称。交换车站图标的 role=button，可访问名称为 \"Swap stations\"，没有可见文本。三个横幅指示器的 role=button，可访问名称分别为 \"Show banner 1\"、\"Show banner 2\" 和 \"Show banner 3\"，没有可见文本。由于参考图片未提供文字标签，这里明确补充这些纯图标控件的名称。\n\nQuick Guide 区域提供 \"What ID documents are accepted by 12306.cn English website?\"(role=link)、\"What services does 12306.cn English website provide?\"(role=link)、\"What is endorsement?\"(role=link)、\"What are the rules of ticket endorsement?\"(role=link) 和 \"More>\"(role=link)，使用上述精确可见文案和可访问名称。账户需求未规定列车查询、横幅切换、交换车站和指南内容的行为；明确这些控件的身份，不会增加账户流程的验收条件。",
+      "parent_id": "ROOT",
+      "dependencies": [],
+      "pages": [
+        {
+          "name": "home",
+          "reference": "reference/homepage.png",
+          "analysis": "regions:\n- Page > Header: white top bar containing the railway brand block at the left and utility navigation at the right.\n- Page > Primary navigation bar: full-width blue bar directly beneath the header, containing Home, Booking and Travel guides entries.\n- Page > Hero banner: full-width nighttime railway photograph with three carousel indicators near the lower left and a wide search panel overlapping the banner's lower edge.\n- Hero banner > Search panel: white floating card containing an information notice, a horizontal From/To/Date/Search form row, and an unchecked High-speed trains only checkbox.\n- Page > Quick Guide section: white content area below the hero with a blue heading and two columns of FAQ links, plus a More link below the right column.\n- Page > Footer: pale gray full-width band with three centered lines of copyright, registration and policy text.\n- No sidebar, modal dialog, loading state, empty state or error message is visible.\n\nvisible_controls:\n- Header: China Railway 12306 brand mark at left, with a red circular railway emblem and product name block; Login and Register text links in the utility navigation.\n- Header utility navigation: My 12306 dropdown control with down chevron; 简体中文 language dropdown control with down chevron; Contact us link with telephone icon.\n- Primary navigation: Home link; Booking link with down chevron; Travel guides link with down chevron.\n- Hero banner: three carousel dot indicators; the first is filled/active and the next two are dimmed.\n- Search panel: From field with location-pin icon and visible value Beijing(北京).\n- Search panel: To field with location-pin icon and visible value Shanghai(上海).\n- Search panel: circular orange swap button with opposing arrows between the From and To fields.\n- Search panel: Date field with calendar icon and visible value Fri, May 29.\n- Search panel: large orange Search button.\n- Search panel: unchecked checkbox labeled High-speed trains only.\n- Quick Guide: four FAQ text links, each preceded by a small blue square bullet.\n- Quick Guide: More> text link below the right-hand FAQ column.\n- Footer: Privacy Policy and Cookie Statement links separated by a vertical bar.\n\nlayout_cues:\n- Header content sits in a wide horizontal container, with the brand block left-aligned and the utility navigation right-aligned; a thin separator divides the header from the navigation bar.\n- The primary navigation bar spans the full viewport width and is shallow; its items are left-aligned and separated by subtle vertical rules.\n- The hero banner is full-bleed and tall, occupying a major portion of the first screen, with the white search panel centered horizontally and overlapping its lower boundary.\n- The search panel is nearly as wide as the main content container, with generous internal padding; the notice spans the full card width above a single horizontal row of fields and button.\n- In the search form, From, To and Date occupy roughly equal columns, the orange Search button occupies the right end, and the checkbox sits alone below the fields at the left.\n- The Quick Guide section uses a wide centered content container; the heading is left-aligned, with two FAQ columns spaced widely apart and the More link under the right column.\n- There is substantial white space below the Quick Guide links before the footer begins.\n- The footer is full-width and centered; its three lines stack vertically with modest line spacing.\n\nstyle_cues:\n- Overall appearance is a corporate travel-booking interface: white header and content areas, a saturated blue navigation band and a dark photographic hero.\n- The header brand is prominent: a red circular railway emblem beside large dark Chinese characters and a smaller gray uppercase subtitle; utility links are smaller and muted dark gray.\n- The primary navigation uses white text on a medium-blue fill, with thin lighter vertical separators and no prominent individual button fills.\n- The hero image is a night scene dominated by dark sky, warm orange bokeh and light trails, and a silver-white high-speed train on an elevated structure; the image has high contrast against the white search card.\n- The search card is white with softly rounded corners and a light drop shadow; its notice text is small and gray with a gray circular information icon.\n- Search fields use thin light gray borders, white backgrounds, small gray labels with line icons, and larger dark values; the Search button is bright orange with white text.\n- Quick Guide uses a medium-large blue heading, small blue square list bullets, and dark gray link text; More> is lighter gray and lower emphasis.\n- The footer has a pale gray background with small centered gray text and links, creating low visual emphasis compared with the hero and search panel.\n\ntext_cues:\n- Header: 中国铁路12306; 12306 CHINA RAILWAY; Login; Register; My 12306; 简体中文; Contact us.\n- Primary navigation: Home; Booking; Travel guides.\n- Search panel notice: The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday).\n- Search panel fields: From; Beijing(北京); To; Shanghai(上海); Date; Fri, May 29.\n- Search panel action: Search.\n- Search panel checkbox: High-speed trains only.\n- Content section heading: Quick Guide.\n- Quick Guide links: What ID documents are accepted by 12306.cn English website?; What services does 12306.cn English website provide?\n- Quick Guide links: What is endorsement?; What are the rules of ticket endorsement?\n- Quick Guide action: More>.\n- Footer copyright: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED.\n- Footer registration: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证：京B2-20202537.\n- Footer links: Privacy Policy | Cookie Statement."
+        }
+      ],
+      "scenarios": [
+        {
+          "id": "REQ-1:scenario:1",
+          "name": "View the public home page and account entries",
+          "steps": [
+            {
+              "keyword": "GIVEN",
+              "content": "一位未登录访客打开首页 /。"
+            },
+            {
+              "keyword": "WHEN",
+              "content": "访客查看首页页头中的账户入口和导航。"
+            },
+            {
+              "keyword": "THEN",
+              "content": "首页显示 \"Register\"(role=link) 和 \"Login\"(role=link)，其可见文案和可访问名称精确匹配；两个链接分别指向 /register 和 /login。"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "document": "requirements.yaml",
+        "pointer": "/children/0"
+      },
+      "ancestor_constraints": [
+        {
+          "id": "ROOT",
+          "name": "Train Ticket Booking Demo",
+          "description": "这是一个小型网站，访客可以注册或登录。\n\n首页和注册页的共享导航提供 \"Home\"(role=link)、\"Booking\"(role=link)、\"Travel guides\"(role=link)、\"My 12306\"(role=link)、\"简体中文\"(role=button) 和 \"Contact us\"(role=link)，可见文案与参考图片完全一致。账户入口控件及其行为见 REQ-1。每个页面的页脚提供 \"Privacy Policy\"(role=link) 和 \"Cookie Statement\"(role=link)，可见文案和可访问名称相同。名称重复的控件通过其语义位置区分，例如注册协议区域与页脚。这里明确了参考控件的展示和交互身份；这次命名说明不增加下拉菜单内容、政策文档、联系服务或旅行指南的业务流程。"
+        }
+      ]
+    },
+    "phase": "test_generation",
+    "data_access": {
+      "read": [
+        "session",
+        "user_account",
+        "user_account.username"
+      ],
+      "write": [
+        "session",
+        "user_account"
+      ]
+    }
+  }
+}
+```
+--- user ---
+## Current module contracts and types
+
+```json
+{
+  "current_contracts": [
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "GET",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header. Absent for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"The saved account username rendered as text in the header after registration or login; null when no valid session is presented.\"}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "name": "GetCurrentSession",
+      "spec": "{no authentication precondition; session_id may be absent, unknown or expired} reads the session identifier supplied via the Cookie header and passes it to the session/account lookup {when the session exists and resolves to a user_account, responds authenticated=true with that account's username so the page header can display the saved username and offer Sign out; when session_id is absent, unknown, expired or resolves to no account, responds authenticated=false with username null so the header shows the Register and Login links} {no writes; creates, modifies and clears no session or account data}",
+      "id": "API_000001",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000001"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "DELETE",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "name": "SignOut",
+      "spec": "{invoked by an authenticated visitor clicking Sign out; session_id is read from the Cookie request header and may be absent or already unknown} deletes the persisted session identified by session_id and clears the session cookie carrier on the response by setting that cookie to an empty value with an expiry in the past, so the visitor returns to the unauthenticated state where the header again shows the Register and Login links {always responds with success, even when session_id is absent or unknown, and always clears the cookie} {no other session is affected; user_account rows, including the saved username, are preserved unchanged; no new session is created}",
+      "id": "API_000002",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000002"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Session identifier taken from RevokeSession.input.session_id; the calling module has already confirmed it is present and not null before calling.\"}}, \"required\": [\"session_id\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[]",
+      "callees": [],
+      "name": "DeleteSessionById",
+      "callers": [
+        "FUNC_000002"
+      ],
+      "write": "[\"session\"]",
+      "spec": "{session_id is supplied by RevokeSession.input.session_id after that module has already established that the value is present and not null; the row may or may not exist} delete the persisted session row whose primary key equals input.session_id {returns an empty result and succeeds whether the row was removed or no row matched input.session_id, so RevokeSession always completes successfully and SignOut can clear the session cookie to return the visitor to the unauthenticated state where the header shows Register and Login} {frame: only the session row whose primary key equals input.session_id is removed; user_account rows, including the saved username that GetCurrentSession renders after the next login, are preserved unchanged; no new session or account row is created and no other session is affected} {callees: none; the deletion is executed directly against the session data}. ",
+      "id": "DB_000002",
+      "kind": "DB",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"found\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"Stored user_account.username of the account that owns the matching session row; null when no session row matched.\"}}, \"required\": [\"found\", \"username\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Session identifier taken from ResolveActiveSession.input.session_id; the calling module has already confirmed it is present and not null before calling.\"}}, \"required\": [\"session_id\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[\"session\",\"user_account.username\"]",
+      "callees": [],
+      "name": "FindSessionAccountById",
+      "callers": [
+        "FUNC_000001"
+      ],
+      "write": "[]",
+      "spec": "{session_id is supplied by ResolveActiveSession.input.session_id after that module has already established that the value is present and not null; no other precondition} look up the persisted session row whose primary key equals input.session_id and, when such a row exists, resolve the owning user_account and read that account's stored username {when a session row matches input.session_id, return found=true and username = the owning account's stored username, which ResolveActiveSession maps directly to output.authenticated=true and output.username so GetCurrentSession can render the saved username as header text; when no session row matches input.session_id, return found=false and username=null, which ResolveActiveSession maps to output.authenticated=false and output.username=null so the header shows the Register and Login links} {the session row itself carries only its identifier, so existence of the row is the stored session state this lookup reports; this module performs no expiry comparison of its own} {frame: read-only; no session or user_account row is created, modified or deleted, and no cookie or other persistent state is altered} {callees: none; the lookup is executed directly against the session and user_account data}. ",
+      "id": "DB_000001",
+      "kind": "DB",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"anyOf\": [{\"type\": \"string\", \"format\": \"uuid\"}, {\"type\": \"null\"}], \"description\": \"Session identifier supplied by GetCurrentSession.payload.session_id, taken from the Cookie request header; absent or null for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "shared": false,
+      "callees": [
+        "DB_000001"
+      ],
+      "name": "ResolveActiveSession",
+      "callers": [
+        "API_000001"
+      ],
+      "spec": "{no authentication precondition; input.session_id may be absent, null, unknown or expired} if input.session_id is absent or null, return authenticated=false and username=null without performing any lookup; otherwise read the persisted session row identified by input.session_id together with the user_account it belongs to, obtaining that account's stored username and the session's validity {when such a session exists, is not expired and resolves to a user_account, return authenticated=true and username = that account's stored username so GetCurrentSession can render the saved username as header text; when the session is absent, unknown, expired or resolves to no account, return authenticated=false and username=null so the header shows the Register and Login links} {frame: no writes occur; no session or user_account row is created, modified or deleted, and no cookie is altered by this module} {downstream data requirement for the storage pass: a lookup by session primary key that returns the owning account's username and session expiry/liveness}.",
+      "id": "FUNC_000001",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"anyOf\": [{\"type\": \"string\", \"format\": \"uuid\"}, {\"type\": \"null\"}], \"description\": \"Session identifier supplied by SignOut.payload.session_id, taken from the Cookie request header; may be absent or already unknown.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "shared": false,
+      "callees": [
+        "DB_000002"
+      ],
+      "name": "RevokeSession",
+      "callers": [
+        "API_000002"
+      ],
+      "spec": "{invoked for a visitor clicking Sign out; input.session_id may be absent, null, unknown or already revoked} if input.session_id is present and not null, delete the persisted session row identified by input.session_id; if it is absent, null or matches no row, perform no deletion and continue {always succeeds and returns an empty result, carrying no data; SignOut then clears the session cookie on the response so the visitor returns to the unauthenticated state} {frame: only the session row for input.session_id is removed; user_account rows, including the saved username, are preserved unchanged; no new session is created and no other session is affected} {downstream data requirement for the storage pass: a delete of a session by primary key that succeeds whether or not the row exists}.",
+      "id": "FUNC_000002",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "id": "UI_000025",
+      "name": "Banner1Button",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 1.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000026",
+      "name": "Banner2Button",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 2.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000027",
+      "name": "Banner3Button",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 3.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000045",
+      "name": "PrivacyPolicyLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Ancestor constraint: footer provides Privacy Policy link with matching visible text and accessible name.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000046",
+      "name": "CookieStatementLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Ancestor constraint: footer provides Cookie Statement link with matching visible text and accessible name.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000002",
+      "name": "Header",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Home page header containing the account entries and navigation that the visitor views on the public home page.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000011",
+      "name": "HeaderAccountArea",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Account entry area at the right of the header. It takes exactly one of two states: guest (Register and Login links) or signed in (saved username text plus Sign out link).",
+      "data": [
+        "DATA_000001"
+      ],
+      "events": []
+    },
+    {
+      "id": "UI_000012",
+      "name": "GuestAccountLinks",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Unauthenticated visitor viewing the home header account area: Register and Login links are shown; the signed-in username and Sign out are hidden.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000013",
+      "name": "RegisterLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "User registration entry: Register link, role=link, with exact visible text and accessible name Register, opening /register.",
+      "data": [],
+      "events": [
+        "EVENT_000003"
+      ]
+    },
+    {
+      "id": "UI_000014",
+      "name": "LoginLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "User login entry: Login link, role=link, with exact visible text and accessible name Login, opening /login.",
+      "data": [],
+      "events": [
+        "EVENT_000004"
+      ]
+    },
+    {
+      "id": "UI_000015",
+      "name": "SignedInAccountArea",
+      "kind": "region",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "After a successful registration or login the header shows the saved username as plain text and a Sign out link instead of Register and Login.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000016",
+      "name": "UsernameDisplay",
+      "kind": "text",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Header displays the saved username of the registered or logged-in account as text.",
+      "data": [
+        "DATA_000001"
+      ],
+      "events": []
+    },
+    {
+      "id": "UI_000017",
+      "name": "SignOutLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Sign out link with exact visible text and accessible name Sign out; activating it clears the persisted session and restores the Register and Login state.",
+      "data": [],
+      "events": [
+        "EVENT_000002"
+      ]
+    },
+    {
+      "handler": "HANDLER_000002",
+      "ui": "UI_000017",
+      "name": "SignOutClicked",
+      "trigger": "click",
+      "id": "EVENT_000002",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "handler": "HANDLER_000003",
+      "ui": "UI_000013",
+      "name": "RegisterLinkClicked",
+      "trigger": "click",
+      "id": "EVENT_000003",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "handler": "HANDLER_000004",
+      "ui": "UI_000014",
+      "name": "LoginLinkClicked",
+      "trigger": "click",
+      "id": "EVENT_000004",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "id": "UI_000038",
+      "name": "QuickGuideLinkList",
+      "kind": "list",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Quick Guide link with exact visible text and accessible name What services does 12306.cn English website provide?, matching the second FAQ item.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000040",
+      "name": "QuickGuideFaqLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Quick Guide link with exact visible text and accessible name What ID documents are accepted by 12306.cn English website?.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000041",
+      "name": "MoreLink",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Quick Guide link with exact visible text and accessible name More>.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000030",
+      "name": "FromInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Editable From textbox with visible label and accessible name From holding the station value Beijing(北京).",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000031",
+      "name": "SwapStationsButton",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Swap stations icon-only button with accessible name Swap stations and no visible text, between From and To.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000032",
+      "name": "ToInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Editable To textbox with visible label and accessible name To holding the station value Shanghai(上海).",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000033",
+      "name": "DateInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Editable Date textbox with visible label and accessible name Date holding Fri, May 29.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000034",
+      "name": "SearchButton",
+      "kind": "button",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Search button with exact visible text and accessible name Search.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000035",
+      "name": "HighSpeedTrainsOnlyCheckbox",
+      "kind": "input",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "High-speed trains only checkbox with exact visible label and accessible name.",
+      "data": [],
+      "events": []
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [
+        "API_000001"
+      ],
+      "name": "LoadSessionState",
+      "write": [
+        "DATA_000001"
+      ],
+      "spec": "{a visitor opens the home page at /, authenticated or not} requests GET /api/session, passing no session id when the browser holds no session cookie and otherwise the current session cookie value {on a response with authenticated=true, stores session_state = {authenticated:true, username:<response.username>} so the header account area renders the saved username as text plus the Sign out link instead of Register and Login; on a response with authenticated=false, stores session_state = {authenticated:false, username:null} so the header renders the Register link pointing to /register and the Login link pointing to /login; if the request fails, session_state retains its initial unauthenticated value {authenticated:false, username:null}} {writes only session_state; creates or clears no session and changes no account data}",
+      "id": "HANDLER_000001",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "handler": "HANDLER_000001",
+      "ui": "UI_000001",
+      "name": "HomePageLoaded",
+      "trigger": "load",
+      "id": "EVENT_000001",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "NavigateToLogin",
+      "write": [],
+      "spec": "{the header account area shows the guest state with the Login link} activating the Login link navigates the visitor to /login {the login page is opened; no session or account data is written}",
+      "id": "HANDLER_000004",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "NavigateToRegister",
+      "write": [],
+      "spec": "{the header account area shows the guest state with the Register link} activating the Register link navigates the visitor to /register {the registration page is opened; no session or account data is written}",
+      "id": "HANDLER_000003",
+      "reqs": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [
+        "DATA_000001"
+      ],
+      "apis": [
+        "API_000002"
+      ],
+      "name": "SignOutAccount",
+      "write": [
+        "DATA_000001"
+      ],
+      "spec": "{the header currently shows the signed-in account area with the saved username text and the Sign out link} activating Sign out sends DELETE /api/session carrying the current session cookie so the server deletes the persisted session and clears the cookie {on success stores session_state = {authenticated:false, username:null}, so the header account area restores the Register link pointing to /register and the Login link pointing to /login and the username text and Sign out link are no longer shown; the visitor stays on the home page} {if the request fails, session_state is left unchanged so the signed-in header remains visible} {the account row and its saved username are preserved; no new session is created}",
+      "id": "HANDLER_000002",
+      "reqs": [
+        "REQ-1"
+      ]
+    },
+    {
+      "id": "UI_000001",
+      "name": "home",
+      "kind": "page",
+      "reqs": [
+        "REQ-1"
+      ],
+      "description": "Page: home.",
+      "data": [],
+      "events": [
+        "EVENT_000001"
+      ]
+    },
+    {
+      "owner": "UI_000001",
+      "schema": "{\"type\":\"object\",\"properties\":{\"authenticated\":{\"type\":\"boolean\"},\"username\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]}},\"required\":[\"authenticated\",\"username\"],\"additionalProperties\":false}",
+      "initial": "{\"authenticated\":false,\"username\":null}",
+      "name": "session_state",
+      "spec": "Current authentication state for the header account area, fetched from GET /api/session when the home page loads. authenticated=false with username null means show the Register and Login links; authenticated=true shows the saved username as text plus the Sign out link. Refreshed to the unauthenticated value after a successful Sign out (DELETE /api/session).",
+      "id": "DATA_000001",
+      "reqs": [
+        "REQ-1"
+      ]
+    }
+  ],
+  "types": []
+}
+```
+--- user ---
+## Always loaded requirement files
+
+```json
+{
+  "always_loaded_files": [
+    "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts",
+    "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts",
+    "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts",
+    "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts",
+    "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+    "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+    "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx"
+  ]
+}
+```
+--- user ---
+## Working context and latest read results
+
+```json
+{
+  "context_state": {
+    "file_chars": 12448,
+    "file_budget_chars": 400000,
+    "budget_exceeded": false,
+    "pinned_files": [
+      "tests/e2e/req-1-6aa2db3c.spec.ts",
+      "tests/integration/req-1-6aa2db3c.test.ts",
+      "tests/unit/req-1-6aa2db3c.test.ts"
+    ],
+    "automatically_released_files": [],
+    "last_operation": {
+      "source_call": 1,
+      "request": {
+        "request_files": [
+          "tests/tdd/vitest.config.ts",
+          "tests/tdd/setup.ts",
+          "tests/tdd/playwright.config.ts",
+          "package.json",
+          "backend/src/app.ts",
+          "backend/src/db/initialize.ts",
+          "backend/src/db/client.ts",
+          "backend/src/db/seed.ts"
+        ],
+        "release_files": []
+      },
+      "results": [
+        {
+          "file": "backend/src/app.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[backend/src/app.ts]"
+        },
+        {
+          "file": "backend/src/db/client.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[backend/src/db/client.ts]"
+        },
+        {
+          "file": "backend/src/db/initialize.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[backend/src/db/initialize.ts]"
+        },
+        {
+          "file": "backend/src/db/seed.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[backend/src/db/seed.ts]"
+        },
+        {
+          "file": "package.json",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[package.json]"
+        },
+        {
+          "file": "tests/tdd/playwright.config.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[tests/tdd/playwright.config.ts]"
+        },
+        {
+          "file": "tests/tdd/setup.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[tests/tdd/setup.ts]"
+        },
+        {
+          "file": "tests/tdd/vitest.config.ts",
+          "status": "loaded",
+          "exists": true,
+          "content_ref": "read_only_files[tests/tdd/vitest.config.ts]"
+        }
+      ],
+      "released_files": [],
+      "kept_pinned_files": []
+    }
+  }
+}
+```
+--- user ---
+## Editable files with current contents
+
+### editable_files
+
+```json
+{
+  "tests/e2e/req-1-6aa2db3c.spec.ts": {
+    "content": "",
+    "exists": false,
+    "context_location": "editable_files"
+  },
+  "tests/integration/req-1-6aa2db3c.test.ts": {
+    "content": "",
+    "exists": false,
+    "context_location": "editable_files"
+  },
+  "tests/unit/req-1-6aa2db3c.test.ts": {
+    "content": "",
+    "exists": false,
+    "context_location": "editable_files"
+  }
+}
+```
+--- user ---
+## Read-only source and phase-protected tests
+
+```json
+{
+  "read_only_files": {
+    "backend/src/app.ts": {
+      "content": "import express from \"express\";\nimport { fileURLToPath } from \"node:url\";\n\nexport function createApp() {\n  const app = express();\n  app.use(express.json());\n  app.get(\"/__arc/health\", (_request, response) => { response.json({ status: \"ok\" }); });\n  app.get(\"/api/session\", (_request, response) => {\n    response.status(501).json({ error: \"Not implemented\", module_id: \"API_000001\" });\n  });\n  app.delete(\"/api/session\", (_request, response) => {\n    response.status(501).json({ error: \"Not implemented\", module_id: \"API_000002\" });\n  });\n  app.post(\"/api/register\", (_request, response) => {\n    response.status(501).json({ error: \"Not implemented\", module_id: \"API_000003\" });\n  });\n  app.use(express.static(fileURLToPath(new URL(\"../../frontend/dist/\", import.meta.url))));\n  app.use((request, response, next) => {\n    if (request.method !== \"GET\" || request.path.startsWith(\"/api\")) { next(); return; }\n    response.sendFile(fileURLToPath(new URL(\"../../frontend/dist/index.html\", import.meta.url)));\n  });\n  return app;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/db/client.ts": {
+      "content": "import Database from \"better-sqlite3\";\nimport { mkdirSync } from \"node:fs\";\nimport { dirname, resolve } from \"node:path\";\nimport { fileURLToPath } from \"node:url\";\nconst defaultDatabase = fileURLToPath(new URL(\"../../data/app.db\", import.meta.url));\nexport function createDatabaseClient(url = process.env.DATABASE_URL ?? defaultDatabase) {\n  if (!url.trim()) throw new Error(\"DATABASE_URL must not be empty\");\n  if (url !== \":memory:\") mkdirSync(dirname(resolve(url)), { recursive: true });\n  const connection = new Database(url);\n  connection.pragma(\"foreign_keys = ON\");\n  return { connection, close: () => connection.close() };\n}\nexport type DatabaseClient = ReturnType<typeof createDatabaseClient>;\nexport let sqliteDatabase: Database.Database;\nexport function bindDatabaseClient(client: DatabaseClient): void { sqliteDatabase = client.connection; }\nexport function schemaTransaction<T>(work: () => T): T { return sqliteDatabase.transaction(work)(); }\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/db/initialize.ts": {
+      "content": "import type Database from \"better-sqlite3\";\nexport const schemaInitializationStatements = [\n  \"CREATE TABLE IF NOT EXISTS \\\"session\\\" (\\n  \\\"id\\\" TEXT NOT NULL,\\n  \\\"user_account_id\\\" TEXT NOT NULL,\\n  CONSTRAINT \\\"session_primary_key_2929117aecd7\\\" PRIMARY KEY (\\\"id\\\"),\\n  CONSTRAINT \\\"session_foreign_key_9d52369112e0\\\" FOREIGN KEY (\\\"user_account_id\\\") REFERENCES \\\"user_account\\\" (\\\"id\\\") ON DELETE RESTRICT ON UPDATE RESTRICT\\n);\",\n  \"CREATE TABLE IF NOT EXISTS \\\"user_account\\\" (\\n  \\\"date_of_birth\\\" TEXT,\\n  \\\"email\\\" TEXT,\\n  \\\"gender\\\" TEXT,\\n  \\\"id\\\" TEXT NOT NULL,\\n  \\\"name\\\" TEXT,\\n  \\\"nationality\\\" TEXT,\\n  \\\"passport_expiration_date\\\" TEXT,\\n  \\\"passport_number\\\" TEXT,\\n  \\\"password\\\" TEXT,\\n  \\\"username\\\" TEXT,\\n  CONSTRAINT \\\"user_account_unique_611e351af19a\\\" UNIQUE (\\\"email\\\" COLLATE NOCASE),\\n  CONSTRAINT \\\"user_account_primary_key_59210168e6ea\\\" PRIMARY KEY (\\\"id\\\"),\\n  CONSTRAINT \\\"user_account_unique_8d28a75f93bd\\\" UNIQUE (\\\"username\\\")\\n);\"\n] as const;\nexport function initializeDatabase(connection: Database.Database): void {\n  connection.pragma(\"foreign_keys = ON\");\n  connection.transaction(() => {\n    for (const statement of schemaInitializationStatements) connection.exec(statement);\n  })();\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/db/seed.ts": {
+      "content": "// Shared startup fixture module. Add cumulative requirement fixtures in the transaction below.\nimport type Database from \"better-sqlite3\";\nimport { initializeDatabase } from \"./initialize.js\";\n\n/** Reset only this connection's database, then create schema and insert all accumulated fixtures. */\nexport function seedDatabase(connection: Database.Database): void {\n  connection.pragma(\"foreign_keys = OFF\");\n  try {\n    connection.transaction(() => {\n      const tables = connection.prepare(\"SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'\").all() as Array<{ name: string }>;\n      for (const { name } of tables) connection.exec('DROP TABLE IF EXISTS \"' + name.replaceAll('\"', '\"\"') + '\"');\n    })();\n  } finally {\n    connection.pragma(\"foreign_keys = ON\");\n  }\n  initializeDatabase(connection);\n  connection.transaction(() => {\n    // Add INSERT statements here. Preserve fixtures accumulated for earlier requirements.\n    // Use the application's actual password/hash encoding; do not create a logged-in session\n    // unless the requirement explicitly states one already exists.\n  })();\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "package.json": {
+      "content": "{\n  \"name\": \"arc-application\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"workspaces\": [\n    \"backend\",\n    \"frontend\"\n  ],\n  \"scripts\": {\n    \"build\": \"npm run build -w @arc/frontend && npm run build -w @arc/backend\",\n    \"start\": \"npm run start -w @arc/backend\",\n    \"dev:backend\": \"npm run dev -w @arc/backend\",\n    \"dev:frontend\": \"npm run dev -w @arc/frontend\"\n  },\n  \"devDependencies\": {\n    \"@playwright/test\": \"1.55.0\",\n    \"vitest\": \"3.2.4\",\n    \"supertest\": \"7.1.4\",\n    \"@types/supertest\": \"6.0.3\",\n    \"tsx\": \"4.20.5\"\n  }\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "tests/tdd/playwright.config.ts": {
+      "content": "import { defineConfig } from \"@playwright/test\";\nconst port = process.env.ARC_TDD_PORT ?? \"33100\";\nexport default defineConfig({\n  testDir: \"../e2e\", workers: 1, fullyParallel: false, retries: 0,\n  outputDir: process.env.ARC_TDD_RESULTS_DIR ?? \"../test-results\",\n  timeout: 30000, use: { baseURL: \"http://127.0.0.1:\" + port },\n  webServer: process.env.ARC_TDD_EXTERNAL_SERVER === \"1\" ? undefined : { command: \"node backend/dist/server.js\", cwd: \"../..\",\n    url: \"http://127.0.0.1:\" + port + \"/__arc/health\", reuseExistingServer: false,\n    env: { PORT: port, NODE_ENV: \"test\", DATABASE_URL: process.env.DATABASE_URL ?? \":memory:\" },\n    timeout: 30000,\n  },\n});\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "tests/tdd/setup.ts": {
+      "content": "import { afterAll } from \"vitest\";\nimport { createDatabaseClient, bindDatabaseClient } from \"../../backend/src/db/client.js\";\nimport { seedDatabase } from \"../../backend/src/db/seed.js\";\nconst client = createDatabaseClient(process.env.DATABASE_URL ?? \":memory:\");\nseedDatabase(client.connection);\nbindDatabaseClient(client);\nafterAll(() => client.close());\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "tests/tdd/vitest.config.ts": {
+      "content": "import { defineConfig } from \"vitest/config\";\nexport default defineConfig({ test: {\n  include: [\"tests/unit/**/*.test.ts\", \"tests/integration/**/*.test.ts\"],\n  setupFiles: [\"tests/tdd/setup.ts\"], fileParallelism: false, maxWorkers: 1,\n  testTimeout: 15000, hookTimeout: 15000,\n} });\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts": {
+      "content": "// Generated contract skeleton.\nexport type GetCurrentSessionInput = { \"session_id\"?: string; };\nexport type GetCurrentSessionOutput = { \"authenticated\": boolean; \"username\": (string | null); };\nexport async function GetCurrentSession(_input: GetCurrentSessionInput): Promise<GetCurrentSessionOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts": {
+      "content": "// Generated contract skeleton.\nexport type SignOutInput = { \"session_id\"?: string; };\nexport type SignOutOutput = {  };\nexport async function SignOut(_input: SignOutInput): Promise<SignOutOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts": {
+      "content": "// Generated contract skeleton.\nexport type DeleteSessionByIdInput = { \"session_id\": string; };\nexport type DeleteSessionByIdOutput = {  };\nexport async function DeleteSessionById(_input: DeleteSessionByIdInput): Promise<DeleteSessionByIdOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts": {
+      "content": "// Generated contract skeleton.\nexport type FindSessionAccountByIdInput = { \"session_id\": string; };\nexport type FindSessionAccountByIdOutput = { \"found\": boolean; \"username\": (string | null); };\nexport async function FindSessionAccountById(_input: FindSessionAccountByIdInput): Promise<FindSessionAccountByIdOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts": {
+      "content": "// Generated contract skeleton.\nexport type ResolveActiveSessionInput = { \"session_id\"?: (string | null); };\nexport type ResolveActiveSessionOutput = { \"authenticated\": boolean; \"username\": (string | null); };\nexport async function ResolveActiveSession(_input: ResolveActiveSessionInput): Promise<ResolveActiveSessionOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts": {
+      "content": "// Generated contract skeleton.\nexport type RevokeSessionInput = { \"session_id\"?: (string | null); };\nexport type RevokeSessionOutput = {  };\nexport async function RevokeSession(_input: RevokeSessionInput): Promise<RevokeSessionOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx": {
+      "content": "export type BannerIndicatorsState = {  };\nexport type BannerIndicatorsProps = {};\nexport function BannerIndicators(_props: BannerIndicatorsProps) {\n  return <section data-ui-id=\"UI_000024\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx": {
+      "content": "export type FooterState = {  };\nexport type FooterProps = {};\nexport function Footer(_props: FooterProps) {\n  return <section data-ui-id=\"UI_000042\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/Header.tsx": {
+      "content": "import { BrandBlock } from \"./BrandBlock\";\nimport { HeaderUtilityNav } from \"./HeaderUtilityNav\";\nimport { HeaderAccountArea } from \"./HeaderAccountArea\";\nexport type HeaderState = {  };\nexport type HeaderProps = {};\nexport function Header(_props: HeaderProps) {\n  return <section data-ui-id=\"UI_000002\">\n    <BrandBlock />\n    <HeaderUtilityNav />\n    <HeaderAccountArea />\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx": {
+      "content": "export type HeaderAccountAreaState = {  };\nexport type HeaderAccountAreaProps = {};\nexport function HeaderAccountArea(_props: HeaderAccountAreaProps) {\n  return <section data-ui-id=\"UI_000011\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx": {
+      "content": "export type QuickGuideLinkListState = {  };\nexport type QuickGuideLinkListProps = {};\nexport function QuickGuideLinkList(_props: QuickGuideLinkListProps) {\n  return <section data-ui-id=\"UI_000038\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx": {
+      "content": "export type SearchPanelState = {  };\nexport type SearchPanelProps = {};\nexport function SearchPanel(_props: SearchPanelProps) {\n  return <section data-ui-id=\"UI_000028\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts": {
+      "content": "export type LoadSessionStateInput = {  };\nexport type LoadSessionStateOutput = {  };\nexport async function LoadSessionState(_input: LoadSessionStateInput): Promise<LoadSessionStateOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts": {
+      "content": "export type NavigateToLoginInput = {  };\nexport type NavigateToLoginOutput = {  };\nexport async function NavigateToLogin(_input: NavigateToLoginInput): Promise<NavigateToLoginOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts": {
+      "content": "export type NavigateToRegisterInput = {  };\nexport type NavigateToRegisterOutput = {  };\nexport async function NavigateToRegister(_input: NavigateToRegisterInput): Promise<NavigateToRegisterOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts": {
+      "content": "export type SignOutAccountInput = {  };\nexport type SignOutAccountOutput = {  };\nexport async function SignOutAccount(_input: SignOutAccountInput): Promise<SignOutAccountOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx": {
+      "content": "import { Header } from \"../components/Header\";\nimport { PrimaryNavigation } from \"../components/PrimaryNavigation\";\nimport { HeroBanner } from \"../components/HeroBanner\";\nimport { QuickGuideSection } from \"../components/QuickGuideSection\";\nimport { Footer } from \"../components/Footer\";\nexport type HomeState = { \"session_state\": { \"authenticated\": boolean; \"username\": (string | null); }; };\nexport type HomeProps = {};\nexport function Home(_props: HomeProps) {\n  return <section data-ui-id=\"UI_000001\">\n    <Header />\n    <PrimaryNavigation />\n    <HeroBanner />\n    <QuickGuideSection />\n    <Footer />\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    }
+  }
+}
+```
+--- user ---
+## All shared module summaries
+
+```json
+{
+  "shared_catalog": [
+    {
+      "file_path": "frontend/src/App.tsx",
+      "symbol_ids": [
+        "SYSTEM.APP",
+        "UI_APP"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Application: Application root.",
+        "React app/page composition"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "backend/src/server.ts",
+      "symbol_ids": [
+        "SYSTEM.SERVER_START"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Startup reset/seed and HTTP server lifecycle"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/config/server.ts",
+      "symbol_ids": [
+        "SYSTEM.SERVER_CONFIG"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Configured default port and PORT environment override"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/types/contracts.ts",
+      "symbol_ids": [
+        "SYSTEM.BACKEND_TYPES"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Backend exported DTO types"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/main.tsx",
+      "symbol_ids": [
+        "SYSTEM.FRONTEND_ENTRY"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "React mount entrypoint"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/types/contracts.ts",
+      "symbol_ids": [
+        "SYSTEM.FRONTEND_TYPES"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Frontend exported DTO types"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/index.css",
+      "symbol_ids": [
+        "SYSTEM.STYLES"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Shared application styles"
+      ],
+      "symbol_count": 1
+    }
+  ]
+}
+```
+--- user ---
+## Related module discovery
+
+```json
+{
+  "related_catalog": [
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts",
+      "symbol_ids": [
+        "API_000003"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{any unauthenticated visitor may call; the body supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms, all of which are mandatory} validates the supplied values before any write: agreed_to_terms must be true; name must contain 2-100 non-whitespace characters; passport_number must consist of 6..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts",
+      "symbol_ids": [
+        "DB_000003"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{username is supplied by CheckAccountUniqueness.input.username and email by CheckAccountUniqueness.input.email after every syntactic registration check has already passed; no other precondition} perform an existence lookup on the persisted user_account rows for a row whose username equals input.username under exact comparison, and an existence lookup for a row whose email equals input.email ign..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts",
+      "symbol_ids": [
+        "DB_000005"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{CreateTravelerAccount has already inserted the account, has locally generated input.session_id and passes as input.account_id the value it received from InsertUserAccount.output.account_id; no other precondition} insert exactly one new session row whose primary key is input.session_id and which is associated with the account identified by input.account_id, so that a later FindSessionAccountByI..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts",
+      "symbol_ids": [
+        "DB_000004"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the caller CreateTravelerAccount has already validated every value through ValidateRegistration and has locally generated input.account_id and computed input.password_hash from the supplied clear-text password; no other precondition} insert exactly one new user_account row whose primary key is input.account_id holding input.nationality, input.name, input.passport_number, input.passport_expirat..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts",
+      "symbol_ids": [
+        "FUNC_000003"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{username and email are supplied by ValidateRegistration.input.username and ValidateRegistration.input.email after all syntactic registration checks have already passed; no other precondition} look up the persisted user_account data for an existing account whose username equals input.username under exact comparison and for an existing account whose email equals input.email under case-insensitiv..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts",
+      "symbol_ids": [
+        "FUNC_000005"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{API_000003 supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms for an unauthenticated visitor; the API has already received them from the registration form} pass all eleven supplied values unchanged to ValidateRegistration and inspect its result. {when ValidateRegistration returns valid=fa..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts",
+      "symbol_ids": [
+        "FUNC_000004"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{API_000003 supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms; any unauthenticated visitor may register} validate the supplied values in this order before any write: input.agreed_to_terms must be true; input.name must contain between 2 and 100 non-whitespace characters; input.passport_num..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "symbol_ids": [
+        "EVENT_000006",
+        "UI_000059",
+        "UI_000060",
+        "UI_000061",
+        "UI_000062",
+        "UI_000063"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "BreadcrumbRegion: The breadcrumb strip realizes the visible \"Current location: HOME > Create an account\" path specified for /register.",
+        "BreadcrumbCurrentLocationText: Breadcrumb label with exact visible text \"Current location:\".",
+        "BreadcrumbHomeLink: The breadcrumb \"HOME\" entry is a link with the exact visible text \"HOME\" and returns to /.",
+        "BreadcrumbSeparator: Breadcrumb separator showing the visible text \">\"."
+      ],
+      "symbol_count": 6
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "symbol_ids": [
+        "UI_000111",
+        "UI_000112",
+        "UI_000113",
+        "UI_000114",
+        "UI_000115",
+        "UI_000116"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "RegistrationFooter: Full-width pale footer below the registration card, containing copyright, registration-number and policy-link text.",
+        "FooterCopyrightText: Footer line with the exact visible copyright text \"COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\".",
+        "FooterRegistrationNumbersText: Footer line with the exact visible registration-number text \"京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\".",
+        "FooterPolicyLinks: Footer policy-link row centered in the footer."
+      ],
+      "symbol_count": 6
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "symbol_ids": [
+        "EVENT_000007",
+        "EVENT_000008",
+        "EVENT_000009",
+        "EVENT_000010",
+        "EVENT_000011",
+        "EVENT_000012",
+        "EVENT_000013",
+        "EVENT_000014",
+        "EVENT_000015",
+        "EVENT_000016",
+        "EVENT_000017",
+        "EVENT_000018",
+        "UI_000065",
+        "UI_000066",
+        "UI_000067",
+        "UI_000068",
+        "UI_000069",
+        "UI_000070",
+        "UI_000071",
+        "UI_000072",
+        "UI_000073",
+        "UI_000074",
+        "UI_000075",
+        "UI_000076",
+        "UI_000077",
+        "UI_000078",
+        "UI_000079",
+        "UI_000080",
+        "UI_000081",
+        "UI_000082",
+        "UI_000083",
+        "UI_000084",
+        "UI_000085",
+        "UI_000086",
+        "UI_000087",
+        "UI_000088",
+        "UI_000089",
+        "UI_000090",
+        "UI_000091",
+        "UI_000092",
+        "UI_000093",
+        "UI_000094",
+        "UI_000095",
+        "UI_000096",
+        "UI_000097",
+        "UI_000098",
+        "UI_000099",
+        "UI_000100",
+        "UI_000101",
+        "UI_000102",
+        "UI_000103",
+        "UI_000104",
+        "UI_000105",
+        "UI_000106",
+        "UI_000107",
+        "UI_000108",
+        "UI_000109",
+        "UI_000110"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "RegistrationForm: The registration form groups all required account fields and the consent block in the reference display order.",
+        "NationalityRow: Form row for selecting nationality.",
+        "NationalityLabel: Visible field label \"Nationality\" for the nationality control.",
+        "NationalitySelect: \"Nationality\" is a combobox with the visible label \"Nationality\", initially displays \"Please select\", and supports choosing \"Vietnam\"; the scenario selects Vietnam."
+      ],
+      "symbol_count": 58
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "symbol_ids": [
+        "EVENT_000005",
+        "UI_000048",
+        "UI_000049",
+        "UI_000050",
+        "UI_000051",
+        "UI_000052",
+        "UI_000053",
+        "UI_000054"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "RegistrationHeader: Top white header containing the China Railway 12306 brand and the account, language and contact utilities.",
+        "BrandLogo: Railway emblem with the visible 中国铁路12306 and 12306 CHINA RAILWAY branding at the left of the header.",
+        "LoginLink: Header account entry with visible text \"Login\".",
+        "RegisterLink: The unauthenticated page header provides \"Register\" (role=link) with the exact visible name; the scenario starts by clicking it to open /register."
+      ],
+      "symbol_count": 8
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+      "symbol_ids": [
+        "EVENT_000015",
+        "HANDLER_000014"
+      ],
+      "reqs": [
+        "REQ-2"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{the registration \"Confirm Password\" field is displayed empty with hidden input content} the visitor types the confirmation password {confirm_password equals the entered hidden text; no API calls and the match with password is evaluated on submission}",
+        "ConfirmPasswordEntered"
+      ],
+      "symbol_count": 2
+    }
+  ]
+}
+```
+--- user ---
+## Discoverable file index
+
+```json
+{
+  "file_index": [
+    {
+      "file": "backend/package.json",
+      "symbols": [
+        "CONFIG.package.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "backend/src/app.ts",
+      "symbols": [
+        "SYSTEM.SERVER_ROUTES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/config/server.ts",
+      "symbols": [
+        "SYSTEM.SERVER_CONFIG"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/db/client.ts",
+      "symbols": [
+        "SYSTEM.DB_CLIENT"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/db/initialize.ts",
+      "symbols": [
+        "SYSTEM.DB_SCHEMA",
+        "TABLE.session",
+        "TABLE.user_account"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/db/seed.ts",
+      "symbols": [
+        "SYSTEM.SEED"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts",
+      "symbols": [
+        "API_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts",
+      "symbols": [
+        "API_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts",
+      "symbols": [
+        "API_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts",
+      "symbols": [
+        "DB_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts",
+      "symbols": [
+        "DB_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts",
+      "symbols": [
+        "DB_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts",
+      "symbols": [
+        "DB_000005"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts",
+      "symbols": [
+        "DB_000004"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts",
+      "symbols": [
+        "FUNC_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts",
+      "symbols": [
+        "FUNC_000005"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts",
+      "symbols": [
+        "FUNC_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts",
+      "symbols": [
+        "FUNC_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts",
+      "symbols": [
+        "FUNC_000004"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/server.ts",
+      "symbols": [
+        "SYSTEM.SERVER_START"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/types/contracts.ts",
+      "symbols": [
+        "SYSTEM.BACKEND_TYPES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/tsconfig.json",
+      "symbols": [
+        "CONFIG.tsconfig.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/package.json",
+      "symbols": [
+        "CONFIG.package.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/src/App.tsx",
+      "symbols": [
+        "SYSTEM.APP",
+        "UI_APP"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "symbols": [
+        "UI_000024",
+        "UI_000025",
+        "UI_000026",
+        "UI_000027"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "symbols": [
+        "UI_000003",
+        "UI_000004",
+        "UI_000005",
+        "UI_000006"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "symbols": [
+        "EVENT_000006",
+        "UI_000059",
+        "UI_000060",
+        "UI_000061",
+        "UI_000062",
+        "UI_000063"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "symbols": [
+        "UI_000042",
+        "UI_000043",
+        "UI_000044",
+        "UI_000045",
+        "UI_000046"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+      "symbols": [
+        "UI_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "symbols": [
+        "EVENT_000002",
+        "EVENT_000003",
+        "EVENT_000004",
+        "UI_000011",
+        "UI_000012",
+        "UI_000013",
+        "UI_000014",
+        "UI_000015",
+        "UI_000016",
+        "UI_000017"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "symbols": [
+        "UI_000007",
+        "UI_000008",
+        "UI_000009",
+        "UI_000010"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx",
+      "symbols": [
+        "UI_000022",
+        "UI_000023"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "symbols": [
+        "UI_000018",
+        "UI_000019",
+        "UI_000020",
+        "UI_000021"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "symbols": [
+        "UI_000038",
+        "UI_000039",
+        "UI_000040",
+        "UI_000041"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx",
+      "symbols": [
+        "UI_000036",
+        "UI_000037"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationCard.tsx",
+      "symbols": [
+        "UI_000064"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "symbols": [
+        "UI_000111",
+        "UI_000112",
+        "UI_000113",
+        "UI_000114",
+        "UI_000115",
+        "UI_000116"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "symbols": [
+        "EVENT_000007",
+        "EVENT_000008",
+        "EVENT_000009",
+        "EVENT_000010",
+        "EVENT_000011",
+        "EVENT_000012",
+        "EVENT_000013",
+        "EVENT_000014",
+        "EVENT_000015",
+        "EVENT_000016",
+        "EVENT_000017",
+        "EVENT_000018",
+        "UI_000065",
+        "UI_000066",
+        "UI_000067",
+        "UI_000068",
+        "UI_000069",
+        "UI_000070",
+        "UI_000071",
+        "UI_000072",
+        "UI_000073",
+        "UI_000074",
+        "UI_000075",
+        "UI_000076",
+        "UI_000077",
+        "UI_000078",
+        "UI_000079",
+        "UI_000080",
+        "UI_000081",
+        "UI_000082",
+        "UI_000083",
+        "UI_000084",
+        "UI_000085",
+        "UI_000086",
+        "UI_000087",
+        "UI_000088",
+        "UI_000089",
+        "UI_000090",
+        "UI_000091",
+        "UI_000092",
+        "UI_000093",
+        "UI_000094",
+        "UI_000095",
+        "UI_000096",
+        "UI_000097",
+        "UI_000098",
+        "UI_000099",
+        "UI_000100",
+        "UI_000101",
+        "UI_000102",
+        "UI_000103",
+        "UI_000104",
+        "UI_000105",
+        "UI_000106",
+        "UI_000107",
+        "UI_000108",
+        "UI_000109",
+        "UI_000110"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "symbols": [
+        "EVENT_000005",
+        "UI_000048",
+        "UI_000049",
+        "UI_000050",
+        "UI_000051",
+        "UI_000052",
+        "UI_000053",
+        "UI_000054"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "symbols": [
+        "UI_000055",
+        "UI_000056",
+        "UI_000057",
+        "UI_000058"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "symbols": [
+        "UI_000028",
+        "UI_000029",
+        "UI_000030",
+        "UI_000031",
+        "UI_000032",
+        "UI_000033",
+        "UI_000034",
+        "UI_000035"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+      "symbols": [
+        "EVENT_000015",
+        "HANDLER_000014"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+      "symbols": [
+        "EVENT_000011",
+        "HANDLER_000010"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+      "symbols": [
+        "EVENT_000016",
+        "HANDLER_000015"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+      "symbols": [
+        "EVENT_000012",
+        "HANDLER_000011"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+      "symbols": [
+        "EVENT_000008",
+        "HANDLER_000007"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+      "symbols": [
+        "EVENT_000007",
+        "HANDLER_000006"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+      "symbols": [
+        "EVENT_000010",
+        "HANDLER_000009"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+      "symbols": [
+        "EVENT_000009",
+        "HANDLER_000008"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts",
+      "symbols": [
+        "EVENT_000014",
+        "HANDLER_000013"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts",
+      "symbols": [
+        "EVENT_000017",
+        "HANDLER_000016"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts",
+      "symbols": [
+        "EVENT_000013",
+        "HANDLER_000012"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+      "symbols": [
+        "EVENT_000001",
+        "HANDLER_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts",
+      "symbols": [
+        "EVENT_000006",
+        "HANDLER_000005"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+      "symbols": [
+        "EVENT_000004",
+        "HANDLER_000004"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+      "symbols": [
+        "EVENT_000003",
+        "EVENT_000005",
+        "HANDLER_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+      "symbols": [
+        "EVENT_000002",
+        "HANDLER_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts",
+      "symbols": [
+        "EVENT_000018",
+        "HANDLER_000017"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+      "symbols": [
+        "DATA_000001",
+        "EVENT_000001",
+        "UI_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "symbols": [
+        "DATA_000002",
+        "DATA_000003",
+        "DATA_000004",
+        "DATA_000005",
+        "DATA_000006",
+        "DATA_000007",
+        "DATA_000008",
+        "DATA_000009",
+        "DATA_000010",
+        "DATA_000011",
+        "DATA_000012",
+        "DATA_000013",
+        "DATA_000014",
+        "UI_000047"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/index.css",
+      "symbols": [
+        "SYSTEM.STYLES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/main.tsx",
+      "symbols": [
+        "SYSTEM.FRONTEND_ENTRY"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/types/contracts.ts",
+      "symbols": [
+        "SYSTEM.FRONTEND_TYPES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/tsconfig.app.json",
+      "symbols": [
+        "CONFIG.tsconfig.app.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/tsconfig.json",
+      "symbols": [
+        "CONFIG.tsconfig.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/vite.config.ts",
+      "symbols": [
+        "CONFIG.vite.config.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "package.json",
+      "symbols": [
+        "CONFIG.WORKSPACE"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/e2e/req-1-6aa2db3c.spec.ts",
+      "symbols": [
+        "TEST.tests/e2e/req-1-6aa2db3c.spec.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/integration/req-1-6aa2db3c.test.ts",
+      "symbols": [
+        "TEST.tests/integration/req-1-6aa2db3c.test.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/tdd/playwright.config.ts",
+      "symbols": [
+        "SYSTEM.TEST.playwright.config.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/tdd/setup.ts",
+      "symbols": [
+        "SYSTEM.TEST.setup.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/tdd/vitest.config.ts",
+      "symbols": [
+        "SYSTEM.TEST.vitest.config.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/unit/req-1-6aa2db3c.test.ts",
+      "symbols": [
+        "TEST.tests/unit/req-1-6aa2db3c.test.ts"
+      ],
+      "kind": "acceptance_test"
+    }
+  ]
+}
+```
+--- user ---
+## Acceptance test targets
+
+```json
+{
+  "test_targets": [
+    "tests/unit/req-1-6aa2db3c.test.ts",
+    "tests/integration/req-1-6aa2db3c.test.ts",
+    "tests/e2e/req-1-6aa2db3c.spec.ts"
+  ]
+}
+```
+--- user ---
+## Observed gates, failing test context and correction feedback
+
+```json
+{
+  "gate_results": [],
+  "failure_context": {
+    "test_files": [],
+    "regression_requirements": []
+  }
+}
+```
+
+[2026-10-22T07:28:43.494954+00:00] [tdd_test_generation] MODEL_OUTPUT
+{"request_files":["backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts","backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts","frontend/src/App.tsx","frontend/src/main.tsx"],"blocked_reason":"","release_files":[],"edits":[]}
+
+[2026-10-22T07:28:43.494954+00:00] [tdd_test_generation] MODEL_USAGE {"completion_tokens": 1744, "prompt_tokens": 24373, "total_tokens": 26117, "completion_tokens_details": {"accepted_prediction_tokens": null, "audio_tokens": null, "reasoning_tokens": 1669, "rejected_prediction_tokens": null, "text_tokens": null}, "prompt_tokens_details": {"audio_tokens": null, "cache_write_tokens": null, "cached_tokens": 10880, "image_tokens": null, "text_tokens": null}}
+
+[2026-10-22T07:28:43.494954+00:00] [tdd_test_generation] MODEL_REASONING
+I need to write three test files: unit, integration, e2e.
+
+Key contract details:
+- GET /api/session returns {authenticated, username}. Anonymous → authenticated=false, username=null.
+- DELETE /api/session always success, clears cookie.
+- Session cookie name? Not specified explicitly. Hmm. The spec says "session_id ... extracted from the Cookie request header". Cookie carrier name is not specified. Tests need to handle this. For integration test, I can register an account via POST /api/register (REQ-2) to get a session cookie, then check GET /api/session. But REQ-2 isn't implemented yet maybe... it's in related catalog. Tests should assert finished product. But REQ-1 leaf testing may legitimately use registration endpoint, since REQ-1 says "注册创建账户及会话；登录为已有账户重新建立会话". Hmm, but registration is REQ-2.
+
+Better approach: integration tests focus on API_000001 and API_000002 contracts:
+- GET /api/session without cookie → 200, authenticated false, username null.
+- GET with unknown session id cookie → authenticated false username null.
+- DELETE without cookie → success (200), clears cookie (Set-Cookie with empty value / expired).
+- DELETE with unknown cookie → success.
+
+For the authenticated branch, we need a session in the DB. We can't preseed inside tests per rules... "assertions never preseed inside test code" — but the DB is seeded via tests/tdd/setup.ts with the cumulative seed. So we can't insert a session. Hmm.
+
+Alternative: use the registration endpoint (POST /api/register) to create account+session, then GET /api/session with the returned cookie. That's a legitimate flow, but depends on REQ-2 implementation. At test time it should be implemented... but maybe not yet (REQ-2 in related catalog probably being implemented in parallel or later). Risk: if REQ-2 unimplemented, our test fails. But tests are only run after implementation of all? The instructions say tests compile first then implementation is completed before first runtime execution. Gates run eventually.
+
+Hmm, but safer: for the authenticated branch in integration, we could write to DB directly via repositories? Rules say don't preseed inside test code and don't use mocks replacing behavior. Actually inserting a session row directly uses DB_'s InsertSession repository... but it's a dependency of REQ-2 and not our contract. Hmm, "Do not add per-requirement seeds, test-local inserts, endpoint seeding or lazy fixture hacks." So no test-local inserts.
+
+So the authenticated flow must go through registration. I think using POST /api/register is acceptable — it's the real product flow. But it risks coupling to REQ-2 which may not be implemented. The requirement itself says "注册创建账户及会话；登录为已有账户重新建立会话。" — that's in REQ-1's description. So registration establishing a session is part of this requirement's scope. Good, so relying on /api/register is justified.
+
+But we don't know the exact cookie name nor the register payload requirements precisely... Register payload requires nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email, agreed_to_terms. Validations: name 2-100 non-whitespace chars, passport 6..., etc. I don't know exact validation rules. Risky to construct a valid registration payload.
+
+Maybe better to be robust: integration test uses supertest with cookie handling: agent. POST /api/register with plausible values, then GET /api/session expecting authenticated=true and username. If registration fails validation, test fails — but I don't know the rules. Let me request RegisterAccount.ts and ValidateRegistration.ts to get exact validation rules? They are read-only (REQ-2 source is read-only in this phase? They are in related catalog, not in always_loaded; I can request files — but they might be read-only since not part of my allowlist; still readable). Reading gives me the exact validation rules to craft a valid payload.
+
+Let me request: backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts, services/ValidateRegistration.ts, and frontend/src/App.tsx, frontend/src/main.tsx (for routes), components/PrimaryNavigation.tsx maybe not needed. Also frontend/src/components/HeaderUtilityNav? For e2e I need role queries on the page; the header includes My 12306 as link per ancestor constraint. The e2e should test:
+- goto "/" → Register link visible with href /register, Login link visible with href /login.
+- Clicking Register navigates to /register.
+- After sign-in state: registration → header shows username + Sign out; click Sign out → Register/Login restored.
+
+That e2e full flow requires registration form fields... heavy. Alternatively for login state I could... hmm. The main scenario (scenario:1) is guest view only. But REQ-1 description includes signed-in state and sign out behavior. So e2e should cover: guest links exist and navigate; and after registration, header shows username and Sign out; clicking Sign out restores links.
+
+Registration form filling requires exact field labels from RegistrationForm — I'd need to read that file to know labels/roles. That's a big file. Alternatively I can do the sign-in state by... there's no direct API from browser test? Actually e2e can do API calls via request context: page.request.post('/api/register', ...) — that would create a session cookie in the browser context if cookies are set? Playwright's page.request shares cookie storage with the browser context. Yes! `page.request` uses the browser context's cookie jar. So I can register via API and then navigate to "/" and expect the username + Sign out.
+
+But still need valid registration payload. So reading ValidateRegistration is essential for both integration and e2e.
+
+Let me request those files now (no edits this invocation).
+
+Also need to know frontend routes: frontend/src/App.tsx and main.tsx for /register route existence.
+
+Let me request:
+- backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts
+- backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts
+- frontend/src/App.tsx
+- frontend/src/main.tsx
+
+Also maybe frontend/src/features/.../components/RegistrationForm.tsx for e2e registration flow (labels). I'll consider after. Actually for e2e I plan to register via API request, so no form filling needed.
+
+Also might need frontend/src/components/HeaderUtilityNav? Not needed for REQ-1 leaf behaviors (ancestor constraint says nav entries exist: Home, Booking, Travel guides, My 12306, 简体中文, Contact us). Those are ancestor constraints — I could assert them in e2e but "Do not invent extra obligations"? The ancestor constraint explicitly specifies them, so asserting presence is fine but risky if roles differ (e.g., My 12306 is role=link, 简体中文 role=button, Contact us role=link). I might assert them lightly in e2e since ancestor constraints define contract. I'll include a few: getByRole('link', {name:'Home'}), Booking, Travel guides, My 12306, Contact us, getByRole('button', {name:'简体中文'}). Hmm risk: HeaderUtilityNav is a scaffold currently. Final implementation should follow the ancestor constraint. I'll include but keep minimal. Actually also the "导航" for account entries. I'll include the ancestor nav assertions in the e2e guest test — it's specified explicitly. Fine.
+
+Also footer Privacy Policy / Cookie Statement links — ancestor constraint. Include.
+
+Let me now just request files.
+
+[2026-10-22T07:28:59.050501+00:00] [tdd_test_generation] MODEL_FINISHED duration_ms=15555

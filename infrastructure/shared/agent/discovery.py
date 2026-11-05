@@ -37,7 +37,7 @@ Exact records are retained in context_records and search candidates in context_c
 for the current task. File-editing tasks
 also retain read_file excerpts in read_files. Use retained evidence instead of querying
 it again. Return your normal stage output when enough evidence is available.
-There is no fixed query-count or character cap. Prefer exact reads after candidate
+There is no fixed query-count cap. Prefer exact reads after candidate
 searches. Do not repeat searches returning the same candidates: read their IDs, or
 produce the stage output using the available evidence. Query errors are feedback,
 not evidence that an object is absent.'''
@@ -78,10 +78,7 @@ class DiscoverySession:
         fingerprint = json.dumps(result, sort_keys=True, ensure_ascii=False)
         count = self.results.get(fingerprint, 0) + 1
         self.results[fingerprint] = count
-        if count >= 3:
-            raise DiscoveryStalled('Discovery returned the same evidence repeatedly. '
-                'Read different relevant evidence or return the task output.')
-        if count == 2:
+        if count >= 2:
             result = {**result, 'next_action': 'These results were already supplied. '
                 'Read different evidence or produce the task output.'}
         return result

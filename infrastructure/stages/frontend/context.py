@@ -4,6 +4,8 @@ import json
 import re
 
 from infrastructure.stages.requirements.tree import RequirementTree
+from infrastructure.stages.requirements.normalize import normalize_requirements
+from infrastructure.stages.requirements.visuals import unavailable_analysis
 from infrastructure.utils.files import read_artifact
 
 REFERENCE = re.compile(r"\\ref\[image\]\(([^)]+)\)")
@@ -16,9 +18,10 @@ def load_ui_design(arc_dir, tree):
 
 def load_ui_context(arc_dir, input_dir):
     """Load only requirement and image evidence; presentation does not depend on backend artifacts."""
-    raw = read_artifact(arc_dir, "requirements.json")
+    raw = normalize_requirements(read_artifact(arc_dir, "requirements.json"))
     tree = RequirementTree(raw)
-    analysis = read_artifact(arc_dir, "visual_analysis.json")
+    analysis = (read_artifact(arc_dir, "visual_analysis.json")
+        if (arc_dir / "visual_analysis.json").is_file() else {})
     images, nodes = {}, {}
 
     def visit(node):
@@ -31,7 +34,8 @@ def load_ui_context(arc_dir, input_dir):
             source = (input_dir / image["reference"]).resolve()
             if not source.is_relative_to(input_dir.resolve()) or not source.is_file():
                 raise ValueError(f"Missing input image or image escapes input: {image['reference']}")
-            record = {**image, "analysis": analysis.get(image["reference"], {})}
+            record = {**image, "analysis": analysis.get(image["reference"],
+                unavailable_analysis(ValueError("No saved visual analysis for this reference")))}
             images[image["id"]] = record
         for child in node.get("children", []):
             visit(child)
@@ -46,7 +50,7 @@ def load_ui_context(arc_dir, input_dir):
         for image in description.get("image", []) if isinstance(description, dict) else []:
             if image.get("id") in images:
                 refs.add(image["id"])
-        contexts[rid] = {**tree.requirements[rid], "steps": [tree.steps[sid] for sid in tree.own_steps[rid]],
+        contexts[rid] = {**tree.context(rid), "steps": [tree.steps[sid] for sid in tree.own_steps[rid]],
             "images": {key: images[key] for key in sorted(refs) if key in images}}
     return tree, images, contexts
 

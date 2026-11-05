@@ -72,7 +72,7 @@ control/data-key assertions. Shared test/build infrastructure remains read-only.
 """
 
 
-def implement_ui(arc_dir: Path, design: dict, model, console, report: dict, max_turns: int = 10,
+def implement_ui(arc_dir: Path, design: dict, model, console, report: dict, max_turns: int | None = None,
         images: dict | None = None, requirement_contexts: dict | None = None) -> dict:
     """Implement the complete saved UI/data design through component-existence TDD.
 
@@ -97,7 +97,9 @@ def implement_ui(arc_dir: Path, design: dict, model, console, report: dict, max_
     for number, pid in enumerate(design["pages"], 1):
         uses = owners(design, pid)
         relative = test_path(pid)
-        suite = existence_suite(design, pid)
+        page_requirements = [{key: value for key, value in (requirement_contexts or {}).get(rid, {"id": rid}).items()
+            if key != "images"} for rid in uses]
+        suite = existence_suite(design, pid, page_requirements)
         if not (output / relative).is_file():
             save_text(output / relative, suite)
         report["pages"][pid] = {"status": "TESTS_READY", "requirements": uses, "test_path": relative}
@@ -139,8 +141,7 @@ def implement_ui(arc_dir: Path, design: dict, model, console, report: dict, max_
                 agent = {"turns": 0, "checks": current}
             else:
                 context = {"page": page_context(design, pid), "application_entrypoints": list(APPLICATION_ENTRYPOINTS),
-                    "requirements": [{key: value for key, value in (requirement_contexts or {}).get(rid, {"id": rid}).items() if key != "images"}
-                        for rid in uses],
+                    "requirements": page_requirements,
                     "visual_references": {iid: (images or {})[iid] for iid in design["pages"][pid]["images"]},
                     "implementation_path": selected_path(output, "page", pid)}
                 workspace = selection.workspace(target=("page", pid),

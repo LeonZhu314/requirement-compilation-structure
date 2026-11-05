@@ -12,9 +12,10 @@ import subprocess
 import tempfile
 
 from infrastructure.stages.frontend.ui.design import data_symbols, page_elements, visible
+from infrastructure.stages.frontend.ui.contracts import explicit_controls, element_contract
 from infrastructure.utils.processes import capture_process, npm_command
 
-KEY_TYPES = {"page", "form", "input", "checkbox", "select", "button", "heading", "link", "list", "image", "alert", "table", "text"}
+KEY_TYPES = {"page", "form", "input", "checkbox", "radio", "radiogroup", "select", "button", "heading", "link", "list", "image", "alert", "table", "text"}
 
 
 def presentation_run_status(result):
@@ -34,10 +35,11 @@ def test_path(pid: str) -> str:
     return f"frontend/tests/ui/{pid}.spec.ts"
 
 
-def existence_suite(design: dict, pid: str) -> str:
+def existence_suite(design: dict, pid: str, requirements=()) -> str:
     """Supply test-local display data; check controls and actual application data keys."""
     page = design["pages"][pid]
     elements = page_elements(design, pid)
+    controls = explicit_controls(requirements)
     variables = data_symbols(elements)
     empty_values = {"string": "", "integer": 0, "number": 0, "boolean": False,
         "array": [], "object": {}, "null": None}
@@ -89,6 +91,11 @@ def existence_suite(design: dict, pid: str) -> str:
             locator = f"page.getByTestId({json.dumps(uid)})"
             shown = visible(design, uid, state)
             lines.append(f"  await expect({locator}){'' if shown else '.not'}.toBeVisible();")
+            contract = element_contract(node, controls)
+            if shown and contract:
+                name, role = contract
+                lines.append(f"  await expect({locator}).toHaveRole({json.dumps(role)});")
+                lines.append(f"  await expect({locator}).toHaveAccessibleName({json.dumps(name, ensure_ascii=False)});")
         lines.extend([
             '  await expect.poll(() => page.evaluate(({ pageId, keys }) => {',
             '    const state = (window as unknown as { __ARC_UI_DATA__?: { page: string; data: Record<string, unknown> } }).__ARC_UI_DATA__;',
@@ -106,7 +113,8 @@ def existence_suite(design: dict, pid: str) -> str:
 
 def require_green(result: dict) -> None:
     """Require passing actual browser assertions with no reported runtime errors."""
-    if result["returncode"] or result.get("errors") or not result.get("passed") or result.get("failed"):
+    if (result["returncode"] or result.get("errors") or not result.get("passed")
+            or result.get("failed") or result.get("skipped") or result.get("flaky")):
         raise CheckFailure("UI checks are not GREEN", result)
 
 

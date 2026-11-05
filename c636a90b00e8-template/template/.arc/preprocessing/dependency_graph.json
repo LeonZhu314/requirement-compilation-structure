@@ -1,0 +1,29 @@
+{
+  "requirement_dependencies": {
+    "REQ-1": [],
+    "REQ-2": [],
+    "ROOT": [
+      "REQ-1",
+      "REQ-2"
+    ]
+  },
+  "atomic_dependencies": {
+    "REQ-1": [],
+    "REQ-2": []
+  },
+  "implementation_waves": [
+    [
+      "REQ-1",
+      "REQ-2"
+    ],
+    [
+      "ROOT"
+    ]
+  ],
+  "atomic_implementation_waves": [
+    [
+      "REQ-1",
+      "REQ-2"
+    ]
+  ]
+}

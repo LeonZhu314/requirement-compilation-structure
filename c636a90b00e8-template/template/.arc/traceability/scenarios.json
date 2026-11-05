@@ -1,0 +1,48 @@
+{
+  "REQ-1-SCN-1": {
+    "scenario_id": "REQ-1-SCN-1",
+    "name": "View the public home page and account entries",
+    "req_id": "REQ-1",
+    "actor": null,
+    "steps": [
+      {
+        "keyword": "GIVEN",
+        "content": "一位未登录访客打开首页 /。",
+        "actor": null
+      },
+      {
+        "keyword": "WHEN",
+        "content": "访客查看首页页头中的账户入口和导航。",
+        "actor": null
+      },
+      {
+        "keyword": "THEN",
+        "content": "首页显示 \"Register\"(role=link) 和 \"Login\"(role=link)，其可见文案和可访问名称精确匹配；两个链接分别指向 /register 和 /login。",
+        "actor": null
+      }
+    ]
+  },
+  "REQ-2-SCN-1": {
+    "scenario_id": "REQ-2-SCN-1",
+    "name": "Register a valid traveler",
+    "req_id": "REQ-2",
+    "actor": null,
+    "steps": [
+      {
+        "keyword": "GIVEN",
+        "content": "一位未登录访客打开 /，准备好未使用的用户名和邮箱、有效的姓名和护照号码、国籍 Vietnam、早于当前日期的出生日期、晚于当前日期的护照有效期，以及有效密码。",
+        "actor": null
+      },
+      {
+        "keyword": "WHEN",
+        "content": "访客点击页头的 \"Register\"(role=link)，在 \"Nationality\"(role=combobox) 中选择 Vietnam，填写 \"Name\"(role=textbox)、\"Passport number\"(role=textbox)、\"Passport expiration date\"(role=textbox)、\"Date of birth\"(role=textbox)、\"Username\"(role=textbox) 和 \"Email address\"(role=textbox)，在 \"Gender\"(role=radiogroup) 中选择 \"Male\"(role=radio)，在带标签的密码输入框 \"Password\" 和 \"Confirm Password\" 中填写相同的有效密码，勾选 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"(role=checkbox)，然后点击 \"Next step\"(role=button)。",
+        "actor": null
+      },
+      {
+        "keyword": "THEN",
+        "content": "首页以可见文本显示已保存的用户名，并显示 \"Sign out\"(role=link)，使用上述精确可见文案和可访问名称；刷新页面后仍显示该用户名和已登录状态下的操作。",
+        "actor": null
+      }
+    ]
+  }
+}

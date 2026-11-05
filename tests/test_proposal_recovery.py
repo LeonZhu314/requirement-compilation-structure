@@ -29,21 +29,21 @@ class ProposalRecovery(unittest.TestCase):
             self.assertEqual(item["correction"]["previous_response"], proposals[index])
         self.assertNotIn("correction", request)
 
-    def test_default_budget_is_ten_and_repairs_explicitly_replace_rejected_output(self):
+    def test_default_has_no_cap_and_repairs_explicitly_replace_rejected_output(self):
         requests = []
         def generate(instructions, request):
             requests.append((instructions, deepcopy(request)))
-            return {}
+            return {} if len(requests) <= 20 else {'read': ['note']}
         model = Mock(generate_json=generate)
-        with self.assertRaisesRegex(RuntimeError, "Example exhausted 10 proposals"):
-            propose_json(model, "Design", {}, lambda value: value["read"], Mock(), "Example")
-        self.assertEqual(len(requests), 10)
+        result, _ = propose_json(model, "Design", {}, lambda value: value["read"], Mock(), "Example")
+        self.assertEqual(result, ['note'])
+        self.assertEqual(len(requests), 21)
         self.assertEqual(requests[0][0], "Design")
         for attempt, (instructions, request) in enumerate(requests[1:], 1):
             self.assertIn("complete replacement JSON object", instructions)
             self.assertEqual(request["correction"]["failed_attempt"], attempt)
 
-    def test_unlimited_attempts_are_not_accepted(self):
+    def test_explicit_zero_attempts_are_not_accepted(self):
         model = Mock()
         with self.assertRaisesRegex(ValueError, "must be positive"):
             propose_json(model, "Design", {}, lambda value: value, Mock(), "Example", 0)

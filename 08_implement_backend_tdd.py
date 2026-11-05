@@ -60,6 +60,11 @@ scenario-specific absence/conflicting states in this isolated database. Do not i
 another requirement's registration/creation API to manufacture Given data.
 
 Within max_tests cover meaningful success and critical requirement-defined rejection.
+Use compact table-driven subcases within a test to cover the explicitly specified field
+rules without another suite or model call: omitted/empty required fields, allowed values,
+stated bounds/formats, confirmation and uniqueness/comparison rules. Change one field of
+an otherwise valid request per subcase and verify required rejection-without-writes.
+Read description-level constraints as well as scenarios; do not invent extra validation.
 Assert relevant persisted results/forbidden writes with SQL where needed; HTTP is the
 only way to execute the operation. Do not assert unspecified wording, random identifiers,
 hashes or timestamps. Do not inspect source text, add mocks, skip/focus tests or hardcode
@@ -89,6 +94,10 @@ Use the supplied test utilities and generated tests to understand existing fixtu
 conventions. Preserve compatibility when reading those records. Production storage must
 satisfy the contract and keep plaintext passwords out of persistent data.
 Preserve required comparison rules and shared credential/header conventions.
+Implement all specified validation rules, including required fields that the happy-path
+tests always supply. Check runtime types before string/date operations; reject invalid
+input through the declared error response. Validate calendar dates without silently
+normalizing impossible dates. Passing a sampled test does not replace the full contract.
 
 Do not start a server, open another database, change schema or seed production data.
 Use installed dependencies and Node standard modules. Implement the operation directly;
@@ -116,8 +125,8 @@ failures without weakening assertions or detecting tests to fake business behavi
 """
 
 
-def implement_backend_tdd(arc_dir: Path, pause: bool = False, max_turns: int = 10, max_tests: int = 5) -> dict:
-    if max_turns < 1:
+def implement_backend_tdd(arc_dir: Path, pause: bool = False, max_turns: int | None = None, max_tests: int = 5) -> dict:
+    if max_turns is not None and max_turns < 1:
         raise ValueError("--max-turns must be positive")
     if max_tests < 1:
         raise ValueError("--max-tests must be positive")
@@ -292,7 +301,7 @@ def implement_backend_tdd(arc_dir: Path, pause: bool = False, max_turns: int = 1
 
 def main() -> None:
     parser = create_parser("Step 08: TDD-driven API Implementation (P / Q / Dataflow Obligations)")
-    parser.add_argument("--max-turns", type=int, default=10, help="Maximum edit rounds per test/implementation agent")
+    parser.add_argument("--max-turns", type=int, default=None, help="Optional limit (default: unlimited). Maximum edit rounds per test/implementation agent")
     parser.add_argument("--max-tests", type=int, default=5, help="Maximum key contract tests per API (default: 5)")
     args = parser.parse_args()
     with ExitStack() as stack:

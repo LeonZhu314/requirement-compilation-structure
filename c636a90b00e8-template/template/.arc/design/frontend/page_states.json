@@ -1,0 +1,22 @@
+[
+  {
+    "name": "home",
+    "ui_id": "UI_000001",
+    "references": [
+      {
+        "reference": "reference/homepage.png",
+        "sha256": "a993a429965857982022eb457b1859ec42ae1935382f321111ce3515e6bca79c"
+      }
+    ]
+  },
+  {
+    "name": "registration",
+    "ui_id": "UI_000047",
+    "references": [
+      {
+        "reference": "reference/register.png",
+        "sha256": "12e14f2c678e3b07e572ecf3da65f86874f5b9bf9e83eba1352045194fe93352"
+      }
+    ]
+  }
+]

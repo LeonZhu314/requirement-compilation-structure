@@ -1,6 +1,7 @@
 """Index requirement containment while retaining each scenario's step context."""
 
 import json
+from infrastructure.stages.requirements.normalize import normalize_requirements
 
 
 # --- Extension point: requirement representation and traversal ----------------
@@ -13,7 +14,9 @@ class RequirementTree:
 
         Build children, own_steps, leaf order, and child-before-parent postorder
         once so later stages share the same containment semantics."""
+        root = normalize_requirements(root)
         self.requirements = {}
+        self.parents = {}
         self.steps = {}
         self.children = {}
         self.own_steps = {}
@@ -28,9 +31,10 @@ class RequirementTree:
             value = node.get(key, [])
             return value
 
-        def visit(node):
+        def visit(node, parent=None):
             """Index one requirement and its own steps, recurse into children, then append its postorder ID."""
             rid = identifier(node, "requirement")
+            self.parents[rid] = parent
             description = node.get("description", "")
             if isinstance(description, dict):
                 description = description.get("text", "")
@@ -46,13 +50,26 @@ class RequirementTree:
                     record["references"] = items(step, "references")
                     self.steps[step_id] = record
                     self.own_steps[rid].append(step_id)
-            self.children[rid] = [visit(child) for child in items(node, "children")]
+            self.children[rid] = [visit(child, rid) for child in items(node, "children")]
             self.postorder.append(rid)
             return rid
 
         visit(root)
         # Only leaves own business analysis; parents organize the requirement tree.
         self.leaves = [rid for rid in self.requirements if not self.children[rid]]
+
+    def context(self, rid):
+        """Include applicable parent constraints, without sibling workflows or steps."""
+        result = dict(self.requirements[rid])
+        ancestors = []
+        parent = self.parents[rid]
+        while parent is not None:
+            if self.requirements[parent]['description']:
+                ancestors.append(dict(self.requirements[parent]))
+            parent = self.parents[parent]
+        if ancestors:
+            result['ancestor_requirements'] = list(reversed(ancestors))
+        return result
 
     def concatenated_steps(self, requirement_id: str) -> str:
         """Render only this requirement's own steps, preserving scenario labels, Given/When/Then, and references."""

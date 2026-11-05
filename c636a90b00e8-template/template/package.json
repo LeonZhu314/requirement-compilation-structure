@@ -1,0 +1,22 @@
+{
+  "name": "arc-application",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build -w @arc/frontend && npm run build -w @arc/backend",
+    "start": "npm run start -w @arc/backend",
+    "dev:backend": "npm run dev -w @arc/backend",
+    "dev:frontend": "npm run dev -w @arc/frontend"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0",
+    "vitest": "3.2.4",
+    "supertest": "7.1.4",
+    "@types/supertest": "6.0.3",
+    "tsx": "4.20.5"
+  }
+}

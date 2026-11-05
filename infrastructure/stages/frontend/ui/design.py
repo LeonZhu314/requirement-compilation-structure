@@ -6,6 +6,9 @@ from copy import deepcopy
 
 INSTRUCTIONS = """Design the UI elements and frontend data declarations for the current requirement.
 Use requirement scenarios and visual references; reuse supplied UI elements where appropriate.
+If a visual reference has status UNAVAILABLE, still design the complete functional UI
+from the original text and explicit names/roles/routes. Its missing visual analysis is
+not a missing business requirement. Do not invent image observations or omit its page.
 This stage declares the interface only. Return no code, tests, API definitions, triggers,
 production initial values, example runtime objects or display fixtures.
 

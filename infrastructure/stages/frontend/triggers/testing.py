@@ -4,6 +4,8 @@ from hashlib import sha256
 import os
 import re
 from tempfile import TemporaryDirectory
+from pathlib import Path
+import json
 
 from infrastructure.stages.frontend.triggers.e2e_runtime import RUNNER
 from infrastructure.stages.frontend.ui.testing import FrontendChecks, parse_playwright_result
@@ -25,6 +27,11 @@ class E2EChecks(FrontendChecks):
         """Reuse the ten-minute frontend command timeout and a per-requirement test-count hint."""
         super().__init__(output)
         self.maximum = maximum
+
+    def exact_locators(self, path, contracts):
+        """Apply original literal naming contracts before tests become implementation references."""
+        script = Path(__file__).with_name('exact_locators.mjs')
+        return self.execute([str(script), str(self.output), path, json.dumps(contracts, ensure_ascii=False)])
 
     def typecheck(self, files, full_source=True):
         """Compile UI and E2E tests, optionally restricting application sources during test generation."""

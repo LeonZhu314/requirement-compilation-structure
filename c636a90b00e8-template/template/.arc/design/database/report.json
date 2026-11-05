@@ -1,0 +1,9 @@
+{
+  "status": "RESOLVED",
+  "node_states": {
+    "REQ-1": "SCHEMA_ANALYZED",
+    "REQ-2": "SCHEMA_ANALYZED"
+  },
+  "errors": [],
+  "warnings": []
+}

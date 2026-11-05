@@ -1,0 +1,798 @@
+[2026-10-22T07:27:00.057903+00:00] [frontend_design_ui] MODEL_CALL model=deepseek-flash attempt=1 status=SUCCEEDED
+[2026-10-22T07:27:00.057903+00:00] [frontend_design_ui] MODEL_INPUT
+
+--- system ---
+## Requirement fidelity
+For design, test generation, implementation and repair, explicit requirement descriptions, scenarios
+and applicable ancestor constraints define the observable product contract. Visual references, generated
+IR, existing source and convenience choices must not override that contract.
+Preserve explicitly specified UI wording and accessible names exactly, including spelling, case,
+punctuation and dynamic naming patterns. Do not translate, paraphrase, abbreviate or substitute another
+spelling unless the document explicitly permits it. Use the same names in design, source and tests.
+Preserve explicitly specified UI roles and states. A required button is a button, not a link merely
+because it navigates; fields need their specified associated labels. Implement the actual control
+semantics, not just matching text or an aria-label on a different control. Use alternatives only when
+the requirement explicitly allows them.
+At each specified scenario step, required controls and navigation entries must exist, be visible and
+be operable in the stated scope. Do not invent prerequisite expansion, hover or navigation steps that
+hide an expected input or action. Preserve these contracts in shared forms and prerequisite flows too.
+Tests must exercise the specified names, roles and states; do not broaden selectors or expected values
+to accept an implementation that contradicts explicit requirements.
+Where the requirement is silent, choose suitable wording, roles and interaction details consistent
+with the supplied visual evidence and existing application conventions. Do not invent extra obligations.
+
+## Background and role
+You are a frontend architect designing one leaf requirement in an existing application.
+Produce framework-neutral contracts, not React components, source code, CSS, tests or SQL.
+Requirements and scenario steps define behavior. Images define visible structure and states;
+image evidence must not invent authentication policies, persistence or server capabilities.
+Requirements may also specify controls and interaction states not shown in an image.
+Ancestor descriptions constrain the leaf; do not implement parent or unrelated requirements.
+
+## Identity and response protocol
+Return exactly one JSON delta matching the supplied schema, no Markdown or extra properties.
+The compiler owns IDs, reqs, the app/page roots and reciprocal UI links. Never output those fields
+for new records. Reference supplied records by exact ID; reference same-reply new records by @Name.
+Do not guess IDs. Names are semantic, not framework-specific. Preserve unrelated existing design.
+validation_feedback and previous_output describe a rejected delta: return a full corrected delta.
+Before returning, check each current scenario step has the UI/state/interaction needed in this layer.
+Do not create implementation detail nodes or speculative operations just to fill the response.
+## Task: discover the UI and bind the requirement
+current_task.requirement.pages lists ALL pages involved in this requirement, not just pages first
+introduced by it. A repeated name/reference still requires binding the current requirement's
+controls/regions and designing its state and interactions in the subsequent passes.
+Work only in current_page. selected_ui_tree is this page's nested tree, not a flat component list.
+In every mode, use pages.analysis to cover ALL visible regions, controls, text, dialogs and states,
+not only those in the leaf's scenarios. Also include the controls and transient states needed by
+current requirement description/scenario steps, even when not shown in the image: editable forms,
+row actions, menus and confirmation dialogs must have their actual interaction-site nodes.
+Without an image analysis, derive structure from requirement evidence and the supplied page tree.
+Use one representative item template for repeated content. Reuse existing matching nodes and IDs;
+insert missing nodes under their appropriate existing or new parent. Preserve unrelated structure.
+page_mode=new: discover the complete page structure from the analysis and requirement evidence.
+page_mode=bind: the page/reference has already been analyzed. The existing tree guides reuse and
+placement; use the same discovery scope as new and add any missing visible or requirement-defined
+UI. An analyzed reference does not imply that the existing tree contains every needed interaction.
+page_mode=extend: compare current pages.analysis to baseline_page_states.analysis to identify
+additional visible states, and integrate them with the current requirement's UI in the same tree.
+Baseline contains analysis, not another UI tree. Never duplicate the page or create an app/page node.
+updates change descriptions only, recording additional states without overwriting unrelated behavior.
+Then bind only the nodes implementing current requirement description/scenario steps. Always bind
+relevant existing nodes even when no structure changes. Do not bind every visual node automatically.
+New nodes have page-local unique PascalCase names. parent may be a loaded ID or @Name from add_nodes.
+updates target loaded existing page nodes. bindings target loaded or new nodes; each description
+must extract the requirement's wording or scenario action and explain which part this UI realizes.
+The compiler appends this leaf's ID and REPLACES that UI description. Always return bindings for
+relevant UI even on first creation. Use the narrowest relevant controls/regions, not just the page.
+Requirement bindings describe implemented behavior for traceability and file discovery, not event
+permissions. Do not bind an unrelated ancestor merely to authorize an event or state access.
+The next passes can use any loaded UI in the declared pages, including their page roots.
+
+## Return format
+{"type": "object", "additionalProperties": false, "properties": {"add_nodes": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"name": {"type": "string"}, "kind": {"type": "string", "enum": ["region", "form", "list", "item", "input", "button", "text", "image", "dialog", "navigation", "other"]}, "description": {"type": "string"}, "parent": {"type": "string"}}, "required": ["name", "kind", "description", "parent"]}}, "updates": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string"}, "description": {"type": "string"}}, "required": ["id", "description"]}}, "bindings": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string"}, "description": {"type": "string"}}, "required": ["id", "description"]}}}, "required": ["add_nodes", "updates", "bindings"]}
+## Example (IDs are illustrative; use supplied IDs)
+{"add_nodes": [{"name": "SearchInput", "kind": "input", "description": "Search term entry.", "parent": "UI_000002"}], "updates": [], "bindings": [{"id": "@SearchInput", "description": "Enter a search term in the search input."}]}
+--- user ---
+## Current task
+
+```json
+{
+  "current_task": {
+    "requirement": {
+      "id": "REQ-2",
+      "name": "Register a traveler account",
+      "description": "点击未登录页头中的 \"Register\"(role=link)，打开 /register 注册页。面包屑的可见文案为 \"Current location: HOME > Create an account\"；其中 \"HOME\"(role=link) 返回 /，\"Create an account\" 是当前页面的文本。表单遵循提供的参考图片，按展示顺序明确以下交互身份：\n\n\"Nationality\"(role=combobox) 的可见标签为 \"Nationality\"，初始显示 \"Please select\"，包含可选择的 \"Vietnam\"(role=option)。\"Name\"(role=textbox) 和 \"Passport number\"(role=textbox) 使用上述精确可见标签。\"Passport expiration date\"(role=textbox) 和 \"Date of birth\"(role=textbox) 使用上述精确可见标签，允许输入日期。如果其日历图标可独立交互，则图标的 role=button，没有可见文本，可访问名称分别为 \"Choose passport expiration date\" 和 \"Choose date of birth\"。\"Gender\"(role=radiogroup) 的可见分组标签为 \"Gender\"，包含 \"Male\"(role=radio) 和 \"Female\"(role=radio)，使用上述精确可见标签和可访问名称。\n\n\"Username\"(role=textbox) 的可见标签为 \"Username\"。隐藏输入内容的两个密码字段，其可见标签和可访问名称分别为 \"Password\" 和 \"Confirm Password\"，没有隐式 ARIA role。\"Email address\"(role=textbox) 使用上述精确可见标签。帮助链接的可见文案和可访问名称为 \"Check the rules for filling out passport information\"(role=link)。\n\n协议控件的 role=checkbox，可见标签和可访问名称均为 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"。其中可独立交互的 \"Terms of Service\"(role=link) 和 \"Privacy Policy\"(role=link) 使用上述精确可见文案；它们位于协议区域，与页脚的 Privacy Policy 链接区分。提交操作为 \"Next step\"(role=button)，可见文案和可访问名称均为 \"Next step\"。护照信息填写指南和协议链接保留上述交互身份；其文档内容不属于本账户创建需求。\n\n所有字段均为必填，且必须勾选同意协议。姓名必须包含 2–100 个非空白字符；护照号码必须包含 6–30 个 ASCII 字母、数字或连字符；出生日期必须早于当前日期，护照有效期必须晚于当前日期。用户名必须包含 3–32 个 ASCII 字母、数字、连字符或下划线。邮箱格式必须有效，长度最多 254 个字符。密码必须包含 12–128 个字符，且包含大写字母、小写字母、数字和特殊字符；Confirm Password 必须与 Password 一致。用户名和邮箱必须唯一，邮箱比较不区分大小写。通过 Next step 提交有效信息后，保存账户、自动登录并返回首页。无效或重复的输入需要显示错误，且不创建账户或会话。",
+      "scenarios": [
+        {
+          "id": "REQ-2:scenario:1",
+          "name": "Register a valid traveler",
+          "steps": [
+            {
+              "keyword": "GIVEN",
+              "content": "一位未登录访客打开 /，准备好未使用的用户名和邮箱、有效的姓名和护照号码、国籍 Vietnam、早于当前日期的出生日期、晚于当前日期的护照有效期，以及有效密码。"
+            },
+            {
+              "keyword": "WHEN",
+              "content": "访客点击页头的 \"Register\"(role=link)，在 \"Nationality\"(role=combobox) 中选择 Vietnam，填写 \"Name\"(role=textbox)、\"Passport number\"(role=textbox)、\"Passport expiration date\"(role=textbox)、\"Date of birth\"(role=textbox)、\"Username\"(role=textbox) 和 \"Email address\"(role=textbox)，在 \"Gender\"(role=radiogroup) 中选择 \"Male\"(role=radio)，在带标签的密码输入框 \"Password\" 和 \"Confirm Password\" 中填写相同的有效密码，勾选 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"(role=checkbox)，然后点击 \"Next step\"(role=button)。"
+            },
+            {
+              "keyword": "THEN",
+              "content": "首页以可见文本显示已保存的用户名，并显示 \"Sign out\"(role=link)，使用上述精确可见文案和可访问名称；刷新页面后仍显示该用户名和已登录状态下的操作。"
+            }
+          ]
+        }
+      ],
+      "pages": [
+        {
+          "name": "registration",
+          "reference": "reference/register.png",
+          "analysis": "regions:\n- Page > Header: white top bar with the China Railway 12306 logo at the left and a pale, rounded utility area at the right containing account, language and contact entries.\n- Page > Primary navigation: full-width blue bar directly beneath the header with Home, Booking and Travel guides entries.\n- Page > Breadcrumb strip: white area between navigation and the main card, showing the current-location path.\n- Page > Main registration card: large white panel with a thin light border, centered in the page and containing the registration form.\n- Main registration card > Form fields: repeated rows with a right-aligned required-label column, a fixed-width input/control column, and optional helper text or links at the right.\n- Main registration card > Gender group: two side-by-side bordered radio-option boxes beneath the Gender label.\n- Main registration card > Consent and submit area: an unchecked agreement checkbox with policy links, followed by a centered orange submit button.\n- Page > Footer: full-width pale gray band containing copyright text, Chinese registration numbers and two policy links, all centered.\n\nvisible_controls:\n- Header > Logo: red circular railway emblem plus 中国铁路12306 and 12306 CHINA RAILWAY text.\n- Header utility bar: Login link; Register link; My 12306 dropdown with down caret; 简体中文 dropdown with down caret; headset icon with Contact us link.\n- Header far right: faint small icon/control partially visible at the edge; its exact shape is unclear.\n- Primary navigation: Home link; Booking dropdown link with down caret; Travel guides dropdown link with down caret.\n- Breadcrumb: HOME link and blue Create an account link.\n- Nationality: select control showing placeholder Please select, with a down caret.\n- Name: blank text input, with adjacent blue link Check the rules for filling out passport information.\n- Passport number: blank text input.\n- Passport expiration date: blank date input with a calendar icon at its right edge.\n- Date of birth: blank date input with a calendar icon at its right edge.\n- Gender: two bordered radio-option controls labeled Male and Female; both radio circles appear unselected.\n- Username: blank text input.\n- Password: blank text input.\n- Confirm Password: blank text input.\n- Email address: blank text input, with orange helper text at the right.\n- Consent: unchecked square checkbox followed by agreement text containing Terms of Service and Privacy Policy links.\n- Next step: large orange button, enabled.\n- Footer: Privacy Policy link and Cookie Statement link.\n\nlayout_cues:\n- Header spans the full width and is roughly 70 px tall. The logo is left-aligned with generous page margin; account and language utilities sit right, grouped inside a large pale rounded container.\n- The blue primary navigation is a full-width horizontal band roughly 42 px tall. Its three entries are left-aligned with moderate spacing rather than spread across the full width.\n- The breadcrumb sits below the navigation, left-aligned with the content area, at a much smaller text size than the header and navigation.\n- The main card is centered horizontally with roughly 120 px side margins and a height covering most of the viewport below the breadcrumb. It has spacious white padding above and around the form.\n- The registration form is vertically stacked. Labels are right-aligned in a fixed column; inputs and selects share a consistent width of roughly 365 px and start at a common left edge.\n- Form rows are separated by substantial vertical whitespace, producing a low-density layout. Helper notices are aligned to the right of their corresponding controls on the same row.\n- The Gender controls form two equal-width bordered boxes in one horizontal row. Each contains a radio circle at the left and text beside it.\n- The agreement row sits below the form fields, inset from the input column, with the checkbox on the left and wrapped policy text beside it. The Next step button is centered beneath this block.\n- The footer occupies a separate full-width band below the card, with all content centered in three stacked lines and wide horizontal breathing room.\n- No sidebar, dialog, overlay, pagination or additional columns are visible. Content is fully contained within the screenshot.\n\nstyle_cues:\n- Overall page background is white; the header is white, the primary navigation is a saturated medium blue, and the footer is very light gray.\n- The logo emblem is bright red with a dark/black interior mark. The Chinese brand text is large, bold and near-black; the Latin tagline below is smaller, lighter gray and spaced out.\n- Header utility text is dark gray/black in a small sans-serif font. The utility group sits on a subtly shaded pale-gray rounded surface. The Register link has no visible selected treatment.\n- Primary navigation text is white and regular-weight; no active underline or highlighted navigation item is apparent.\n- Breadcrumb text is small and muted gray, with the final breadcrumb link in blue.\n- Form labels are dark gray/black, regular weight, with a red asterisk preceding each required field. Colons follow every label.\n- Text inputs and selects have white fills, thin light-gray borders, small corner radii and plain placeholder text in gray. Date fields include small outline calendar icons aligned at the right.\n- Helper text is orange and small; the passport-information helper is a blue underlined link. Agreement links are blue and underlined.\n- Gender option boxes have thin light-gray borders and a slightly off-white background. Radio circles are neutral gray outlines with no visible selected dot.\n- The Next step button is solid orange, wide and low-profile, with white centered text, modest rounded corners and no prominent shadow.\n- Footer text is medium gray, centered and small, with vertical-bar separators between the registration-number entries and between the policy links.\n- Typography is sans-serif throughout, with stronger/larger branding text and smaller, lighter body and utility text. No photographic imagery, gradients or decorative illustrations are visible beyond the logo and small line icons.\n\ntext_cues:\n- Header: 中国铁路12306; 12306 CHINA RAILWAY; Login; Register; My 12306; 简体中文; Contact us.\n- Primary navigation: Home; Booking; Travel guides.\n- Breadcrumb: Current location: HOME > Create an account.\n- Form: * Nationality:; Please select; At present, only foreign passports are accepted for registration.\n- Form: * Name:; Check the rules for filling out passport information.\n- Form: *Passport number:.\n- Form: *Passport expiration date:.\n- Form: *Date of birth:.\n- Form: *Gender:; Male; Female.\n- Form: *Username:; *Password:; *Confirm Password:; *Email address:.\n- Email helper: Related notifications will be sent to you via email.\n- Consent: I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\n- Submit: Next step.\n- Footer: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\n- Footer: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\n- Footer: Privacy Policy | Cookie Statement."
+        }
+      ],
+      "ancestor_constraints": [
+        {
+          "id": "ROOT",
+          "name": "Train Ticket Booking Demo",
+          "description": "这是一个小型网站，访客可以注册或登录。\n\n首页和注册页的共享导航提供 \"Home\"(role=link)、\"Booking\"(role=link)、\"Travel guides\"(role=link)、\"My 12306\"(role=link)、\"简体中文\"(role=button) 和 \"Contact us\"(role=link)，可见文案与参考图片完全一致。账户入口控件及其行为见 REQ-1。每个页面的页脚提供 \"Privacy Policy\"(role=link) 和 \"Cookie Statement\"(role=link)，可见文案和可访问名称相同。名称重复的控件通过其语义位置区分，例如注册协议区域与页脚。这里明确了参考控件的展示和交互身份；这次命名说明不增加下拉菜单内容、政策文档、联系服务或旅行指南的业务流程。"
+        }
+      ]
+    },
+    "data_access": {
+      "read": [
+        "user_account"
+      ],
+      "write": [
+        "session",
+        "user_account",
+        "user_account.date_of_birth",
+        "user_account.email",
+        "user_account.gender",
+        "user_account.name",
+        "user_account.nationality",
+        "user_account.passport_expiration_date",
+        "user_account.passport_number",
+        "user_account.password",
+        "user_account.username"
+      ],
+      "entities": [
+        {
+          "key": "session",
+          "description": "A persisted authentication session that keeps a visitor logged in until sign out clears it.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [],
+              "write": []
+            }
+          ],
+          "read": [
+            "REQ-1"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        },
+        {
+          "key": "user_account",
+          "description": "A registered visitor account whose saved username is shown in the header after registration or login.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "date_of_birth",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's date of birth.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "email",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's contact email address, identified regardless of letter case.",
+              "properties": {
+                "max_length": 254,
+                "unique": true,
+                "comparison": "case_insensitive"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's gender as declared in the account profile.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1"
+              ],
+              "read": [],
+              "write": []
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's full name as recorded for the account and passport.",
+              "properties": {
+                "min_length": 2,
+                "max_length": 100
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "nationality",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's nationality country selected when registering the account.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_expiration_date",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The expiry date of the traveler's passport.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_number",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's passport number identifying the travel document.",
+              "properties": {
+                "min_length": 6,
+                "max_length": 30
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "password",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's password credential used to authenticate the traveler.",
+              "properties": {
+                "min_length": 12,
+                "max_length": 128
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "username",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Saved account username displayed in the header after registration or login.",
+              "properties": {
+                "min_length": 3,
+                "max_length": 32,
+                "unique": true,
+                "comparison": "exact"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [
+                "REQ-1"
+              ],
+              "write": [
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+--- user ---
+## Selected page and UI tree
+
+```json
+{
+  "current_page": {
+    "name": "registration",
+    "reference": "reference/register.png",
+    "ui_id": "UI_000047"
+  },
+  "page_mode": "new",
+  "selected_ui_tree": {
+    "id": "UI_000047",
+    "name": "registration",
+    "kind": "page",
+    "description": "Page: registration.",
+    "reqs": [],
+    "children": [],
+    "data": [],
+    "events": []
+  },
+  "loaded_ui_ids": [
+    "UI_000047"
+  ]
+}
+```
+--- user ---
+## Global UI summary
+
+```json
+{
+  "ui_tree_summary": {
+    "id": "UI_APP",
+    "name": "Application",
+    "kind": "app",
+    "pages": [
+      {
+        "id": "UI_000001",
+        "name": "home",
+        "kind": "page",
+        "major_subtrees": [
+          {
+            "id": "UI_000002",
+            "name": "Header",
+            "kind": "region"
+          },
+          {
+            "id": "UI_000022",
+            "name": "HeroBanner",
+            "kind": "region"
+          },
+          {
+            "id": "UI_000036",
+            "name": "QuickGuideSection",
+            "kind": "region"
+          }
+        ]
+      },
+      {
+        "id": "UI_000047",
+        "name": "registration",
+        "kind": "page",
+        "major_subtrees": []
+      }
+    ]
+  }
+}
+```
+
+[2026-10-22T07:27:00.057903+00:00] [frontend_design_ui] MODEL_OUTPUT
+{"add_nodes":[{"parent":"UI_000047","kind":"region","name":"RegistrationHeader","description":"Top white header containing the China Railway 12306 brand and the account, language and contact utilities."},{"parent":"@RegistrationHeader","kind":"image","name":"BrandLogo","description":"Railway emblem with the visible 中国铁路12306 and 12306 CHINA RAILWAY branding at the left of the header."},{"parent":"@RegistrationHeader","kind":"navigation","name":"LoginLink","description":"Header account entry with visible text \"Login\"."},{"parent":"@RegistrationHeader","kind":"navigation","name":"RegisterLink","description":"Header account entry with visible text \"Register\" and role=link, used by visitors to open /register."},{"parent":"@RegistrationHeader","kind":"navigation","name":"My12306Link","description":"Header utility entry with visible text \"My 12306\" and role=link."},{"parent":"@RegistrationHeader","kind":"button","name":"LanguageButton","description":"Header language control with visible text \"简体中文\" and role=button."},{"parent":"@RegistrationHeader","kind":"navigation","name":"ContactUsLink","description":"Header contact entry with visible text \"Contact us\" and role=link."},{"parent":"UI_000047","kind":"navigation","name":"PrimaryNavigation","description":"Full-width blue primary navigation beneath the header."},{"parent":"@PrimaryNavigation","kind":"navigation","name":"PrimaryHomeLink","description":"Primary navigation entry with visible text \"Home\" and role=link."},{"parent":"@PrimaryNavigation","kind":"navigation","name":"BookingLink","description":"Primary navigation entry with visible text \"Booking\" and role=link."},{"parent":"@PrimaryNavigation","kind":"navigation","name":"TravelGuidesLink","description":"Primary navigation entry with visible text \"Travel guides\" and role=link."},{"parent":"UI_000047","kind":"region","name":"BreadcrumbRegion","description":"White breadcrumb strip between the primary navigation and the registration card."},{"parent":"@BreadcrumbRegion","kind":"text","name":"BreadcrumbCurrentLocationText","description":"Breadcrumb label with exact visible text \"Current location:\"."},{"parent":"@BreadcrumbRegion","kind":"navigation","name":"BreadcrumbHomeLink","description":"Breadcrumb entry with visible text \"HOME\" and role=link that returns to /."},{"parent":"@BreadcrumbRegion","kind":"text","name":"BreadcrumbSeparator","description":"Breadcrumb separator showing the visible text \">\"."},{"parent":"@BreadcrumbRegion","kind":"text","name":"BreadcrumbCurrentPageText","description":"Current-page breadcrumb text with exact visible text \"Create an account\", rendered as text rather than a link."},{"parent":"UI_000047","kind":"region","name":"RegistrationCard","description":"Centered white registration panel below the breadcrumb, containing the account form."},{"parent":"@RegistrationCard","kind":"form","name":"RegistrationForm","description":"Registration form arranged vertically with right-aligned labels and a common input column, following the reference layout."},{"parent":"@RegistrationForm","kind":"region","name":"NationalityRow","description":"Form row for selecting nationality."},{"parent":"@NationalityRow","kind":"text","name":"NationalityLabel","description":"Visible field label \"Nationality\" for the nationality control."},{"parent":"@NationalityRow","kind":"input","name":"NationalitySelect","description":"Nationality control with role=combobox, visible label \"Nationality\", initial display \"Please select\", and selectable options including \"Vietnam\"."},{"parent":"@NationalitySelect","kind":"item","name":"VietnamOption","description":"Selectable nationality option \"Vietnam\" with role=option."},{"parent":"@NationalityRow","kind":"text","name":"NationalityHelperText","description":"Orange helper text with exact visible wording \"At present, only foreign passports are accepted for registration.\"."},{"parent":"@RegistrationForm","kind":"region","name":"NameRow","description":"Form row for the traveler's full name and the passport-information help link."},{"parent":"@NameRow","kind":"text","name":"NameLabel","description":"Visible field label \"Name\" for the name textbox."},{"parent":"@NameRow","kind":"input","name":"NameInput","description":"Text input with role=textbox and exact visible label \"Name\"."},{"parent":"@NameRow","kind":"navigation","name":"PassportRulesLink","description":"Blue underlined help link with exact visible and accessible text \"Check the rules for filling out passport information\" and role=link."},{"parent":"@RegistrationForm","kind":"region","name":"PassportNumberRow","description":"Form row for the passport number."},{"parent":"@PassportNumberRow","kind":"text","name":"PassportNumberLabel","description":"Visible field label \"Passport number\" for the passport-number textbox."},{"parent":"@PassportNumberRow","kind":"input","name":"PassportNumberInput","description":"Text input with role=textbox and exact visible label \"Passport number\"."},{"parent":"@RegistrationForm","kind":"region","name":"PassportExpirationRow","description":"Form row for the passport expiration date and its calendar control."},{"parent":"@PassportExpirationRow","kind":"text","name":"PassportExpirationLabel","description":"Visible field label \"Passport expiration date\" for the date textbox."},{"parent":"@PassportExpirationRow","kind":"input","name":"PassportExpirationDateInput","description":"Date-entry textbox with role=textbox and exact visible label \"Passport expiration date\"."},{"parent":"@PassportExpirationRow","kind":"button","name":"PassportExpirationCalendarButton","description":"Calendar icon button with no visible text and accessible name \"Choose passport expiration date\", role=button, independently operable."},{"parent":"@RegistrationForm","kind":"region","name":"DateOfBirthRow","description":"Form row for the date of birth and its calendar control."},{"parent":"@DateOfBirthRow","kind":"text","name":"DateOfBirthLabel","description":"Visible field label \"Date of birth\" for the date textbox."},{"parent":"@DateOfBirthRow","kind":"input","name":"DateOfBirthInput","description":"Date-entry textbox with role=textbox and exact visible label \"Date of birth\"."},{"parent":"@DateOfBirthRow","kind":"button","name":"DateOfBirthCalendarButton","description":"Calendar icon button with no visible text and accessible name \"Choose date of birth\", role=button, independently operable."},{"parent":"@RegistrationForm","kind":"region","name":"GenderRow","description":"Form row containing the gender group label and radio options."},{"parent":"@GenderRow","kind":"text","name":"GenderLabel","description":"Visible group label \"Gender\" for the radio group."},{"parent":"@GenderRow","kind":"form","name":"GenderRadioGroup","description":"Gender control with role=radiogroup and visible group label \"Gender\"."},{"parent":"@GenderRadioGroup","kind":"input","name":"MaleRadio","description":"Radio option with exact visible label and accessible name \"Male\", role=radio."},{"parent":"@GenderRadioGroup","kind":"input","name":"FemaleRadio","description":"Radio option with exact visible label and accessible name \"Female\", role=radio."},{"parent":"@RegistrationForm","kind":"region","name":"UsernameRow","description":"Form row for the account username."},{"parent":"@UsernameRow","kind":"text","name":"UsernameLabel","description":"Visible field label \"Username\" for the username textbox."},{"parent":"@UsernameRow","kind":"input","name":"UsernameInput","description":"Text input with role=textbox and exact visible label \"Username\"."},{"parent":"@RegistrationForm","kind":"region","name":"PasswordRow","description":"Form row for the account password."},{"parent":"@PasswordRow","kind":"text","name":"PasswordLabel","description":"Visible field label and accessible name \"Password\" for the password field."},{"parent":"@PasswordRow","kind":"input","name":"PasswordInput","description":"Password field with hidden input content, visible label and accessible name \"Password\", and no implicit ARIA role."},{"parent":"@RegistrationForm","kind":"region","name":"ConfirmPasswordRow","description":"Form row for confirming the account password."},{"parent":"@ConfirmPasswordRow","kind":"text","name":"ConfirmPasswordLabel","description":"Visible field label and accessible name \"Confirm Password\" for the confirmation password field."},{"parent":"@ConfirmPasswordRow","kind":"input","name":"ConfirmPasswordInput","description":"Password field with hidden input content, visible label and accessible name \"Confirm Password\", and no implicit ARIA role."},{"parent":"@RegistrationForm","kind":"region","name":"EmailAddressRow","description":"Form row for the contact email address."},{"parent":"@EmailAddressRow","kind":"text","name":"EmailAddressLabel","description":"Visible field label \"Email address\" for the email textbox."},{"parent":"@EmailAddressRow","kind":"input","name":"EmailAddressInput","description":"Text input with role=textbox and exact visible label \"Email address\"."},{"parent":"@EmailAddressRow","kind":"text","name":"EmailHelperText","description":"Orange helper text with exact visible wording \"Related notifications will be sent to you via email.\"."},{"parent":"@RegistrationForm","kind":"region","name":"ConsentSection","description":"Agreement area containing the required consent checkbox and its inline policy links."},{"parent":"@ConsentSection","kind":"input","name":"TermsConsentCheckbox","description":"Agreement checkbox with role=checkbox, visible label and accessible name exactly \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"."},{"parent":"@ConsentSection","kind":"text","name":"ConsentText","description":"Agreement sentence text surrounding the two policy links, matching the exact required wording."},{"parent":"@ConsentSection","kind":"navigation","name":"TermsOfServiceLink","description":"Inline agreement link with exact visible text \"Terms of Service\" and role=link, independently interactive."},{"parent":"@ConsentSection","kind":"navigation","name":"ConsentPrivacyPolicyLink","description":"Inline agreement link with exact visible text \"Privacy Policy\" and role=link, distinct from the footer Privacy Policy link."},{"parent":"@RegistrationForm","kind":"text","name":"FormErrorMessage","description":"Validation message area that displays invalid-input or duplicate-account errors without creating an account or session."},{"parent":"@RegistrationForm","kind":"button","name":"NextStepButton","description":"Large orange submit button with visible text and accessible name exactly \"Next step\", role=button."},{"parent":"UI_000047","kind":"region","name":"RegistrationFooter","description":"Full-width pale footer below the registration card, containing copyright, registration-number and policy-link text."},{"parent":"@RegistrationFooter","kind":"text","name":"FooterCopyrightText","description":"Footer line with the exact visible copyright text \"COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\"."},{"parent":"@RegistrationFooter","kind":"text","name":"FooterRegistrationNumbersText","description":"Footer line with the exact visible registration-number text \"京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\"."},{"parent":"@RegistrationFooter","kind":"region","name":"FooterPolicyLinks","description":"Footer policy-link row centered in the footer."},{"parent":"@FooterPolicyLinks","kind":"navigation","name":"FooterPrivacyPolicyLink","description":"Footer link with exact visible text \"Privacy Policy\" and role=link, distinct by location from the agreement-area Privacy Policy link."},{"parent":"@FooterPolicyLinks","kind":"navigation","name":"CookieStatementLink","description":"Footer link with exact visible text \"Cookie Statement\" and role=link."}],"bindings":[{"description":"The unauthenticated page header provides \"Register\" (role=link) with the exact visible name; the scenario starts by clicking it to open /register.","id":"@RegisterLink"},{"description":"The breadcrumb strip realizes the visible \"Current location: HOME > Create an account\" path specified for /register.","id":"@BreadcrumbRegion"},{"description":"The breadcrumb \"HOME\" entry is a link with the exact visible text \"HOME\" and returns to /.","id":"@BreadcrumbHomeLink"},{"description":"The breadcrumb's final entry is current-page text with the exact visible text \"Create an account\" rather than a link.","id":"@BreadcrumbCurrentPageText"},{"description":"The registration form groups all required account fields and the consent block in the reference display order.","id":"@RegistrationForm"},{"description":"\"Nationality\" is a combobox with the visible label \"Nationality\", initially displays \"Please select\", and supports choosing \"Vietnam\"; the scenario selects Vietnam.","id":"@NationalitySelect"},{"description":"\"Vietnam\" is a selectable option with role=option inside the Nationality combobox.","id":"@VietnamOption"},{"description":"\"Name\" is a textbox with the exact visible label \"Name\"; the scenario fills a valid 2–100 non-whitespace name.","id":"@NameInput"},{"description":"\"Check the rules for filling out passport information\" is a link with the exact visible and accessible name for passport guidance.","id":"@PassportRulesLink"},{"description":"\"Passport number\" is a textbox with the exact visible label \"Passport number\"; the scenario fills a valid 6–30 character ASCII passport number.","id":"@PassportNumberInput"},{"description":"\"Passport expiration date\" is a date-entry textbox with the exact visible label \"Passport expiration date\"; the scenario fills a date later than the current date.","id":"@PassportExpirationDateInput"},{"description":"The independently operable calendar button has no visible text and the accessible name \"Choose passport expiration date\", role=button.","id":"@PassportExpirationCalendarButton"},{"description":"\"Date of birth\" is a date-entry textbox with the exact visible label \"Date of birth\"; the scenario fills a date earlier than the current date.","id":"@DateOfBirthInput"},{"description":"The independently operable calendar button has no visible text and the accessible name \"Choose date of birth\", role=button.","id":"@DateOfBirthCalendarButton"},{"description":"\"Gender\" is a radiogroup with the visible group label \"Gender\" and contains the required Male and Female radio options.","id":"@GenderRadioGroup"},{"description":"\"Male\" is a radio with the exact visible label and accessible name \"Male\"; the scenario selects it.","id":"@MaleRadio"},{"description":"\"Female\" is a radio with the exact visible label and accessible name \"Female\".","id":"@FemaleRadio"},{"description":"\"Username\" is a textbox with the exact visible label \"Username\"; the scenario fills a unique 3–32 character username.","id":"@UsernameInput"},{"description":"\"Password\" is a hidden-content password field with the visible label and accessible name \"Password\" and no implicit ARIA role; the scenario fills a valid matching password.","id":"@PasswordInput"},{"description":"\"Confirm Password\" is a hidden-content password field with the visible label and accessible name \"Confirm Password\" and no implicit ARIA role; it must match Password.","id":"@ConfirmPasswordInput"},{"description":"\"Email address\" is a textbox with the exact visible label \"Email address\"; the scenario fills a valid unique email address.","id":"@EmailAddressInput"},{"description":"The agreement control is a checkbox with the visible label and accessible name exactly \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"; the scenario checks it.","id":"@TermsConsentCheckbox"},{"description":"\"Terms of Service\" is an independently interactive link with the exact visible text inside the agreement area.","id":"@TermsOfServiceLink"},{"description":"\"Privacy Policy\" is an independently interactive link with the exact visible text inside the agreement area and is distinct from the footer Privacy Policy link.","id":"@ConsentPrivacyPolicyLink"},{"description":"Invalid or duplicate input displays an error in this message area and prevents creating an account or session.","id":"@FormErrorMessage"},{"description":"\"Next step\" is a button with the exact visible and accessible name; clicking it submits the valid registration to save the account, sign the visitor in and return to the home page.","id":"@NextStepButton"},{"description":"The footer \"Privacy Policy\" link is the shared footer policy entry and is semantically distinguished from the agreement-area Privacy Policy link.","id":"@FooterPrivacyPolicyLink"}],"updates":[]}
+
+[2026-10-22T07:27:00.057903+00:00] [frontend_design_ui] MODEL_USAGE {"completion_tokens": 9880, "prompt_tokens": 6562, "total_tokens": 16442, "completion_tokens_details": {"accepted_prediction_tokens": null, "audio_tokens": null, "reasoning_tokens": 6263, "rejected_prediction_tokens": null, "text_tokens": null}, "prompt_tokens_details": {"audio_tokens": null, "cache_write_tokens": null, "cached_tokens": 2048, "image_tokens": null, "text_tokens": null}}
+
+[2026-10-22T07:27:00.057903+00:00] [frontend_design_ui] MODEL_REASONING
+We need to design the registration page UI tree. Page is new, root UI_000047. Need to add nodes covering all visible regions and requirement-defined controls/states. Also bind relevant nodes to requirement.
+
+Need names PascalCase page-local unique. Insert under root or nested.
+
+Let's plan structure:
+
+- Header region (page header) with Logo maybe text, and links: Login? Requirement mentions unauthenticated header "Register" link opening /register. Header shows Login, Register, My 12306, 简体中文, Contact us. Ancestor constraint defines shared navigation Home, Booking, Travel guides, My 12306, 简体中文, Contact us, plus account entry REQ-1. For registration page, header has Login and Register. Since requirement says clicking "Register" in unauthenticated header opens /register. On registration page header still shows Login/Register? Image shows. We should include header with Register link bound? The scenario starts from home clicking Register; but current requirement pages only registration. We bind registration page's header? Requirement says click Register in the header of unauthenticated page. Since current page is registration and page includes header. But we need to design registration page's controls. Include Header region with Logo, LoginLink, RegisterLink, My12306Link, LanguageButton, ContactUsLink. Bind Register? It opens /register; on same page maybe irrelevant. But requirement explicitly mentions header Register link; include and bind? Could bind as account entry? Narrowly, maybe bind RegisterLink because it's explicitly required UI wording/role. Yes.
+
+- Primary navigation region: HomeLink, BookingLink, TravelGuidesLink. Shared ancestor. Bind? Ancestor constraint defines shared nav, but current requirement leaf is register page. Bind relevant? Maybe not necessary, but current page includes nav. Requirement does not require navigation except Home link in breadcrumb. We can include but not bind (avoid binding unrelated ancestor). However "Always return bindings for relevant UI". Shared nav is ancestor constraint, but we should not implement parent. Could add as structure, not bind.
+
+- Breadcrumb region: text "Current location:", HomeLink "HOME", separator ">", CurrentPageText "Create an account". Requirement explicitly says breadcrumb. Bind Breadcrumb region, HomeLink, CurrentPageText.
+
+- MainRegistrationCard region containing form, helper text, etc.
+
+Form fields:
+  - NationalityFormRow/Form field: label "Nationality", select combobox initial Please select with options including Vietnam. Could add NationalitySelect (kind input?) Use kind "input" for select/combobox? Schema kinds include input, other. Better kind "other" maybe form control. But representative: "NationalityField" kind "form"? We have region/form/list/item/input/button/text/image/dialog/navigation/other. For combobox, kind "input" is closest? The requirement role=combobox. Kind "input" might represent. Need label node for exact visible label. Add "NationalityLabel" text, "NationalitySelect" input, "VietnamOption" item? Option within select could be item. Need initial "Please select" display. Add description. Also helper "At present, only foreign passports are accepted for registration." text. Add as text. Bind NationalitySelect and maybe label? Binding narrow controls. Could bind NationalitySelect and VietnamOption? The scenario selects Vietnam. Need option node bind. If option is nested under select? Maybe select itself and option. But options dynamic; representative item template for repeated content. Add NationalityOption? names page-local unique; maybe "VietnamNationalityOption". Good.
+
+  - Name row: label "Name", textbox, helper link "Check the rules..." exact. Add NameField region? Or label text, NameInput input, PassportRulesLink navigation/link. Bind NameInput and PassportRulesLink. The requirement says visible label exact. Label node helps.
+
+  - Passport number: label, input. Bind.
+  - Passport expiration date: label, date input, calendar button accessible name "Choose passport expiration date" no visible text. Add PassportExpirationDateInput input, PassportExpirationCalendarButton button. Bind both? Requirement says if calendar icon independently interactive. Yes bind maybe button.
+  - Date of birth similarly.
+  - Gender group: label "Gender", radiogroup with Male/Female radios. Add GenderGroup region/form? Could add "GenderRadioGroup" kind form or other? Radio group is form. Add MaleRadio and FemaleRadio kind input? Kind "input" for radio. Bind gender group and Male radio (scenario selects Male). Also female maybe bind? Requirement defines both; bind Female too? "bind only nodes implementing current requirement description/scenario steps" both are required fields. Bind both maybe.
+  - Username row.
+  - Password: requirement says hidden input content, no implicit ARIA role, visible label and accessible name "Password". Need add PasswordInput kind input? It lacks role, but still input. Bind.
+  - ConfirmPassword input.
+  - Email address input with orange helper text "Related notifications will be sent to you via email." Add text.
+  - Consent area: checkbox with visible label/accessible name entire sentence. Add TermsConsentCheckbox input/checkbox. Need the sentence includes links. Could add Consent text node containing full text? But links need separate nodes. Need "TermsOfServiceLink" and "PrivacyPolicyLink" inside consent region. The checkbox accessible name should be full sentence; description. Add ConsentRegion, TermsConsentCheckbox, ConsentText, TermsOfServiceLink, PrivacyPolicyLink. Be careful footer also has Privacy Policy link; distinguish by semantics. Names globally page-local must be unique: ConsentPrivacyPolicyLink vs FooterPrivacyPolicyLink.
+
+  - Next step button.
+
+Footer region: footer text lines, PrivacyPolicyLink, CookieStatementLink. These are required by ancestor. Add footer, but don't bind? Current requirement mentions footer Privacy Policy distinction only in description: "它们位于协议区域，与页脚的 Privacy Policy 链接区分" — that's an explicit mention requiring distinction. Could add FooterPrivacyPolicyLink and bind? Might bind to show distinction? But the requirement about footer policy link is ancestor. Yet leaf says link locations distinct. We can bind consent links and footer link? Binding footer link may be relevant to distinguish. We can bind FooterPrivacyPolicyLink to the requirement's distinction. But "Do not bind an unrelated ancestor merely to authorize..." Footer Privacy Policy is shared ancestor, but requirement explicitly distinguishes it. Maybe include binding with description noting it's the footer policy link, distinct from the consent-area Privacy Policy link. That seems relevant.
+
+Also need validation error states? Requirement says invalid/duplicate inputs show errors. We need UI nodes for error messages. Since no image state, requirement-defined. Need add error text nodes maybe group. Could create a generic FormErrorSummary region or individual field error messages. The requirement says "无效或重复的输入需要显示错误" without specific wording. We can add per-field error message elements? "Do not invent extra obligations." But we need interaction-site nodes for errors. Could add a generic "FormErrorMessage" text under each field? That's a lot. Maybe add a shared "FormValidationErrors" region? But errors tied to fields. For design, can include error message text nodes adjacent to fields, with placeholder wording chosen? But exact wording not specified. It's okay to choose suitable wording where silent. Yet avoid over-detail. We could add an "ErrorMessage" text under each field? We need show errors and not create account. Tests may need error display. Without specific wording, any error text. But design should include error UI. Could add generic "FormErrorText" nodes for each field? Hmm.
+
+Maybe create "RegistrationForm" region with fields and "FormErrorSummary" region for invalid/duplicate errors. But per-field errors more standard. However requirement mentions specific validation constraints; likely tests check error visibility maybe via text. Since wording not specified, they may check any error. The design isn't tests. We can include generic "ValidationErrorText" under relevant fields with placeholder. But bindings? Bind maybe not necessary? But current scenario only valid registration; invalid states described in requirement. To cover, add "NationalityError", "NameError", etc as text nodes. That's many but okay. Could also define one representative "FieldErrorText" template? Names unique, one per field.
+
+Also success state on home page: current page registration only. The scenario THEN is on home. Current task pages lists only registration. We cannot design home here. But bindings can include registration submit button. The home state belongs to home page already? Since pages list only registration, we shouldn't add home nodes. The selected page is registration. Bind only registration nodes. Maybe mention home not designed here. But requirement says pages lists ALL pages involved; only registration page. Yet scenario includes home display after registration. Maybe home exists baseline with REQ-1. We don't modify. We could not bind home because not current page. The compiler can use existing home. Fine.
+
+Need also maybe success/redirect state not in registration. Not design.
+
+Let's structure nodes:
+
+Root UI_000047 children:
+1. RegistrationHeader (region)
+   - BrandLogo (image or text)
+   - HeaderAccountLinks? Could directly children: LoginLink (navigation), RegisterLink (navigation), My12306Link (navigation), LanguageButton (button), ContactUsLink (navigation)
+   But "My 12306" is role=link per ancestor, though image says dropdown. Requirement says shared nav role link. Use navigation kind. LanguageButton button. ContactUsLink link.
+2. PrimaryNavigation (navigation)
+   - HomeNavLink, BookingNavLink, TravelGuidesNavLink (navigation)
+3. BreadcrumbRegion (region)
+   - CurrentLocationText (text) "Current location:"
+   - BreadcrumbHomeLink (navigation) "HOME"
+   - BreadcrumbSeparator (text) ">"
+   - BreadcrumbCurrentPageText (text) "Create an account"
+4. RegistrationCard (region)
+   - RegistrationForm (form)
+     - NationalityRow (region)
+       - NationalityLabel (text)
+       - NationalitySelect (input)
+         - VietnamOption (item)
+       - NationalityHelperText (text)
+       - NationalityError (text)
+     - NameRow (region)
+       - NameLabel (text)
+       - NameInput (input)
+       - PassportRulesLink (navigation)
+       - NameError
+     - PassportNumberRow...
+     - PassportExpirationRow...
+     - DateOfBirthRow...
+     - GenderRow (region/form?)
+       - GenderLabel
+       - GenderRadioGroup (form)
+         - MaleRadio (input)
+         - FemaleRadio (input)
+       - GenderError
+     - UsernameRow...
+     - PasswordRow...
+     - ConfirmPasswordRow...
+     - EmailAddressRow...
+     - ConsentSection (region)
+       - TermsConsentCheckbox (input)
+       - ConsentText (text) maybe full sentence
+       - TermsOfServiceLink
+       - ConsentPrivacyPolicyLink
+       - ConsentError
+     - NextStepButton (button)
+     - FormErrorMessage? Maybe not if per-field.
+5. RegistrationFooter (region)
+   - FooterCopyrightText (text)
+   - FooterRegistrationNumbers (text)
+   - FooterPolicyLinks (region)
+     - FooterPrivacyPolicyLink (navigation)
+     - CookieStatementLink (navigation)
+
+Need add required asterisks? Labels with red asterisk. Could incorporate in label description. Names exact "Nationality" not include asterisk. Good.
+
+Need binding descriptions. For each relevant node, must extract requirement wording or scenario action and explain which part this UI realizes. We can bind many. Need not bind every field? "Always return bindings for relevant UI even on first creation." Bind all fields involved in scenario and requirement, breadcrumb, links, checkbox, submit, header register link, footer policy distinction, date calendar buttons, gender radios, nationality option, terms links.
+
+Let's enumerate bindings:
+- @RegistrationHeader? Maybe bind header as region containing "Register" entry? Narrowest might be @RegisterLink. Bind RegisterLink: header "Register" link opens /register; visible text exact. Actually on registration page, clicking it reloads /register. The requirement says click unauthenticated header Register to open /register. Bind.
+- @BreadcrumbRegion maybe as region, @BreadcrumbHomeLink, @BreadcrumbCurrentPageText.
+- @NationalitySelect (combobox initial Please select, includes Vietnam; scenario chooses Vietnam).
+- @VietnamOption (option Vietnam).
+- @NameInput.
+- @PassportRulesLink.
+- @PassportNumberInput.
+- @PassportExpirationDateInput.
+- @PassportExpirationCalendarButton.
+- @DateOfBirthInput.
+- @DateOfBirthCalendarButton.
+- @GenderRadioGroup.
+- @MaleRadio.
+- @FemaleRadio.
+- @UsernameInput.
+- @PasswordInput.
+- @ConfirmPasswordInput.
+- @EmailAddressInput.
+- @TermsConsentCheckbox.
+- @TermsOfServiceLink.
+- @ConsentPrivacyPolicyLink.
+- @NextStepButton.
+- @FooterPrivacyPolicyLink for distinction.
+Maybe bind error texts? Could bind generic error nodes? Maybe not all. But requirement includes invalid errors. We could bind @NationalityError? But wording not specified. Could bind each error? That may be excessive. Maybe create a single @FormErrorMessage region? Hmm.
+
+Alternative: Add one "ValidationMessage" text inside each row. Bind maybe @FormValidationMessages? But if generic region, test can find. Yet if we don't bind, is it okay? The leaf's requirement includes error state. Bind at least a generic "FormErrorSummary" region. But errors should be per field. We can add "FormErrorMessage" text under form, description "Displays validation or duplicate-account errors; exact wording not specified by requirement." Bind that single node to requirement's invalid/duplicate error behavior. That covers. But a single form-level error might be acceptable? The requirement says "显示错误" not per field. So one error message area is fine. Add "FormErrorMessage" text under RegistrationForm after submit maybe. Bind. That avoids many error nodes. But UX typically per field, but requirement silent. Could add per-field for better design? Too much. Let's add one "FormErrorMessage" text at bottom of form. Also maybe hidden by default; description says hidden until validation fails. Good.
+
+Need maybe success state? Not on registration.
+
+Need include field labels as text nodes? We can create labels but bind only control nodes. But labels are relevant to exact visible labels. Could bind labels? The binding is for UI behavior traceability. Binding label nodes might be unnecessary; the control's accessible name includes label. But requirement explicitly says visible labels. The label node itself realizes visible label. Maybe bind labels too? That would be many. "Use narrowest relevant controls/regions" — label is not a control. But visible wording is important. Bind control descriptions mention visible label. The UI tree includes label nodes. It may be okay not to bind each label. But to ensure exact wording, add label nodes. Bind maybe one or two? Hmm.
+
+Maybe bind the RegistrationForm region? It realizes form. But better bind each control. Could also bind some labels? Not needed.
+
+Need "Next step" button exact text.
+
+Need role details in descriptions. For checkbox: visible label and accessible name full sentence. For password fields: no implicit ARIA role. Our kind input might imply role textbox, but description can say rendered as a password field with no implicit ARIA role, visible label "Password". Kind "input" okay.
+
+Need "Nationality" initial display "Please select". Our select placeholder node? Add "NationalityPlaceholder" text? Could include in description of select. Maybe add "PleaseSelectOption" item? Requirement says initial shows "Please select", contains selectable "Vietnam" option. Add "PleaseSelectPlaceholderOption" item? But initial display not an option? It is placeholder. Add item maybe. Names: NationalitySelect, VietnamOption. Description covers initial. Good.
+
+Need breadcrumb "Create an account" is current page text not link. Add text.
+
+Need footer text exact? We can include but not bind. Maybe add footer copyright text, registration numbers text. Use exact text from analysis.
+
+Need "Header far right faint icon" ignore unclear. The analysis says unclear, no need.
+
+Need "Login" link? Include. Not bind? Requirement not about login. But page structure. Could include.
+
+Need primary nav Home, Booking, Travel guides. Include.
+
+Need "My 12306" role link, "简体中文" role button, "Contact us" role link. Include.
+
+Need "Home" link in navigation and breadcrumb. Names unique: PrimaryHomeLink vs BreadcrumbHomeLink.
+
+Need app/page root not output. Parent root UI_000047.
+
+Let's ensure names page-local unique. Use PascalCase.
+
+List add_nodes:
+
+1 RegistrationHeader parent UI_000047 kind region
+2 BrandLogo parent @RegistrationHeader kind image (or text). Image is okay.
+3 LoginLink parent @RegistrationHeader kind navigation
+4 RegisterLink parent @RegistrationHeader kind navigation
+5 My12306Link parent @RegistrationHeader kind navigation
+6 LanguageButton parent @RegistrationHeader kind button
+7 ContactUsLink parent @RegistrationHeader kind navigation
+
+8 PrimaryNavigation parent UI_000047 kind navigation
+9 PrimaryHomeLink parent @PrimaryNavigation kind navigation
+10 BookingLink parent @PrimaryNavigation kind navigation
+11 TravelGuidesLink parent @PrimaryNavigation kind navigation
+
+12 BreadcrumbRegion parent UI_000047 kind region
+13 BreadcrumbCurrentLocationText parent @BreadcrumbRegion kind text
+14 BreadcrumbHomeLink parent @BreadcrumbRegion kind navigation
+15 BreadcrumbSeparator parent @BreadcrumbRegion kind text
+16 BreadcrumbCurrentPageText parent @BreadcrumbRegion kind text
+
+17 RegistrationCard parent UI_000047 kind region
+18 RegistrationForm parent @RegistrationCard kind form
+
+19 NationalityRow parent @RegistrationForm kind region
+20 NationalityLabel parent @NationalityRow kind text
+21 NationalitySelect parent @NationalityRow kind input
+22 VietnamOption parent @NationalitySelect kind item
+23 NationalityHelperText parent @NationalityRow kind text
+
+24 NameRow parent @RegistrationForm kind region
+25 NameLabel parent @NameRow kind text
+26 NameInput parent @NameRow kind input
+27 PassportRulesLink parent @NameRow kind navigation
+
+28 PassportNumberRow parent @RegistrationForm kind region
+29 PassportNumberLabel parent @PassportNumberRow kind text
+30 PassportNumberInput parent @PassportNumberRow kind input
+
+31 PassportExpirationRow parent @RegistrationForm kind region
+32 PassportExpirationLabel parent @PassportExpirationRow kind text
+33 PassportExpirationDateInput parent @PassportExpirationRow kind input
+34 PassportExpirationCalendarButton parent @PassportExpirationRow kind button
+
+35 DateOfBirthRow parent @RegistrationForm kind region
+36 DateOfBirthLabel parent @DateOfBirthRow kind text
+37 DateOfBirthInput parent @DateOfBirthRow kind input
+38 DateOfBirthCalendarButton parent @DateOfBirthRow kind button
+
+39 GenderRow parent @RegistrationForm kind region
+40 GenderLabel parent @GenderRow kind text
+41 GenderRadioGroup parent @GenderRow kind form
+42 MaleRadio parent @GenderRadioGroup kind input
+43 FemaleRadio parent @GenderRadioGroup kind input
+
+44 UsernameRow parent @RegistrationForm kind region
+45 UsernameLabel parent @UsernameRow kind text
+46 UsernameInput parent @UsernameRow kind input
+
+47 PasswordRow parent @RegistrationForm kind region
+48 PasswordLabel parent @PasswordRow kind text
+49 PasswordInput parent @PasswordRow kind input
+
+50 ConfirmPasswordRow parent @RegistrationForm kind region
+51 ConfirmPasswordLabel parent @ConfirmPasswordRow kind text
+52 ConfirmPasswordInput parent @ConfirmPasswordRow kind input
+
+53 EmailAddressRow parent @RegistrationForm kind region
+54 EmailAddressLabel parent @EmailAddressRow kind text
+55 EmailAddressInput parent @EmailAddressRow kind input
+56 EmailHelperText parent @EmailAddressRow kind text
+
+57 ConsentSection parent @RegistrationForm kind region
+58 TermsConsentCheckbox parent @ConsentSection kind input
+59 ConsentText parent @ConsentSection kind text
+60 TermsOfServiceLink parent @ConsentSection kind navigation
+61 ConsentPrivacyPolicyLink parent @ConsentSection kind navigation
+
+62 FormErrorMessage parent @RegistrationForm kind text
+63 NextStepButton parent @RegistrationForm kind button
+
+64 RegistrationFooter parent UI_000047 kind region
+65 FooterCopyrightText parent @RegistrationFooter kind text
+66 FooterRegistrationNumbersText parent @RegistrationFooter kind text
+67 FooterPolicyLinks parent @RegistrationFooter kind region
+68 FooterPrivacyPolicyLink parent @FooterPolicyLinks kind navigation
+69 CookieStatementLink parent @FooterPolicyLinks kind navigation
+
+Maybe also "At present..." helper text exact. Included.
+
+Need maybe error for consent? Single FormErrorMessage covers.
+
+Need maybe "Gender" group required. Good.
+
+Need maybe "Nationality" select role combobox. Description.
+
+Bindings IDs can reference @Name for new. Use @ for all new. Need bind loaded? Only root UI_000047. Do not bind page root? Maybe not necessary. Bind narrow controls.
+
+Bindings descriptions:
+- @RegisterLink: "The unauthenticated page header provides \"Register\" (role=link) at the exact visible name; the scenario starts by clicking it to open /register."
+- @BreadcrumbRegion? Maybe bind region to breadcrumb contract: "Breadcrumb strip realizes visible \"Current location: HOME > Create an account\" with HOME as link and current page as text." But bind narrow nodes individually. Could bind BreadcrumbRegion too? Maybe not, bind Home and current text.
+- @BreadcrumbHomeLink: "\"HOME\" (role=link) in the breadcrumb returns /."
+- @BreadcrumbCurrentPageText: "\"Create an account\" is the current page's non-link text in the breadcrumb."
+- @NationalitySelect: "\"Nationality\" (role=combobox) shows visible label \"Nationality\", initially \"Please select\", and allows choosing \"Vietnam\"; scenario selects Vietnam."
+- @VietnamOption: "\"Vietnam\" (role=option) is selectable in the Nationality combobox."
+- @NameInput: "\"Name\" (role=textbox) uses exact visible label \"Name\"; scenario fills a valid 2–100 non-whitespace name."
+- @PassportRulesLink: "\"Check the rules for filling out passport information\" (role=link) uses exact visible and accessible name for passport guidance."
+- @PassportNumberInput: "\"Passport number\" (role=textbox) uses exact visible label and accepts 6–30 ASCII letters/digits/hyphens."
+- @PassportExpirationDateInput: "\"Passport expiration date\" (role=textbox) uses exact visible label and accepts a date later than today."
+- @PassportExpirationCalendarButton: "Calendar button with no visible text and accessible name \"Choose passport expiration date\" (role=button), independently operable for the date field."
+- @DateOfBirthInput: "\"Date of birth\" (role=textbox) uses exact visible label and accepts a date earlier than today."
+- @DateOfBirthCalendarButton: "Calendar button with no visible text and accessible name \"Choose date of birth\" (role=button), independently operable."
+- @GenderRadioGroup: "\"Gender\" (role=radiogroup) has visible group label \"Gender\" and contains Male/Female radios."
+- @MaleRadio: "\"Male\" (role=radio) is selected in the scenario."
+- @FemaleRadio: "\"Female\" (role=radio) with exact visible label and accessible name."
+- @UsernameInput: "\"Username\" (role=textbox) visible label; accepts 3–32 ASCII letters/digits/hyphens/underscores and must be unique."
+- @PasswordInput: "\"Password\" visible label and accessible name; password field with hidden content and no implicit ARIA role; accepts 12–128 chars with upper/lower/digit/special."
+- @ConfirmPasswordInput: "\"Confirm Password\" visible label/access name; hidden content, no implicit ARIA role; must match Password."
+- @EmailAddressInput: "\"Email address\" (role=textbox); valid, max 254, unique case-insensitive."
+- @TermsConsentCheckbox: "Agreement checkbox role=checkbox with visible label and accessible name exactly \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"; must be checked."
+- @TermsOfServiceLink: "\"Terms of Service\" (role=link) inside consent area, exact visible text, independently interactive."
+- @ConsentPrivacyPolicyLink: "\"Privacy Policy\" (role=link) inside consent area, exact visible text, distinct from footer Privacy Policy."
+- @FormErrorMessage: "Displays validation or duplicate-account error when invalid input prevents account creation; no account/session created."
+- @NextStepButton: "\"Next step\" (role=button) visible and accessible name exact; submits valid form to save account, auto-login and return home."
+- @FooterPrivacyPolicyLink: "Footer \"Privacy Policy\" (role=link) is the shared footer policy link, semantically distinct from the consent-area Privacy Policy link."
+
+Should bind @PassportNumberInput etc. Good.
+
+Do we need bind @NationalityRow? Not necessary. But control accessible label association: The select has visible label "Nationality". We have label node. In binding description mention. Good.
+
+Need maybe bind @EmailHelperText? Not necessary.
+
+Need maybe bind @PrimaryHomeLink? Requirement mentions "HOME" breadcrumb returns /, not nav. No.
+
+Need maybe bind @LanguageButton etc? Ancestor constraint defines, but not current requirement. No.
+
+Need maybe add "NationalityPlaceholder" node? Could add to NationalitySelect description. Fine.
+
+Need maybe add "RequiredAsterisk" nodes? Not necessary.
+
+Need maybe add "RegistrationForm" bind? The form region realizing form. Could bind @RegistrationForm to "Form follows reference image; all fields required..." But bindings should be narrow. We already bind controls. Maybe binding form region helps for "all fields required" and submission. But we bind submit. Could add binding for @RegistrationForm: "Registration form groups all required account fields and consent controls in reference order." That is relevant. Add maybe. But not too many. It may be useful. Let's include @RegistrationForm binding. It covers order.
+
+Need maybe bind @ConsentSection? Not needed.
+
+Need updates empty.
+
+Need ensure no duplicate names. "FooterPrivacyPolicyLink" vs "ConsentPrivacyPolicyLink" distinct.
+
+Need description of footer privacy link maybe bind. Good.
+
+Potential issue: "Privacy Policy" link in consent text accessible name exact; the checkbox accessible name includes full sentence. Our checkbox's accessible name should include entire sentence, but in HTML the links inside label would make checkbox name include text. Description covers. Good.
+
+Potential issue: requirement says password fields have no implicit ARIA role. Our kind "input" may be interpreted as input role? But kind is design taxonomy, not ARIA. Description clarifies.
+
+Potential issue: "Nationality" role=combobox. Kind input might be less exact. But kind enum lacks combobox. Could use "other" with description role combobox. Hmm. For control semantics, kind "input" is okay? The schema has input. Since requirement role=combobox, using kind "other" might be weird. We can set kind "input" and description says select/combobox. Fine.
+
+GenderRadioGroup kind form. Good.
+
+Date input role=textbox per requirement, though input type date. We use input kind, description role=textbox.
+
+Now check current scenario steps: GIVEN visitor opens /. WHEN clicks header Register -> we have RegisterLink (on registration page) but not home page. Current page is registration. The header Register link is present on registration page too. The requirement says click unauthenticated header Register opens /register. Since pages list only registration, we can only bind this page. But the action from home is on home page existing REQ-1 maybe. Is it okay? The current_task.pages only registration. The compiler will handle home. We should not create home. We bind RegisterLink in registration header though it's not the one clicked from home. Hmm. Could be considered not implementing the scenario's step because the link is on registration page, not home. But current page is registration; the header is shared. The home page already has Header UI_000002. The compiler can use existing home header. We don't need to bind. But requirement explicitly says click unauthenticated header Register. The registration page's header also has Register. The same shared mechanism. Binding it is okay for traceability. The compiler may use home's existing Register link from REQ-1. But we cannot reference it. Fine.
+
+Need maybe bind @RegistrationHeader? Not necessary.
+
+Need maybe footer "Privacy Policy | Cookie Statement" exact. We add.
+
+Should we include "Login" link? Yes. Not bind.
+
+Need maybe "My 12306" role link. Even though image dropdown, ancestor says role=link. Use navigation.
+
+Need maybe "Booking" role link and "Travel guides" role link. Use navigation.
+
+Need maybe "Home" primary nav link. Use navigation.
+
+Now produce JSON only.
+
+Let's craft add_nodes with descriptions concise but clear. Parent references @Name for new. Root parent "UI_000047". All names unique. Descriptions should mention visible text and role.
+
+Need careful JSON valid.
+
+Let's write.
+
+[2026-10-22T07:28:00.277258+00:00] [frontend_design_ui] MODEL_FINISHED duration_ms=60219

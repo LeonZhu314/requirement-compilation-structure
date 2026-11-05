@@ -1,0 +1,7 @@
+{
+  "reference": "regt3h8hc.arc-bench.com/arcbench-runner:latest",
+  "runner_kind": "python",
+  "id": "sha256:ce6c0d262ffe81ff0864d8ca6c3e3861bb1241353eb055399202cb7b48072438",
+  "digest": "regt3h8hc.arc-bench.com/arcbench-runner@sha256:ce6c0d262ffe81ff0864d8ca6c3e3861bb1241353eb055399202cb7b48072438",
+  "created": "2026-10-20T02:34:39.336603995+08:00"
+}

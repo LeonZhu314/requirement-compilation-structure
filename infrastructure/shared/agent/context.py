@@ -93,6 +93,9 @@ class SourceFiles:
         details once. Successful checks and duplicate JSON `output` are omitted.
         """
         value = compact_feedback(value)
+        self.sources.update(source_paths(self.output, self.root))
+        self.editable.update(editable_sources(self.output, self.root))
+        self.tests.update(source_paths(self.output, self.tests_root))
         text = (value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)).replace("\\\\", "/").replace("\\", "/")
         application_files = {path for path in workspace.writable if path.startswith(self.root + "/")}
         self.sources.update(application_files)

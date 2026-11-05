@@ -13,6 +13,8 @@ from infrastructure.utils.presentation.console import DemoConsole
 from infrastructure.utils.presentation.logging import console_log
 from infrastructure.utils.files import save_json, save_text
 from infrastructure.stages.requirements.tree import RequirementTree
+from infrastructure.stages.requirements.normalize import normalize_requirements
+from infrastructure.stages.requirements.visuals import analyze_references
 from infrastructure.shared.project.git import checkpoint
 
 
@@ -44,6 +46,7 @@ class RequirementExplorer:
     """Show one requirement at a time with optional scenario and step expansion."""
 
     def __init__(self, input_path: Path, root: dict) -> None:
+        root = normalize_requirements(root)
         self.input_path = input_path.resolve()
         self.input_dir = self.input_path.parent
         self.tree = RequirementTree(root)
@@ -227,6 +230,7 @@ def load_requirements(path: Path) -> dict:
         raise ValueError(f"Invalid requirements.yaml: {error}") from error
     if not isinstance(root, dict):
         raise ValueError("The requirements YAML root must be an object")
+    root = normalize_requirements(root)
     RequirementTree(root)
     return root
 
@@ -266,6 +270,7 @@ def explore_requirement(input_dir: Path, arc_dir: Path, pause: bool = False) -> 
         raise ValueError(f"Invalid requirements.yaml: {error}") from error
     if not isinstance(requirements, dict):
         raise ValueError("The root of requirements.yaml must be a requirement object")
+    requirements = normalize_requirements(requirements)
     try:
         text = json.dumps(requirements, ensure_ascii=False, indent=2, allow_nan=False)
     except (TypeError, ValueError) as error:
@@ -292,20 +297,12 @@ def explore_requirement(input_dir: Path, arc_dir: Path, pause: bool = False) -> 
     save_text(arc_dir / "requirements.json", text + "\n")
     checkpoint(arc_dir.parent, stage="01", task="requirements", action="Publish input requirement snapshot",
         details={"source": str(source), "image_references": references})
-    analysis = {}
-    if references:
-        model = VisualModel()
-        for reference in references:
-            print(f"Analyzing image: {reference}", flush=True)
-            analysis[reference] = model.analyze(input_dir / reference)
-            save_json(arc_dir / "visual_analysis.json", analysis)
-            checkpoint(arc_dir.parent, stage="01", task=reference, action="Publish visual reference analysis",
-                details={"reference": reference, "analysis": analysis[reference]})
-            console.show(f"3. Visual analysis | {reference}", json.dumps(analysis[reference], ensure_ascii=False, indent=2))
-    else:
+    _, visual_report = analyze_references(input_dir, arc_dir, references, VisualModel, console)
+    if not references:
         console.show("3. Visual analysis", "No referenced images; no model call is needed.")
-    save_json(arc_dir / "visual_analysis.json", analysis)
     print(f"Results saved: {arc_dir / 'requirements.json'}, {arc_dir / 'visual_analysis.json'}")
+    if visual_report["status"] == "DEGRADED":
+        return {**requirements, "status": "DEGRADED", "verification": {"visual_analysis": visual_report}}
     return requirements
 
 

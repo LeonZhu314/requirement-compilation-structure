@@ -11,7 +11,7 @@ from infrastructure.shared.agent.loop import run_file_agent
 from infrastructure.shared.agent.recovery import implementation_task, final_checks, complete_report
 from infrastructure.shared.agent.context import SourceFiles
 from infrastructure.shared.agent.discovery import project_index
-from infrastructure.shared.project.entrypoints import selected_path
+from infrastructure.shared.project.entrypoints import selected_path, remember_path
 from infrastructure.stages.frontend.triggers.e2e_runtime import CONFIG, FIXTURE, prepare_e2e
 from infrastructure.stages.frontend.triggers.testing import E2EChecks, test_path
 from infrastructure.stages.frontend.ui.runtime import APPLICATION_ENTRYPOINTS, prepare_frontend
@@ -39,6 +39,12 @@ def scenario_context(ui, design, rid):
     for pid in ui["pages"]:
         if elements.intersection(page_elements(ui, pid)):
             pages[pid] = page_context(ui, pid)
+    # Include only entry/loading dependencies on directly involved pages. Do not
+    # recursively pull other workflows or change the requirement's trigger ownership.
+    page_nodes = {uid for pid in pages for uid in page_elements(ui, pid)}
+    for tid, trigger in design["triggers"].items():
+        if trigger["source"] in page_nodes and trigger["event"] == "mount":
+            triggers.setdefault(tid, trigger)
     return {"page_subtrees": pages, "triggers": triggers}
 
 
@@ -205,7 +211,7 @@ If a necessary correction is outside tool scope, explain the exact blocker in di
 
 
 def run_trigger_tdd(arc_dir, tree, schema, backend, ui, design, images, contexts,
-        model, console, report, max_turns=10, max_tests=2):
+        model, console, report, max_turns=None, max_tests=2, *, acceptance_prepare=None, acceptance_review=None):
     """Implement design one requirement at a time through real-app E2E TDD.
 
     Prepare dependencies/runtime, generate initial key scenario tests, then
@@ -296,6 +302,19 @@ def run_trigger_tdd(arc_dir, tree, schema, backend, ui, design, images, contexts
         report["requirements"][rid] = {"status": "GENERATING_TESTS", "triggers": sorted(tids),
             "target_triggers": sorted(targets), "test_path": relative}
         save_json(arc_dir / "frontend_e2e.json", report)
+        if acceptance_prepare is not None:
+            # Freeze a compiled oracle before the implementation rollback boundary.
+            # A failed implementation must not delete it and solicit a different test.
+            with implementation_task(output, report["requirements"][rid], console, "12 / acceptance / " + rid):
+                relative = acceptance_prepare(rid)
+                # Reuse this independent suite as the TDD oracle instead of asking
+                # another agent to generate overlapping implementation-owned smoke tests.
+                remember_path(output, "e2e_test", rid, relative)
+                report["requirements"][rid]["acceptance_path"] = relative
+                report["requirements"][rid]["test_path"] = relative
+            if report["requirements"][rid]["status"] == "FAILED":
+                save_json(arc_dir / "frontend_e2e.json", report)
+                continue
         with implementation_task(output, report["requirements"][rid], console, "12 / " + rid):
             regression_files = [test_path(key, output) for key in [*accepted, rid]]
 
@@ -319,12 +338,6 @@ def run_trigger_tdd(arc_dir, tree, schema, backend, ui, design, images, contexts
 
             test_context = {**model_context(context), "schema": related_schema(schema, context["backend_apis"].values()), "test_path": relative if (output / relative).is_file() else None,
                 "max_tests": max_tests}
-            test_workspace = selection.workspace(target=("e2e_test", rid), existing=relative,
-                references=["frontend/src/ui-runtime.ts", CONFIG, FIXTURE, "backend/tests/support/context.ts",
-                    *selection.paths("page", pages), *APPLICATION_ENTRYPOINTS,
-                    "frontend/package.json", "frontend/tsconfig.json",
-                    *backend_selection.paths("api", called),
-                    *[f"backend/src/db/tables/{name}.sql" for name in related_schema(schema, context["backend_apis"].values())]])
             agent, generation_feedback = None, None
             if (output / relative).is_file():
                 try:
@@ -332,6 +345,16 @@ def run_trigger_tdd(arc_dir, tree, schema, backend, ui, design, images, contexts
                 except (ValueError, RuntimeError) as error:
                     generation_feedback = getattr(error, "feedback", {"error": str(error)})
             if agent is None:
+                if acceptance_prepare is not None:
+                    # Independent tests have a separate review owner. Never expose
+                    # them through the writable smoke-test generation workspace.
+                    raise ValueError(f"Independent suite compilation failed: {generation_feedback}")
+                test_workspace = selection.workspace(target=("e2e_test", rid), existing=relative,
+                    references=["frontend/src/ui-runtime.ts", CONFIG, FIXTURE, "backend/tests/support/context.ts",
+                        *selection.paths("page", pages), *APPLICATION_ENTRYPOINTS,
+                        "frontend/package.json", "frontend/tsconfig.json",
+                        *backend_selection.paths("api", called),
+                        *[f"backend/src/db/tables/{name}.sql" for name in related_schema(schema, context["backend_apis"].values())]])
                 agent = run_file_agent(model, TEST_INSTRUCTIONS, test_context,
                     test_workspace, test_gate, max_turns, console, label + " / Test Generation",
                     feedback=generation_feedback,
@@ -359,13 +382,20 @@ def run_trigger_tdd(arc_dir, tree, schema, backend, ui, design, images, contexts
                         if result["backend_tests"]["returncode"]:
                             return result
                 result["e2e"] = checks.tests(regression_files)
-                if ui_files:
+                if ui_files and test_run_status(result['e2e']) == 'GREEN':
                     result["ui"] = ui_checks.tests(ui_files)
                 return result
 
             def implementation_gate():
                 """Require actual implementations, compilation and functional smoke results."""
                 result = implementation_checks()
+                if acceptance_review is not None and 'strict mode violation' in json.dumps(result.get('e2e')):
+                    failures = json.dumps(result['e2e'])
+                    candidates = [path for path in regression_files
+                        if '/acceptance/' in path and path.rsplit('/', 1)[-1] in failures]
+                    reviewed = [acceptance_review(path, result['e2e']) for path in candidates or [relative]]
+                    if any(reviewed):
+                        result = implementation_checks()
                 try:
                     for kind in ("typecheck", "backend_typecheck"):
                         if result.get(kind) and result[kind]["returncode"]:
@@ -387,17 +417,16 @@ def run_trigger_tdd(arc_dir, tree, schema, backend, ui, design, images, contexts
             checkpoint(output, stage="12", task=rid, action="Publish functional smoke tests before implementation",
                 status=generated["status"], details={"test_path": relative, "checks": generated})
             report["requirements"][rid]["status"] = "IMPLEMENTING"
-            task = {**model_context(context),
+            task = {**model_context(context, implementation=True),
                 "application_entrypoints": list(APPLICATION_ENTRYPOINTS),
                 "backend_entrypoints": {"registry": "backend/src/api/register.ts",
                     "app": "backend/src/app.ts", "server": "backend/src/server.ts"}}
-            workspace = selection.workspace(paths=[*selection.paths("page", pages), "frontend/src/style.css"],
-                references=[relative, *ui_files, "backend/tests/support/context.ts",
+            workspace = selection.workspace(paths=selection.paths("page", pages),
+                references=[relative, "backend/tests/support/context.ts",
                     "frontend/src/ui-runtime.ts", CONFIG, *APPLICATION_ENTRYPOINTS,
                     "frontend/package.json", "frontend/tsconfig.json"])
             workspace.allow_write = lambda path: editable_runtime_path(output, path)
-            backend_selection.include(workspace, [*backend_selection.paths("api", called),
-                *[path for aid in called if (path := selected_path(output, "backend_test", aid))]])
+            backend_selection.include(workspace, backend_selection.paths("api", called))
 
             def repair_feedback(value):
                 return selection.feedback(workspace, backend_selection.feedback(workspace, value))
@@ -410,7 +439,8 @@ def run_trigger_tdd(arc_dir, tree, schema, backend, ui, design, images, contexts
             if agent is None:
                 agent = run_file_agent(model, IMPLEMENT_INSTRUCTIONS, task, workspace,
                     implementation_gate, max_turns, console, label + " / Interaction Implementation",
-                    feedback=current, feedback_filter=repair_feedback, context_index=context_index)
+                    feedback=current, feedback_filter=repair_feedback, context_index=context_index,
+                    test_review=acceptance_review)
             accepted.append(rid)
             reused = tids & implemented
             implemented.update(targets)

@@ -52,8 +52,8 @@ SQL files in a transaction. Preserve existing data through IF NOT EXISTS.
 """
 
 
-def implement_db(arc_dir: Path, pause: bool = False, max_attempts: int = 10, max_turns: int = 10) -> dict:
-    if max_turns < 1:
+def implement_db(arc_dir: Path, pause: bool = False, max_attempts: int | None = None, max_turns: int | None = None) -> dict:
+    if max_turns is not None and max_turns < 1:
         raise ValueError("--max-turns must be positive")
     source = arc_dir / "db_schema.json"
     if not source.is_file():
@@ -155,8 +155,8 @@ def implement_db(arc_dir: Path, pause: bool = False, max_attempts: int = 10, max
 
 def main() -> None:
     parser = create_parser("Step 05: Implement DB Tables and Required Startup Data")
-    parser.add_argument("--max-attempts", type=int, default=10, help="Maximum proposals per table or startup-data requirement (default: 10)")
-    parser.add_argument("--max-turns", type=int, default=10, help="Maximum real database/startup repair rounds")
+    parser.add_argument("--max-attempts", type=int, default=None, help="Optional limit (default: unlimited). Maximum proposals per table or startup-data requirement")
+    parser.add_argument("--max-turns", type=int, default=None, help="Optional limit (default: unlimited). Maximum real database/startup repair rounds")
     args = parser.parse_args()
     with ExitStack() as stack:
         try:

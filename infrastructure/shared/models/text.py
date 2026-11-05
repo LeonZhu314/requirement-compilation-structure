@@ -2,11 +2,13 @@
 
 import json
 import os
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
 from infrastructure.utils.presentation.model_io import http_client, invoke
+from infrastructure.shared.models.errors import ModelServiceError
 
 
 DEFAULT_MODEL = "deepseek-flash"
@@ -74,14 +76,26 @@ class TextModel:
 
     def _request(self, **arguments):
         """Apply one output budget to JSON calls, with legacy endpoint compatibility."""
+        transport, recovered_service = self.client, False
         while True:
             options = dict(arguments)
             if not getattr(self, "_reasoning_supported", True):
                 options.pop("reasoning_effort", None)
                 options.pop("extra_body", None)
             try:
-                return invoke(self.client, {**options, self._token_parameter: self.max_output_tokens})
+                return invoke(transport, {**options, self._token_parameter: self.max_output_tokens})
             except OpenAIError as error:
+                headers = getattr(getattr(error, "response", None), "headers", {})
+                if (getattr(error, "status_code", None) == 503 and not recovered_service
+                        and headers.get("x-should-retry") != "false"
+                        and "retry-after" not in headers and "retry-after-ms" not in headers):
+                    # Standard SDK retries already ran. Probe this unavailable service
+                    # once after a cooldown, without another nested SDK retry sequence.
+                    recovered_service = True
+                    print("Model service returned 503 after SDK retries; retry the same request once in 5s.", flush=True)
+                    time.sleep(5)
+                    transport = self.client.with_options(max_retries=0)
+                    continue
                 message = str(error).lower()
                 rejected = getattr(error, "status_code", None) in {400, 422} and any(
                     word in message for word in ("unsupported", "unknown", "unrecognized", "not supported", "not allowed", "unexpected"))
@@ -102,13 +116,15 @@ class TextModel:
                 model=self.name,
                 messages=[
                     {"role": "system", "content": instructions.rstrip() + "\n" + JSON_OUTPUT_RULE},
-                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(",", ":"))},
                 ],
                 **({"response_format": {"type": "json_object"}} if getattr(self, "json_mode", True) else {}),
                 **reasoning_arguments(self.name, mode),
             )
         except OpenAIError as error:
-            raise RuntimeError(f"Text model request failed: {error}") from error
+            raise ModelServiceError(f"Text model request failed: {error}",
+                status_code=getattr(error, "status_code", None),
+                request_id=getattr(error, "request_id", None)) from error
         if response.choices and response.choices[0].finish_reason == "length":
             raise ValueError(
                 f"Model output was truncated (finish_reason=length). The output budget is "

@@ -1,0 +1,1397 @@
+[2026-10-22T07:28:00.283900+00:00] [frontend_design_data] MODEL_CALL model=deepseek-flash attempt=1 status=SUCCEEDED
+[2026-10-22T07:28:00.283900+00:00] [frontend_design_data] MODEL_INPUT
+
+--- system ---
+## Requirement fidelity
+For design, test generation, implementation and repair, explicit requirement descriptions, scenarios
+and applicable ancestor constraints define the observable product contract. Visual references, generated
+IR, existing source and convenience choices must not override that contract.
+Preserve explicitly specified UI wording and accessible names exactly, including spelling, case,
+punctuation and dynamic naming patterns. Do not translate, paraphrase, abbreviate or substitute another
+spelling unless the document explicitly permits it. Use the same names in design, source and tests.
+Preserve explicitly specified UI roles and states. A required button is a button, not a link merely
+because it navigates; fields need their specified associated labels. Implement the actual control
+semantics, not just matching text or an aria-label on a different control. Use alternatives only when
+the requirement explicitly allows them.
+At each specified scenario step, required controls and navigation entries must exist, be visible and
+be operable in the stated scope. Do not invent prerequisite expansion, hover or navigation steps that
+hide an expected input or action. Preserve these contracts in shared forms and prerequisite flows too.
+Tests must exercise the specified names, roles and states; do not broaden selectors or expected values
+to accept an implementation that contradicts explicit requirements.
+Where the requirement is silent, choose suitable wording, roles and interaction details consistent
+with the supplied visual evidence and existing application conventions. Do not invent extra obligations.
+
+## Background and role
+You are a frontend architect designing one leaf requirement in an existing application.
+Produce framework-neutral contracts, not React components, source code, CSS, tests or SQL.
+Requirements and scenario steps define behavior. Images define visible structure and states;
+image evidence must not invent authentication policies, persistence or server capabilities.
+Requirements may also specify controls and interaction states not shown in an image.
+Ancestor descriptions constrain the leaf; do not implement parent or unrelated requirements.
+
+## Identity and response protocol
+Return exactly one JSON delta matching the supplied schema, no Markdown or extra properties.
+The compiler owns IDs, reqs, the app/page roots and reciprocal UI links. Never output those fields
+for new records. Reference supplied records by exact ID; reference same-reply new records by @Name.
+Do not guess IDs. Names are semantic, not framework-specific. Preserve unrelated existing design.
+validation_feedback and previous_output describe a rejected delta: return a full corrected delta.
+Before returning, check each current scenario step has the UI/state/interaction needed in this layer.
+Do not create implementation detail nodes or speculative operations just to fill the response.
+## Type and reuse conventions
+Use JSON STRINGS containing JSON Schema. Scalar types are string/integer/number/boolean/null;
+arrays have items; objects have properties, required and additionalProperties:false. Parameter
+names use snake_case. Nullable values use anyOf. String formats: date/date-time/uuid. Enums match
+their scalar type. No source HTTP-location extensions in frontend contracts.
+Only type, properties, required, additionalProperties, items, enum, anyOf, $ref, format and
+description are supported. Other keywords such as minLength/maxLength/pattern/minimum/maximum/
+default/oneOf/allOf/$defs are forbidden; format:email/uri is forbidden. Put business validation
+in data/handler spec, not extra JSON Schema metadata. Define only actually referenced new_types.
+Custom types use #/types/Name and new_types:[{name:"PascalCase",schema:"<JSON Schema>"}].
+Never redefine supplied types; recursive types and unused new types are forbidden.
+Handler input/output must be object schemas; void is an empty object. Data schema may be any type.
+Existing data/handlers/events can be reused only unchanged, with identical behavior and contracts.
+Reuse IDs must come from supplied records. The compiler adds current reqs without changing contracts.
+## Task: minimal typed frontend state
+Design only state required by this leaf: inputs, fetched results, selections, loading and error state.
+Include the state needed for the current scenario's controls and transient UI, such as which editor
+or confirmation dialog is open and which record it targets, so subsequent handlers can use it.
+Do not create separate UIData/UIValue, duplicate DTO fields as unrelated global state, or model static
+labels as data. owner describes state lifetime: choose the smallest suitable common UI ancestor of
+display consumers AND the controls/regions whose handlers need to read/write that state. Use a page
+for coordination between its sibling regions, and app for genuinely cross-page state. Requirement
+ownership does not restrict state consumers. The compiler lifts owner to the nearest common ancestor
+when actual consumers/events require a wider scope; state ID, schema, initial value and behavior stay
+unchanged. initial is a JSON STRING containing a value matching schema; null requires a nullable
+schema. Every new_data needs at least one binding. Bind state to its actual loaded UI consumers.
+Use globally unambiguous @Name aliases for this reply even though data names are owner-scoped snake_case.
+Reuse supplied state unchanged when it already suffices. Return empty arrays if state is unnecessary.
+
+## Return format
+{"type": "object", "additionalProperties": false, "properties": {"new_data": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"name": {"type": "string"}, "owner": {"type": "string"}, "spec": {"type": "string"}, "schema": {"type": "string"}, "initial": {"type": "string"}}, "required": ["name", "owner", "spec", "schema", "initial"]}}, "reuse_data": {"type": "array", "items": {"type": "string"}}, "bindings": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"ui": {"type": "string"}, "data": {"type": "string"}}, "required": ["ui", "data"]}}, "new_types": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"name": {"type": "string"}, "schema": {"type": "string"}}, "required": ["name", "schema"]}}}, "required": ["new_data", "reuse_data", "bindings", "new_types"]}
+## Example (IDs are illustrative; use supplied IDs)
+{"new_data": [{"name": "search_term", "owner": "UI_000002", "spec": "Search query while this page is open.", "schema": "{\"type\":\"string\"}", "initial": "\"\""}], "reuse_data": [], "bindings": [{"ui": "UI_000003", "data": "@search_term"}], "new_types": []}
+--- user ---
+## Current task
+
+```json
+{
+  "current_task": {
+    "requirement": {
+      "id": "REQ-2",
+      "name": "Register a traveler account",
+      "description": "点击未登录页头中的 \"Register\"(role=link)，打开 /register 注册页。面包屑的可见文案为 \"Current location: HOME > Create an account\"；其中 \"HOME\"(role=link) 返回 /，\"Create an account\" 是当前页面的文本。表单遵循提供的参考图片，按展示顺序明确以下交互身份：\n\n\"Nationality\"(role=combobox) 的可见标签为 \"Nationality\"，初始显示 \"Please select\"，包含可选择的 \"Vietnam\"(role=option)。\"Name\"(role=textbox) 和 \"Passport number\"(role=textbox) 使用上述精确可见标签。\"Passport expiration date\"(role=textbox) 和 \"Date of birth\"(role=textbox) 使用上述精确可见标签，允许输入日期。如果其日历图标可独立交互，则图标的 role=button，没有可见文本，可访问名称分别为 \"Choose passport expiration date\" 和 \"Choose date of birth\"。\"Gender\"(role=radiogroup) 的可见分组标签为 \"Gender\"，包含 \"Male\"(role=radio) 和 \"Female\"(role=radio)，使用上述精确可见标签和可访问名称。\n\n\"Username\"(role=textbox) 的可见标签为 \"Username\"。隐藏输入内容的两个密码字段，其可见标签和可访问名称分别为 \"Password\" 和 \"Confirm Password\"，没有隐式 ARIA role。\"Email address\"(role=textbox) 使用上述精确可见标签。帮助链接的可见文案和可访问名称为 \"Check the rules for filling out passport information\"(role=link)。\n\n协议控件的 role=checkbox，可见标签和可访问名称均为 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"。其中可独立交互的 \"Terms of Service\"(role=link) 和 \"Privacy Policy\"(role=link) 使用上述精确可见文案；它们位于协议区域，与页脚的 Privacy Policy 链接区分。提交操作为 \"Next step\"(role=button)，可见文案和可访问名称均为 \"Next step\"。护照信息填写指南和协议链接保留上述交互身份；其文档内容不属于本账户创建需求。\n\n所有字段均为必填，且必须勾选同意协议。姓名必须包含 2–100 个非空白字符；护照号码必须包含 6–30 个 ASCII 字母、数字或连字符；出生日期必须早于当前日期，护照有效期必须晚于当前日期。用户名必须包含 3–32 个 ASCII 字母、数字、连字符或下划线。邮箱格式必须有效，长度最多 254 个字符。密码必须包含 12–128 个字符，且包含大写字母、小写字母、数字和特殊字符；Confirm Password 必须与 Password 一致。用户名和邮箱必须唯一，邮箱比较不区分大小写。通过 Next step 提交有效信息后，保存账户、自动登录并返回首页。无效或重复的输入需要显示错误，且不创建账户或会话。",
+      "scenarios": [
+        {
+          "id": "REQ-2:scenario:1",
+          "name": "Register a valid traveler",
+          "steps": [
+            {
+              "keyword": "GIVEN",
+              "content": "一位未登录访客打开 /，准备好未使用的用户名和邮箱、有效的姓名和护照号码、国籍 Vietnam、早于当前日期的出生日期、晚于当前日期的护照有效期，以及有效密码。"
+            },
+            {
+              "keyword": "WHEN",
+              "content": "访客点击页头的 \"Register\"(role=link)，在 \"Nationality\"(role=combobox) 中选择 Vietnam，填写 \"Name\"(role=textbox)、\"Passport number\"(role=textbox)、\"Passport expiration date\"(role=textbox)、\"Date of birth\"(role=textbox)、\"Username\"(role=textbox) 和 \"Email address\"(role=textbox)，在 \"Gender\"(role=radiogroup) 中选择 \"Male\"(role=radio)，在带标签的密码输入框 \"Password\" 和 \"Confirm Password\" 中填写相同的有效密码，勾选 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"(role=checkbox)，然后点击 \"Next step\"(role=button)。"
+            },
+            {
+              "keyword": "THEN",
+              "content": "首页以可见文本显示已保存的用户名，并显示 \"Sign out\"(role=link)，使用上述精确可见文案和可访问名称；刷新页面后仍显示该用户名和已登录状态下的操作。"
+            }
+          ]
+        }
+      ],
+      "pages": [
+        {
+          "name": "registration",
+          "reference": "reference/register.png",
+          "analysis": "regions:\n- Page > Header: white top bar with the China Railway 12306 logo at the left and a pale, rounded utility area at the right containing account, language and contact entries.\n- Page > Primary navigation: full-width blue bar directly beneath the header with Home, Booking and Travel guides entries.\n- Page > Breadcrumb strip: white area between navigation and the main card, showing the current-location path.\n- Page > Main registration card: large white panel with a thin light border, centered in the page and containing the registration form.\n- Main registration card > Form fields: repeated rows with a right-aligned required-label column, a fixed-width input/control column, and optional helper text or links at the right.\n- Main registration card > Gender group: two side-by-side bordered radio-option boxes beneath the Gender label.\n- Main registration card > Consent and submit area: an unchecked agreement checkbox with policy links, followed by a centered orange submit button.\n- Page > Footer: full-width pale gray band containing copyright text, Chinese registration numbers and two policy links, all centered.\n\nvisible_controls:\n- Header > Logo: red circular railway emblem plus 中国铁路12306 and 12306 CHINA RAILWAY text.\n- Header utility bar: Login link; Register link; My 12306 dropdown with down caret; 简体中文 dropdown with down caret; headset icon with Contact us link.\n- Header far right: faint small icon/control partially visible at the edge; its exact shape is unclear.\n- Primary navigation: Home link; Booking dropdown link with down caret; Travel guides dropdown link with down caret.\n- Breadcrumb: HOME link and blue Create an account link.\n- Nationality: select control showing placeholder Please select, with a down caret.\n- Name: blank text input, with adjacent blue link Check the rules for filling out passport information.\n- Passport number: blank text input.\n- Passport expiration date: blank date input with a calendar icon at its right edge.\n- Date of birth: blank date input with a calendar icon at its right edge.\n- Gender: two bordered radio-option controls labeled Male and Female; both radio circles appear unselected.\n- Username: blank text input.\n- Password: blank text input.\n- Confirm Password: blank text input.\n- Email address: blank text input, with orange helper text at the right.\n- Consent: unchecked square checkbox followed by agreement text containing Terms of Service and Privacy Policy links.\n- Next step: large orange button, enabled.\n- Footer: Privacy Policy link and Cookie Statement link.\n\nlayout_cues:\n- Header spans the full width and is roughly 70 px tall. The logo is left-aligned with generous page margin; account and language utilities sit right, grouped inside a large pale rounded container.\n- The blue primary navigation is a full-width horizontal band roughly 42 px tall. Its three entries are left-aligned with moderate spacing rather than spread across the full width.\n- The breadcrumb sits below the navigation, left-aligned with the content area, at a much smaller text size than the header and navigation.\n- The main card is centered horizontally with roughly 120 px side margins and a height covering most of the viewport below the breadcrumb. It has spacious white padding above and around the form.\n- The registration form is vertically stacked. Labels are right-aligned in a fixed column; inputs and selects share a consistent width of roughly 365 px and start at a common left edge.\n- Form rows are separated by substantial vertical whitespace, producing a low-density layout. Helper notices are aligned to the right of their corresponding controls on the same row.\n- The Gender controls form two equal-width bordered boxes in one horizontal row. Each contains a radio circle at the left and text beside it.\n- The agreement row sits below the form fields, inset from the input column, with the checkbox on the left and wrapped policy text beside it. The Next step button is centered beneath this block.\n- The footer occupies a separate full-width band below the card, with all content centered in three stacked lines and wide horizontal breathing room.\n- No sidebar, dialog, overlay, pagination or additional columns are visible. Content is fully contained within the screenshot.\n\nstyle_cues:\n- Overall page background is white; the header is white, the primary navigation is a saturated medium blue, and the footer is very light gray.\n- The logo emblem is bright red with a dark/black interior mark. The Chinese brand text is large, bold and near-black; the Latin tagline below is smaller, lighter gray and spaced out.\n- Header utility text is dark gray/black in a small sans-serif font. The utility group sits on a subtly shaded pale-gray rounded surface. The Register link has no visible selected treatment.\n- Primary navigation text is white and regular-weight; no active underline or highlighted navigation item is apparent.\n- Breadcrumb text is small and muted gray, with the final breadcrumb link in blue.\n- Form labels are dark gray/black, regular weight, with a red asterisk preceding each required field. Colons follow every label.\n- Text inputs and selects have white fills, thin light-gray borders, small corner radii and plain placeholder text in gray. Date fields include small outline calendar icons aligned at the right.\n- Helper text is orange and small; the passport-information helper is a blue underlined link. Agreement links are blue and underlined.\n- Gender option boxes have thin light-gray borders and a slightly off-white background. Radio circles are neutral gray outlines with no visible selected dot.\n- The Next step button is solid orange, wide and low-profile, with white centered text, modest rounded corners and no prominent shadow.\n- Footer text is medium gray, centered and small, with vertical-bar separators between the registration-number entries and between the policy links.\n- Typography is sans-serif throughout, with stronger/larger branding text and smaller, lighter body and utility text. No photographic imagery, gradients or decorative illustrations are visible beyond the logo and small line icons.\n\ntext_cues:\n- Header: 中国铁路12306; 12306 CHINA RAILWAY; Login; Register; My 12306; 简体中文; Contact us.\n- Primary navigation: Home; Booking; Travel guides.\n- Breadcrumb: Current location: HOME > Create an account.\n- Form: * Nationality:; Please select; At present, only foreign passports are accepted for registration.\n- Form: * Name:; Check the rules for filling out passport information.\n- Form: *Passport number:.\n- Form: *Passport expiration date:.\n- Form: *Date of birth:.\n- Form: *Gender:; Male; Female.\n- Form: *Username:; *Password:; *Confirm Password:; *Email address:.\n- Email helper: Related notifications will be sent to you via email.\n- Consent: I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\n- Submit: Next step.\n- Footer: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\n- Footer: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\n- Footer: Privacy Policy | Cookie Statement."
+        }
+      ],
+      "ancestor_constraints": [
+        {
+          "id": "ROOT",
+          "name": "Train Ticket Booking Demo",
+          "description": "这是一个小型网站，访客可以注册或登录。\n\n首页和注册页的共享导航提供 \"Home\"(role=link)、\"Booking\"(role=link)、\"Travel guides\"(role=link)、\"My 12306\"(role=link)、\"简体中文\"(role=button) 和 \"Contact us\"(role=link)，可见文案与参考图片完全一致。账户入口控件及其行为见 REQ-1。每个页面的页脚提供 \"Privacy Policy\"(role=link) 和 \"Cookie Statement\"(role=link)，可见文案和可访问名称相同。名称重复的控件通过其语义位置区分，例如注册协议区域与页脚。这里明确了参考控件的展示和交互身份；这次命名说明不增加下拉菜单内容、政策文档、联系服务或旅行指南的业务流程。"
+        }
+      ]
+    },
+    "data_access": {
+      "read": [
+        "user_account"
+      ],
+      "write": [
+        "session",
+        "user_account",
+        "user_account.date_of_birth",
+        "user_account.email",
+        "user_account.gender",
+        "user_account.name",
+        "user_account.nationality",
+        "user_account.passport_expiration_date",
+        "user_account.passport_number",
+        "user_account.password",
+        "user_account.username"
+      ],
+      "entities": [
+        {
+          "key": "session",
+          "description": "A persisted authentication session that keeps a visitor logged in until sign out clears it.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [],
+              "write": []
+            }
+          ],
+          "read": [
+            "REQ-1"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        },
+        {
+          "key": "user_account",
+          "description": "A registered visitor account whose saved username is shown in the header after registration or login.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "date_of_birth",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's date of birth.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "email",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's contact email address, identified regardless of letter case.",
+              "properties": {
+                "max_length": 254,
+                "unique": true,
+                "comparison": "case_insensitive"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's gender as declared in the account profile.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1"
+              ],
+              "read": [],
+              "write": []
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's full name as recorded for the account and passport.",
+              "properties": {
+                "min_length": 2,
+                "max_length": 100
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "nationality",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's nationality country selected when registering the account.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_expiration_date",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The expiry date of the traveler's passport.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_number",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's passport number identifying the travel document.",
+              "properties": {
+                "min_length": 6,
+                "max_length": 30
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "password",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's password credential used to authenticate the traveler.",
+              "properties": {
+                "min_length": 12,
+                "max_length": 128
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "username",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Saved account username displayed in the header after registration or login.",
+              "properties": {
+                "min_length": 3,
+                "max_length": 32,
+                "unique": true,
+                "comparison": "exact"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [
+                "REQ-1"
+              ],
+              "write": [
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+--- user ---
+## Selected page and UI tree
+
+```json
+{
+  "selected_ui_tree": [
+    {
+      "id": "UI_000047",
+      "name": "registration",
+      "kind": "page",
+      "description": "Page: registration.",
+      "reqs": [],
+      "children": [
+        {
+          "id": "UI_000048",
+          "name": "RegistrationHeader",
+          "kind": "region",
+          "description": "Top white header containing the China Railway 12306 brand and the account, language and contact utilities.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000049",
+              "name": "BrandLogo",
+              "kind": "image",
+              "description": "Railway emblem with the visible 中国铁路12306 and 12306 CHINA RAILWAY branding at the left of the header.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000050",
+              "name": "LoginLink",
+              "kind": "navigation",
+              "description": "Header account entry with visible text \"Login\".",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000051",
+              "name": "RegisterLink",
+              "kind": "navigation",
+              "description": "The unauthenticated page header provides \"Register\" (role=link) with the exact visible name; the scenario starts by clicking it to open /register.",
+              "reqs": [
+                "REQ-2"
+              ],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000052",
+              "name": "My12306Link",
+              "kind": "navigation",
+              "description": "Header utility entry with visible text \"My 12306\" and role=link.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000053",
+              "name": "LanguageButton",
+              "kind": "button",
+              "description": "Header language control with visible text \"简体中文\" and role=button.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000054",
+              "name": "ContactUsLink",
+              "kind": "navigation",
+              "description": "Header contact entry with visible text \"Contact us\" and role=link.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000055",
+          "name": "PrimaryNavigation",
+          "kind": "navigation",
+          "description": "Full-width blue primary navigation beneath the header.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000056",
+              "name": "PrimaryHomeLink",
+              "kind": "navigation",
+              "description": "Primary navigation entry with visible text \"Home\" and role=link.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000057",
+              "name": "BookingLink",
+              "kind": "navigation",
+              "description": "Primary navigation entry with visible text \"Booking\" and role=link.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000058",
+              "name": "TravelGuidesLink",
+              "kind": "navigation",
+              "description": "Primary navigation entry with visible text \"Travel guides\" and role=link.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000059",
+          "name": "BreadcrumbRegion",
+          "kind": "region",
+          "description": "The breadcrumb strip realizes the visible \"Current location: HOME > Create an account\" path specified for /register.",
+          "reqs": [
+            "REQ-2"
+          ],
+          "children": [
+            {
+              "id": "UI_000060",
+              "name": "BreadcrumbCurrentLocationText",
+              "kind": "text",
+              "description": "Breadcrumb label with exact visible text \"Current location:\".",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000061",
+              "name": "BreadcrumbHomeLink",
+              "kind": "navigation",
+              "description": "The breadcrumb \"HOME\" entry is a link with the exact visible text \"HOME\" and returns to /.",
+              "reqs": [
+                "REQ-2"
+              ],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000062",
+              "name": "BreadcrumbSeparator",
+              "kind": "text",
+              "description": "Breadcrumb separator showing the visible text \">\".",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000063",
+              "name": "BreadcrumbCurrentPageText",
+              "kind": "text",
+              "description": "The breadcrumb's final entry is current-page text with the exact visible text \"Create an account\" rather than a link.",
+              "reqs": [
+                "REQ-2"
+              ],
+              "children": [],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000064",
+          "name": "RegistrationCard",
+          "kind": "region",
+          "description": "Centered white registration panel below the breadcrumb, containing the account form.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000065",
+              "name": "RegistrationForm",
+              "kind": "form",
+              "description": "The registration form groups all required account fields and the consent block in the reference display order.",
+              "reqs": [
+                "REQ-2"
+              ],
+              "children": [
+                {
+                  "id": "UI_000066",
+                  "name": "NationalityRow",
+                  "kind": "region",
+                  "description": "Form row for selecting nationality.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000067",
+                      "name": "NationalityLabel",
+                      "kind": "text",
+                      "description": "Visible field label \"Nationality\" for the nationality control.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000068",
+                      "name": "NationalitySelect",
+                      "kind": "input",
+                      "description": "\"Nationality\" is a combobox with the visible label \"Nationality\", initially displays \"Please select\", and supports choosing \"Vietnam\"; the scenario selects Vietnam.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [
+                        {
+                          "id": "UI_000069",
+                          "name": "VietnamOption",
+                          "kind": "item",
+                          "description": "\"Vietnam\" is a selectable option with role=option inside the Nationality combobox.",
+                          "reqs": [
+                            "REQ-2"
+                          ],
+                          "children": [],
+                          "data": [],
+                          "events": []
+                        }
+                      ],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000070",
+                      "name": "NationalityHelperText",
+                      "kind": "text",
+                      "description": "Orange helper text with exact visible wording \"At present, only foreign passports are accepted for registration.\".",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000071",
+                  "name": "NameRow",
+                  "kind": "region",
+                  "description": "Form row for the traveler's full name and the passport-information help link.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000072",
+                      "name": "NameLabel",
+                      "kind": "text",
+                      "description": "Visible field label \"Name\" for the name textbox.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000073",
+                      "name": "NameInput",
+                      "kind": "input",
+                      "description": "\"Name\" is a textbox with the exact visible label \"Name\"; the scenario fills a valid 2–100 non-whitespace name.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000074",
+                      "name": "PassportRulesLink",
+                      "kind": "navigation",
+                      "description": "\"Check the rules for filling out passport information\" is a link with the exact visible and accessible name for passport guidance.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000075",
+                  "name": "PassportNumberRow",
+                  "kind": "region",
+                  "description": "Form row for the passport number.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000076",
+                      "name": "PassportNumberLabel",
+                      "kind": "text",
+                      "description": "Visible field label \"Passport number\" for the passport-number textbox.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000077",
+                      "name": "PassportNumberInput",
+                      "kind": "input",
+                      "description": "\"Passport number\" is a textbox with the exact visible label \"Passport number\"; the scenario fills a valid 6–30 character ASCII passport number.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000078",
+                  "name": "PassportExpirationRow",
+                  "kind": "region",
+                  "description": "Form row for the passport expiration date and its calendar control.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000079",
+                      "name": "PassportExpirationLabel",
+                      "kind": "text",
+                      "description": "Visible field label \"Passport expiration date\" for the date textbox.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000080",
+                      "name": "PassportExpirationDateInput",
+                      "kind": "input",
+                      "description": "\"Passport expiration date\" is a date-entry textbox with the exact visible label \"Passport expiration date\"; the scenario fills a date later than the current date.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000081",
+                      "name": "PassportExpirationCalendarButton",
+                      "kind": "button",
+                      "description": "The independently operable calendar button has no visible text and the accessible name \"Choose passport expiration date\", role=button.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000082",
+                  "name": "DateOfBirthRow",
+                  "kind": "region",
+                  "description": "Form row for the date of birth and its calendar control.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000083",
+                      "name": "DateOfBirthLabel",
+                      "kind": "text",
+                      "description": "Visible field label \"Date of birth\" for the date textbox.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000084",
+                      "name": "DateOfBirthInput",
+                      "kind": "input",
+                      "description": "\"Date of birth\" is a date-entry textbox with the exact visible label \"Date of birth\"; the scenario fills a date earlier than the current date.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000085",
+                      "name": "DateOfBirthCalendarButton",
+                      "kind": "button",
+                      "description": "The independently operable calendar button has no visible text and the accessible name \"Choose date of birth\", role=button.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000086",
+                  "name": "GenderRow",
+                  "kind": "region",
+                  "description": "Form row containing the gender group label and radio options.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000087",
+                      "name": "GenderLabel",
+                      "kind": "text",
+                      "description": "Visible group label \"Gender\" for the radio group.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000088",
+                      "name": "GenderRadioGroup",
+                      "kind": "form",
+                      "description": "\"Gender\" is a radiogroup with the visible group label \"Gender\" and contains the required Male and Female radio options.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [
+                        {
+                          "id": "UI_000089",
+                          "name": "MaleRadio",
+                          "kind": "input",
+                          "description": "\"Male\" is a radio with the exact visible label and accessible name \"Male\"; the scenario selects it.",
+                          "reqs": [
+                            "REQ-2"
+                          ],
+                          "children": [],
+                          "data": [],
+                          "events": []
+                        },
+                        {
+                          "id": "UI_000090",
+                          "name": "FemaleRadio",
+                          "kind": "input",
+                          "description": "\"Female\" is a radio with the exact visible label and accessible name \"Female\".",
+                          "reqs": [
+                            "REQ-2"
+                          ],
+                          "children": [],
+                          "data": [],
+                          "events": []
+                        }
+                      ],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000091",
+                  "name": "UsernameRow",
+                  "kind": "region",
+                  "description": "Form row for the account username.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000092",
+                      "name": "UsernameLabel",
+                      "kind": "text",
+                      "description": "Visible field label \"Username\" for the username textbox.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000093",
+                      "name": "UsernameInput",
+                      "kind": "input",
+                      "description": "\"Username\" is a textbox with the exact visible label \"Username\"; the scenario fills a unique 3–32 character username.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000094",
+                  "name": "PasswordRow",
+                  "kind": "region",
+                  "description": "Form row for the account password.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000095",
+                      "name": "PasswordLabel",
+                      "kind": "text",
+                      "description": "Visible field label and accessible name \"Password\" for the password field.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000096",
+                      "name": "PasswordInput",
+                      "kind": "input",
+                      "description": "\"Password\" is a hidden-content password field with the visible label and accessible name \"Password\" and no implicit ARIA role; the scenario fills a valid matching password.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000097",
+                  "name": "ConfirmPasswordRow",
+                  "kind": "region",
+                  "description": "Form row for confirming the account password.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000098",
+                      "name": "ConfirmPasswordLabel",
+                      "kind": "text",
+                      "description": "Visible field label and accessible name \"Confirm Password\" for the confirmation password field.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000099",
+                      "name": "ConfirmPasswordInput",
+                      "kind": "input",
+                      "description": "\"Confirm Password\" is a hidden-content password field with the visible label and accessible name \"Confirm Password\" and no implicit ARIA role; it must match Password.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000100",
+                  "name": "EmailAddressRow",
+                  "kind": "region",
+                  "description": "Form row for the contact email address.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000101",
+                      "name": "EmailAddressLabel",
+                      "kind": "text",
+                      "description": "Visible field label \"Email address\" for the email textbox.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000102",
+                      "name": "EmailAddressInput",
+                      "kind": "input",
+                      "description": "\"Email address\" is a textbox with the exact visible label \"Email address\"; the scenario fills a valid unique email address.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000103",
+                      "name": "EmailHelperText",
+                      "kind": "text",
+                      "description": "Orange helper text with exact visible wording \"Related notifications will be sent to you via email.\".",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000104",
+                  "name": "ConsentSection",
+                  "kind": "region",
+                  "description": "Agreement area containing the required consent checkbox and its inline policy links.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000105",
+                      "name": "TermsConsentCheckbox",
+                      "kind": "input",
+                      "description": "The agreement control is a checkbox with the visible label and accessible name exactly \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"; the scenario checks it.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000106",
+                      "name": "ConsentText",
+                      "kind": "text",
+                      "description": "Agreement sentence text surrounding the two policy links, matching the exact required wording.",
+                      "reqs": [],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000107",
+                      "name": "TermsOfServiceLink",
+                      "kind": "navigation",
+                      "description": "\"Terms of Service\" is an independently interactive link with the exact visible text inside the agreement area.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000108",
+                      "name": "ConsentPrivacyPolicyLink",
+                      "kind": "navigation",
+                      "description": "\"Privacy Policy\" is an independently interactive link with the exact visible text inside the agreement area and is distinct from the footer Privacy Policy link.",
+                      "reqs": [
+                        "REQ-2"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000109",
+                  "name": "FormErrorMessage",
+                  "kind": "text",
+                  "description": "Invalid or duplicate input displays an error in this message area and prevents creating an account or session.",
+                  "reqs": [
+                    "REQ-2"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000110",
+                  "name": "NextStepButton",
+                  "kind": "button",
+                  "description": "\"Next step\" is a button with the exact visible and accessible name; clicking it submits the valid registration to save the account, sign the visitor in and return to the home page.",
+                  "reqs": [
+                    "REQ-2"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000111",
+          "name": "RegistrationFooter",
+          "kind": "region",
+          "description": "Full-width pale footer below the registration card, containing copyright, registration-number and policy-link text.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000112",
+              "name": "FooterCopyrightText",
+              "kind": "text",
+              "description": "Footer line with the exact visible copyright text \"COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\".",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000113",
+              "name": "FooterRegistrationNumbersText",
+              "kind": "text",
+              "description": "Footer line with the exact visible registration-number text \"京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\".",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000114",
+              "name": "FooterPolicyLinks",
+              "kind": "region",
+              "description": "Footer policy-link row centered in the footer.",
+              "reqs": [],
+              "children": [
+                {
+                  "id": "UI_000115",
+                  "name": "FooterPrivacyPolicyLink",
+                  "kind": "navigation",
+                  "description": "The footer \"Privacy Policy\" link is the shared footer policy entry and is semantically distinguished from the agreement-area Privacy Policy link.",
+                  "reqs": [
+                    "REQ-2"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000116",
+                  "name": "CookieStatementLink",
+                  "kind": "navigation",
+                  "description": "Footer link with exact visible text \"Cookie Statement\" and role=link.",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        }
+      ],
+      "data": [],
+      "events": []
+    }
+  ],
+  "app": {
+    "id": "UI_APP",
+    "name": "Application",
+    "kind": "app"
+  },
+  "loaded_ui_ids": [
+    "UI_000047",
+    "UI_000048",
+    "UI_000049",
+    "UI_000050",
+    "UI_000051",
+    "UI_000052",
+    "UI_000053",
+    "UI_000054",
+    "UI_000055",
+    "UI_000056",
+    "UI_000057",
+    "UI_000058",
+    "UI_000059",
+    "UI_000060",
+    "UI_000061",
+    "UI_000062",
+    "UI_000063",
+    "UI_000064",
+    "UI_000065",
+    "UI_000066",
+    "UI_000067",
+    "UI_000068",
+    "UI_000069",
+    "UI_000070",
+    "UI_000071",
+    "UI_000072",
+    "UI_000073",
+    "UI_000074",
+    "UI_000075",
+    "UI_000076",
+    "UI_000077",
+    "UI_000078",
+    "UI_000079",
+    "UI_000080",
+    "UI_000081",
+    "UI_000082",
+    "UI_000083",
+    "UI_000084",
+    "UI_000085",
+    "UI_000086",
+    "UI_000087",
+    "UI_000088",
+    "UI_000089",
+    "UI_000090",
+    "UI_000091",
+    "UI_000092",
+    "UI_000093",
+    "UI_000094",
+    "UI_000095",
+    "UI_000096",
+    "UI_000097",
+    "UI_000098",
+    "UI_000099",
+    "UI_000100",
+    "UI_000101",
+    "UI_000102",
+    "UI_000103",
+    "UI_000104",
+    "UI_000105",
+    "UI_000106",
+    "UI_000107",
+    "UI_000108",
+    "UI_000109",
+    "UI_000110",
+    "UI_000111",
+    "UI_000112",
+    "UI_000113",
+    "UI_000114",
+    "UI_000115",
+    "UI_000116",
+    "UI_APP"
+  ]
+}
+```
+--- user ---
+## Backend API contracts
+
+```json
+{
+  "api_contracts": [
+    {
+      "shared_reason": "",
+      "path": "/api/register",
+      "shared": false,
+      "method": "POST",
+      "payload": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Selected nationality, e.g. \\\"Vietnam\\\".\"}, \"name\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Traveler full name as printed on the passport.\"}, \"passport_number\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Passport number: 6-30 ASCII letters, digits or hyphens.\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Passport expiry date; must be later than the current date.\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Traveler date of birth; must be earlier than the current date.\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"], \"source\": \"body\", \"description\": \"Selected gender radio option.\"}, \"username\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"3-32 ASCII letters, digits, hyphens or underscores; must be unique.\"}, \"password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"12-128 characters including uppercase, lowercase, digit and special character.\"}, \"confirm_password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Must be identical to password.\"}, \"email\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Valid email address, at most 254 characters; unique regardless of letter case.\"}, \"agreed_to_terms\": {\"type\": \"boolean\", \"source\": \"body\", \"description\": \"True when the visitor checked the Terms of Service and Privacy Policy agreement checkbox.\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "response": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"description\": \"Saved account username displayed as text in the header after automatic login.\"}, \"error\": {\"type\": \"string\", \"description\": \"Message describing the invalid or duplicate input; present only when no account was created.\"}}, \"required\": [], \"additionalProperties\": false}",
+      "name": "RegisterAccount",
+      "spec": "{any unauthenticated visitor may call; the body supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms, all of which are mandatory} validates the supplied values before any write: agreed_to_terms must be true; name must contain 2-100 non-whitespace characters; passport_number must consist of 6-30 ASCII letters, digits or hyphens; date_of_birth must be earlier than the current date read from the clock; passport_expiration_date must be later than the current date; username must be 3-32 ASCII letters, digits, hyphens or underscores; email must be syntactically valid and at most 254 characters; password must be 12-128 characters containing an uppercase letter, a lowercase letter, a digit and a special character; confirm_password must equal password; username must not already belong to an existing account and email must not already belong to an existing account under case-insensitive comparison. When every check passes, it persists a new user_account holding exactly these validated values (a locally hashed password derived from the supplied password is stored in place of the plain password, and a locally generated account identifier is assigned) and creates a new persisted session for that account identifier; it then sets the generated session identifier as the session cookie value on the Set-Cookie response header and responds with the saved username so the header can display it and offer Sign out. If any validation check fails or the username or email is already taken, it responds with an error description and creates no account and no session. {on success the new account and session exist, the session cookie is set, and username is returned; on failure no user_account row and no session row are created and no cookie is set} {rows of other accounts and sessions are left unchanged; the agreed_to_terms value itself is not persisted; no clear-text password is stored or returned}",
+      "id": "API_000003",
+      "kind": "API",
+      "reqs": [
+        "REQ-2"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000005"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "DELETE",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "name": "SignOut",
+      "spec": "{invoked by an authenticated visitor clicking Sign out; session_id is read from the Cookie request header and may be absent or already unknown} deletes the persisted session identified by session_id and clears the session cookie carrier on the response by setting that cookie to an empty value with an expiry in the past, so the visitor returns to the unauthenticated state where the header again shows the Register and Login links {always responds with success, even when session_id is absent or unknown, and always clears the cookie} {no other session is affected; user_account rows, including the saved username, are preserved unchanged; no new session is created}",
+      "id": "API_000002",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000002"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "GET",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header. Absent for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"The saved account username rendered as text in the header after registration or login; null when no valid session is presented.\"}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "name": "GetCurrentSession",
+      "spec": "{no authentication precondition; session_id may be absent, unknown or expired} reads the session identifier supplied via the Cookie header and passes it to the session/account lookup {when the session exists and resolves to a user_account, responds authenticated=true with that account's username so the page header can display the saved username and offer Sign out; when session_id is absent, unknown, expired or resolves to no account, responds authenticated=false with username null so the header shows the Register and Login links} {no writes; creates, modifies and clears no session or account data}",
+      "id": "API_000001",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000001"
+      ]
+    }
+  ]
+}
+```
+--- user ---
+## Existing state and interaction contracts
+
+```json
+{
+  "existing_data": []
+}
+```
+--- user ---
+## Type definitions
+
+```json
+{
+  "type_name_index": [],
+  "existing_types": []
+}
+```
+--- user ---
+## Additional context
+
+```json
+{
+  "api_index": [
+    {
+      "id": "API_000001",
+      "kind": "API",
+      "name": "GetCurrentSession",
+      "method": "GET",
+      "path": "/api/session"
+    },
+    {
+      "id": "API_000002",
+      "kind": "API",
+      "name": "SignOut",
+      "method": "DELETE",
+      "path": "/api/session"
+    },
+    {
+      "id": "API_000003",
+      "kind": "API",
+      "name": "RegisterAccount",
+      "method": "POST",
+      "path": "/api/register"
+    }
+  ]
+}
+```
+
+[2026-10-22T07:28:00.283900+00:00] [frontend_design_data] MODEL_OUTPUT
+{"new_types":[],"bindings":[{"data":"@nationality","ui":"UI_000068"},{"data":"@name","ui":"UI_000073"},{"data":"@passport_number","ui":"UI_000077"},{"data":"@passport_expiration_date","ui":"UI_000080"},{"data":"@date_of_birth","ui":"UI_000084"},{"data":"@gender","ui":"UI_000088"},{"data":"@username","ui":"UI_000093"},{"data":"@password","ui":"UI_000096"},{"data":"@confirm_password","ui":"UI_000099"},{"data":"@email","ui":"UI_000102"},{"data":"@agreed_to_terms","ui":"UI_000105"},{"data":"@registration_error_message","ui":"UI_000109"},{"data":"@registration_submitting","ui":"UI_000110"}],"new_data":[{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"nationality","spec":"Currently selected nationality value in the registration \"Nationality\" combobox; empty string until the visitor picks \"Vietnam\". Sent to RegisterAccount as nationality."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"name","spec":"Current text of the registration \"Name\" textbox. Sent to RegisterAccount as name."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"passport_number","spec":"Current text of the registration \"Passport number\" textbox. Sent to RegisterAccount as passport_number."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"passport_expiration_date","spec":"Current value of the registration \"Passport expiration date\" date textbox, as an entered date string. Sent to RegisterAccount as passport_expiration_date."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"date_of_birth","spec":"Current value of the registration \"Date of birth\" date textbox, as an entered date string. Sent to RegisterAccount as date_of_birth."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"gender","spec":"Selected option of the registration \"Gender\" radiogroup: \"Male\", \"Female\", or empty string when nothing is selected. Sent to RegisterAccount as gender."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"username","spec":"Current text of the registration \"Username\" textbox. Sent to RegisterAccount as username."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"password","spec":"Current hidden text of the registration \"Password\" field. Sent to RegisterAccount as password."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"confirm_password","spec":"Current hidden text of the registration \"Confirm Password\" field; must match password before submission. Sent to RegisterAccount as confirm_password."},{"owner":"UI_000047","schema":"{\"type\":\"string\"}","initial":"\"\"","name":"email","spec":"Current text of the registration \"Email address\" textbox. Sent to RegisterAccount as email."},{"owner":"UI_000047","schema":"{\"type\":\"boolean\"}","initial":"false","name":"agreed_to_terms","spec":"Whether the registration agreement checkbox is checked; must be true before submission. Sent to RegisterAccount as agreed_to_terms."},{"owner":"UI_000047","schema":"{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]}","initial":"null","name":"registration_error_message","spec":"Error message describing invalid or duplicate registration input returned when submission fails; null when there is no error. Shown in the form error area and no account or session is created while it is set."},{"owner":"UI_000047","schema":"{\"type\":\"boolean\"}","initial":"false","name":"registration_submitting","spec":"True while the registration submission is in flight after \"Next step\" is clicked; used to reflect the submitting state of the button until the request resolves."}],"reuse_data":[]}
+
+[2026-10-22T07:28:00.283900+00:00] [frontend_design_data] MODEL_USAGE {"completion_tokens": 1499, "prompt_tokens": 14387, "total_tokens": 15886, "completion_tokens_details": {"accepted_prediction_tokens": null, "audio_tokens": null, "reasoning_tokens": 529, "rejected_prediction_tokens": null, "text_tokens": null}, "prompt_tokens_details": {"audio_tokens": null, "cache_write_tokens": null, "cached_tokens": 2816, "image_tokens": null, "text_tokens": null}}
+
+[2026-10-22T07:28:00.283900+00:00] [frontend_design_data] MODEL_REASONING
+We need to design form state for the registration page. Owner: page UI_000047, or form UI_000065? The form fields and error message and submit button are all inside RegistrationForm UI_000065. Bindings need actual loaded UI consumers: inputs (UI_000068, 73, 77, 80, 84, 88/89/90, 93, 96, 99, 102, 105), error message UI_000109, NextStepButton UI_000110.
+
+Simplest: one state object holding form field values + error + submitting. But bindings must be per UI; binding a whole object to each input is odd. Typically these tasks bind individual states to individual inputs. Let's create separate data items:
+
+- nationality (string) bound to UI_000068
+- name (string) UI_000073
+- passport_number (string) UI_000077
+- passport_expiration_date (string) UI_000080
+- date_of_birth (string) UI_000084
+- gender (string) UI_000088 (radiogroup)
+- username (string) UI_000093
+- password (string) UI_000096
+- confirm_password (string) UI_000099
+- email (string) UI_000102
+- agreed_to_terms (boolean) UI_000105
+- error_message (nullable string) UI_000109
+- submitting? Is loading state needed — yes, submit button. Could add "is_submitting" boolean bound to UI_000110. Keep minimal but it's transient UI state. Requirement says include loading and error state. Add is_submitting.
+
+Owner: page UI_000047 (registration page) — the form coordinate with header after submit? Actually navigation on success to home page; that's routing handled by handler. Page owner is fine.
+
+Schema for error_message: anyOf string/null.
+
+Bindings: each data -> one UI.
+
+Do we need new types? No; all simple scalars.
+
+Also gender radio: bound to radiogroup UI_000088 or to radio buttons? Bind to group. Maybe state value "Male"|"Female". Use string with enum? Enum on string is allowed. Use {"type":"string","enum":["Male","Female"]} but initial "" not in enum. Initial could be null with anyOf. Simpler: string initial "".
+
+Nationality string initial "" — but initial visible "Please select" placeholder; label static so fine.
+
+Date fields: string initial "".
+
+Write it.
+
+[2026-10-22T07:28:10.652864+00:00] [frontend_design_data] MODEL_FINISHED duration_ms=10368

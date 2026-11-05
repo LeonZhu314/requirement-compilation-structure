@@ -1,0 +1,1447 @@
+[2026-10-22T07:26:50.813538+00:00] [frontend_design_interaction] MODEL_CALL model=deepseek-flash attempt=1 status=SUCCEEDED
+[2026-10-22T07:26:50.813538+00:00] [frontend_design_interaction] MODEL_INPUT
+
+--- system ---
+## Requirement fidelity
+For design, test generation, implementation and repair, explicit requirement descriptions, scenarios
+and applicable ancestor constraints define the observable product contract. Visual references, generated
+IR, existing source and convenience choices must not override that contract.
+Preserve explicitly specified UI wording and accessible names exactly, including spelling, case,
+punctuation and dynamic naming patterns. Do not translate, paraphrase, abbreviate or substitute another
+spelling unless the document explicitly permits it. Use the same names in design, source and tests.
+Preserve explicitly specified UI roles and states. A required button is a button, not a link merely
+because it navigates; fields need their specified associated labels. Implement the actual control
+semantics, not just matching text or an aria-label on a different control. Use alternatives only when
+the requirement explicitly allows them.
+At each specified scenario step, required controls and navigation entries must exist, be visible and
+be operable in the stated scope. Do not invent prerequisite expansion, hover or navigation steps that
+hide an expected input or action. Preserve these contracts in shared forms and prerequisite flows too.
+Tests must exercise the specified names, roles and states; do not broaden selectors or expected values
+to accept an implementation that contradicts explicit requirements.
+Where the requirement is silent, choose suitable wording, roles and interaction details consistent
+with the supplied visual evidence and existing application conventions. Do not invent extra obligations.
+
+## Background and role
+You are a frontend architect designing one leaf requirement in an existing application.
+Produce framework-neutral contracts, not React components, source code, CSS, tests or SQL.
+Requirements and scenario steps define behavior. Images define visible structure and states;
+image evidence must not invent authentication policies, persistence or server capabilities.
+Requirements may also specify controls and interaction states not shown in an image.
+Ancestor descriptions constrain the leaf; do not implement parent or unrelated requirements.
+
+## Identity and response protocol
+Return exactly one JSON delta matching the supplied schema, no Markdown or extra properties.
+The compiler owns IDs, reqs, the app/page roots and reciprocal UI links. Never output those fields
+for new records. Reference supplied records by exact ID; reference same-reply new records by @Name.
+Do not guess IDs. Names are semantic, not framework-specific. Preserve unrelated existing design.
+validation_feedback and previous_output describe a rejected delta: return a full corrected delta.
+Before returning, check each current scenario step has the UI/state/interaction needed in this layer.
+Do not create implementation detail nodes or speculative operations just to fill the response.
+## Type and reuse conventions
+Use JSON STRINGS containing JSON Schema. Scalar types are string/integer/number/boolean/null;
+arrays have items; objects have properties, required and additionalProperties:false. Parameter
+names use snake_case. Nullable values use anyOf. String formats: date/date-time/uuid. Enums match
+their scalar type. No source HTTP-location extensions in frontend contracts.
+Only type, properties, required, additionalProperties, items, enum, anyOf, $ref, format and
+description are supported. Other keywords such as minLength/maxLength/pattern/minimum/maximum/
+default/oneOf/allOf/$defs are forbidden; format:email/uri is forbidden. Put business validation
+in data/handler spec, not extra JSON Schema metadata. Define only actually referenced new_types.
+Custom types use #/types/Name and new_types:[{name:"PascalCase",schema:"<JSON Schema>"}].
+Never redefine supplied types; recursive types and unused new types are forbidden.
+Handler input/output must be object schemas; void is an empty object. Data schema may be any type.
+Existing data/handlers/events can be reused only unchanged, with identical behavior and contracts.
+Reuse IDs must come from supplied records. The compiler adds current reqs without changing contracts.
+## Task: events and their handlers together
+Connect scenario actions, page/region load, input changes, submissions, navigation and supported failures.
+event_ui_candidates includes all loaded UI in the declared pages and shared app structure. Choose
+the actual interaction control, or a page/region root for load initialization, using its exact ID.
+An event site does not need a prior binding to this requirement. Keep events at their semantic sites;
+do not move a click to an ancestor just to reach state. The compiler coordinates state lifetime by
+lifting owners when a handler needs state from sibling regions. Reference supplied state IDs only;
+never invent UI/data IDs. Cross-page state uses app lifetime when the referenced pages need it.
+Select the handler explicitly in the same response: new_handlers:[{name:"LoadAccount",...}] means
+new_events.handler:"@LoadAccount"; an existing handler must appear in reuse_handlers or handler_updates
+before a NEW event may reference its exact ID. A handler in the input reuse_handlers catalog alone is
+not selected. Reusing an existing event via reuse_events selects its established handler automatically.
+new_events.ui must be a loaded UI. The compiler records the current requirement on used event sites
+for traceability and source discovery. trigger is a framework-neutral semantic
+trigger, not an onClick/effect string. Each event points to exactly one handler. Multiple events may share
+one handler. There is at most one event per UI+trigger: reuse it unchanged if its existing handler suffices.
+If an established event cannot serve this leaf unchanged, use a permitted handler_updates addition or
+report a contradiction; never quietly overwrite another requirement or create a duplicate trigger.
+An existing event whose handler needs ADDITIONAL behavior may use handler_updates. This is an explicit
+revision, not reuse. Give its loaded handler ID, an ADDITIONAL spec, and additional read/write/apis.
+The compiler preserves its ID/name/input/output/original spec and appends these additions. Preserve
+all old behavior; do not negate the previous contract. All existing event sites of an updated handler
+must be loaded. Also select its event through reuse_events, or attach a new event to the updated handler.
+Never list an updated handler in reuse_handlers. Use blocked_reason when a signature change or removal
+of old behavior is required, rather than silently changing the contract.
+New handlers use globally unique PascalCase names. read/write name loaded data IDs; apis name loaded
+backend API IDs, never backend FUNC/DB. APIs must be sufficient, with existing request/response contracts;
+never invent an endpoint. api_contracts is the initial relevant slice, not all available capabilities.
+api_index lists all existing APIs. Refer to an exact indexed API ID in the normal handler apis list
+when needed; the compiler supplies its full contract and types for review on the next attempt.
+If reporting a gap involves an unloaded indexed API, name its exact ID/name in blocked_reason so
+the compiler can retrieve it. No extra output fields or separate loading protocol are needed.
+spec uses {preconditions} action {postconditions}, explaining event parameter
+mapping, data updates, API request/response mappings, navigation and failure behavior as needed.
+input/output are object contracts. UI-only actions need no API. Keep orchestration in spec, not a separate
+handler call graph. Every new or explicitly reused handler must be used by an event. Use @Name for a new
+handler. Reuse_events contains loaded IDs only. Data already committed by the Data pass cannot be invented
+here. blocked_reason is empty on success. If required state or a backend capability is unavailable,
+or an immutable existing event contradicts the requirement, explain the precise gap in blocked_reason;
+do not drop required behavior just to make an empty delta pass validation. The compiler feeds the
+reason back and rolls back this leaf if the gap cannot be resolved within the attempts.
+
+## Return format
+{"type": "object", "additionalProperties": false, "properties": {"blocked_reason": {"type": "string"}, "new_handlers": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"name": {"type": "string"}, "spec": {"type": "string"}, "input": {"type": "string"}, "output": {"type": "string"}, "read": {"type": "array", "items": {"type": "string"}}, "write": {"type": "array", "items": {"type": "string"}}, "apis": {"type": "array", "items": {"type": "string"}}}, "required": ["name", "spec", "input", "output", "read", "write", "apis"]}}, "reuse_handlers": {"type": "array", "items": {"type": "string"}}, "handler_updates": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string"}, "spec": {"type": "string"}, "read": {"type": "array", "items": {"type": "string"}}, "write": {"type": "array", "items": {"type": "string"}}, "apis": {"type": "array", "items": {"type": "string"}}}, "required": ["id", "spec", "read", "write", "apis"]}}, "new_events": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"ui": {"type": "string"}, "name": {"type": "string"}, "trigger": {"type": "string", "enum": ["click", "change", "input", "submit", "load", "focus", "blur", "keydown", "select", "toggle", "close"]}, "handler": {"type": "string"}}, "required": ["ui", "name", "trigger", "handler"]}}, "reuse_events": {"type": "array", "items": {"type": "string"}}, "new_types": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"name": {"type": "string"}, "schema": {"type": "string"}}, "required": ["name", "schema"]}}}, "required": ["blocked_reason", "new_handlers", "reuse_handlers", "handler_updates", "new_events", "reuse_events", "new_types"]}
+## Example (IDs are illustrative; use supplied IDs)
+{"blocked_reason": "", "handler_updates": [], "new_handlers": [{"name": "ChangeSearchTerm", "spec": "{page open} store entered term {search_term equals input value; no API calls}", "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}", "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "read": [], "write": ["DATA_000001"], "apis": []}], "reuse_handlers": [], "new_events": [{"ui": "UI_000003", "name": "SearchTermChanged", "trigger": "input", "handler": "@ChangeSearchTerm"}], "reuse_events": [], "new_types": []}
+--- user ---
+## Current task
+
+```json
+{
+  "current_task": {
+    "requirement": {
+      "id": "REQ-1",
+      "name": "Public home page and account access",
+      "description": "未登录状态下，首页 / 显示 \"Register\"(role=link)，点击后打开 /register；同时显示 \"Login\"(role=link)，点击后打开 /login。注册或登录成功后，页头以文本显示已保存的用户名，并提供 \"Sign out\"(role=link)；点击 Sign out 清除持久保存的会话，恢复 Register 和 Login 链接。注册创建账户及会话；登录为已有账户重新建立会话。未登录状态的参考图片没有展示登录后的 Sign out 操作；其精确可见文案和可访问名称均为 \"Sign out\"。\n\n首页参考图还展示了可编辑的 \"From\"(role=textbox)、\"To\"(role=textbox) 和 \"Date\"(role=textbox)，各自使用上述可见标签和可访问名称；\"Search\"(role=button) 的可见文案为 \"Search\"，\"High-speed trains only\"(role=checkbox) 使用上述可见标签和可访问名称。交换车站图标的 role=button，可访问名称为 \"Swap stations\"，没有可见文本。三个横幅指示器的 role=button，可访问名称分别为 \"Show banner 1\"、\"Show banner 2\" 和 \"Show banner 3\"，没有可见文本。由于参考图片未提供文字标签，这里明确补充这些纯图标控件的名称。\n\nQuick Guide 区域提供 \"What ID documents are accepted by 12306.cn English website?\"(role=link)、\"What services does 12306.cn English website provide?\"(role=link)、\"What is endorsement?\"(role=link)、\"What are the rules of ticket endorsement?\"(role=link) 和 \"More>\"(role=link)，使用上述精确可见文案和可访问名称。账户需求未规定列车查询、横幅切换、交换车站和指南内容的行为；明确这些控件的身份，不会增加账户流程的验收条件。",
+      "scenarios": [
+        {
+          "id": "REQ-1:scenario:1",
+          "name": "View the public home page and account entries",
+          "steps": [
+            {
+              "keyword": "GIVEN",
+              "content": "一位未登录访客打开首页 /。"
+            },
+            {
+              "keyword": "WHEN",
+              "content": "访客查看首页页头中的账户入口和导航。"
+            },
+            {
+              "keyword": "THEN",
+              "content": "首页显示 \"Register\"(role=link) 和 \"Login\"(role=link)，其可见文案和可访问名称精确匹配；两个链接分别指向 /register 和 /login。"
+            }
+          ]
+        }
+      ],
+      "pages": [
+        {
+          "name": "home",
+          "reference": "reference/homepage.png",
+          "analysis": "regions:\n- Page > Header: white top bar containing the railway brand block at the left and utility navigation at the right.\n- Page > Primary navigation bar: full-width blue bar directly beneath the header, containing Home, Booking and Travel guides entries.\n- Page > Hero banner: full-width nighttime railway photograph with three carousel indicators near the lower left and a wide search panel overlapping the banner's lower edge.\n- Hero banner > Search panel: white floating card containing an information notice, a horizontal From/To/Date/Search form row, and an unchecked High-speed trains only checkbox.\n- Page > Quick Guide section: white content area below the hero with a blue heading and two columns of FAQ links, plus a More link below the right column.\n- Page > Footer: pale gray full-width band with three centered lines of copyright, registration and policy text.\n- No sidebar, modal dialog, loading state, empty state or error message is visible.\n\nvisible_controls:\n- Header: China Railway 12306 brand mark at left, with a red circular railway emblem and product name block; Login and Register text links in the utility navigation.\n- Header utility navigation: My 12306 dropdown control with down chevron; 简体中文 language dropdown control with down chevron; Contact us link with telephone icon.\n- Primary navigation: Home link; Booking link with down chevron; Travel guides link with down chevron.\n- Hero banner: three carousel dot indicators; the first is filled/active and the next two are dimmed.\n- Search panel: From field with location-pin icon and visible value Beijing(北京).\n- Search panel: To field with location-pin icon and visible value Shanghai(上海).\n- Search panel: circular orange swap button with opposing arrows between the From and To fields.\n- Search panel: Date field with calendar icon and visible value Fri, May 29.\n- Search panel: large orange Search button.\n- Search panel: unchecked checkbox labeled High-speed trains only.\n- Quick Guide: four FAQ text links, each preceded by a small blue square bullet.\n- Quick Guide: More> text link below the right-hand FAQ column.\n- Footer: Privacy Policy and Cookie Statement links separated by a vertical bar.\n\nlayout_cues:\n- Header content sits in a wide horizontal container, with the brand block left-aligned and the utility navigation right-aligned; a thin separator divides the header from the navigation bar.\n- The primary navigation bar spans the full viewport width and is shallow; its items are left-aligned and separated by subtle vertical rules.\n- The hero banner is full-bleed and tall, occupying a major portion of the first screen, with the white search panel centered horizontally and overlapping its lower boundary.\n- The search panel is nearly as wide as the main content container, with generous internal padding; the notice spans the full card width above a single horizontal row of fields and button.\n- In the search form, From, To and Date occupy roughly equal columns, the orange Search button occupies the right end, and the checkbox sits alone below the fields at the left.\n- The Quick Guide section uses a wide centered content container; the heading is left-aligned, with two FAQ columns spaced widely apart and the More link under the right column.\n- There is substantial white space below the Quick Guide links before the footer begins.\n- The footer is full-width and centered; its three lines stack vertically with modest line spacing.\n\nstyle_cues:\n- Overall appearance is a corporate travel-booking interface: white header and content areas, a saturated blue navigation band and a dark photographic hero.\n- The header brand is prominent: a red circular railway emblem beside large dark Chinese characters and a smaller gray uppercase subtitle; utility links are smaller and muted dark gray.\n- The primary navigation uses white text on a medium-blue fill, with thin lighter vertical separators and no prominent individual button fills.\n- The hero image is a night scene dominated by dark sky, warm orange bokeh and light trails, and a silver-white high-speed train on an elevated structure; the image has high contrast against the white search card.\n- The search card is white with softly rounded corners and a light drop shadow; its notice text is small and gray with a gray circular information icon.\n- Search fields use thin light gray borders, white backgrounds, small gray labels with line icons, and larger dark values; the Search button is bright orange with white text.\n- Quick Guide uses a medium-large blue heading, small blue square list bullets, and dark gray link text; More> is lighter gray and lower emphasis.\n- The footer has a pale gray background with small centered gray text and links, creating low visual emphasis compared with the hero and search panel.\n\ntext_cues:\n- Header: 中国铁路12306; 12306 CHINA RAILWAY; Login; Register; My 12306; 简体中文; Contact us.\n- Primary navigation: Home; Booking; Travel guides.\n- Search panel notice: The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday).\n- Search panel fields: From; Beijing(北京); To; Shanghai(上海); Date; Fri, May 29.\n- Search panel action: Search.\n- Search panel checkbox: High-speed trains only.\n- Content section heading: Quick Guide.\n- Quick Guide links: What ID documents are accepted by 12306.cn English website?; What services does 12306.cn English website provide?\n- Quick Guide links: What is endorsement?; What are the rules of ticket endorsement?\n- Quick Guide action: More>.\n- Footer copyright: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED.\n- Footer registration: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证：京B2-20202537.\n- Footer links: Privacy Policy | Cookie Statement."
+        }
+      ],
+      "ancestor_constraints": [
+        {
+          "id": "ROOT",
+          "name": "Train Ticket Booking Demo",
+          "description": "这是一个小型网站，访客可以注册或登录。\n\n首页和注册页的共享导航提供 \"Home\"(role=link)、\"Booking\"(role=link)、\"Travel guides\"(role=link)、\"My 12306\"(role=link)、\"简体中文\"(role=button) 和 \"Contact us\"(role=link)，可见文案与参考图片完全一致。账户入口控件及其行为见 REQ-1。每个页面的页脚提供 \"Privacy Policy\"(role=link) 和 \"Cookie Statement\"(role=link)，可见文案和可访问名称相同。名称重复的控件通过其语义位置区分，例如注册协议区域与页脚。这里明确了参考控件的展示和交互身份；这次命名说明不增加下拉菜单内容、政策文档、联系服务或旅行指南的业务流程。"
+        }
+      ]
+    },
+    "data_access": {
+      "read": [
+        "session",
+        "user_account",
+        "user_account.username"
+      ],
+      "write": [
+        "session",
+        "user_account"
+      ],
+      "entities": [
+        {
+          "key": "session",
+          "description": "A persisted authentication session that keeps a visitor logged in until sign out clears it.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [],
+              "write": []
+            }
+          ],
+          "read": [
+            "REQ-1"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        },
+        {
+          "key": "user_account",
+          "description": "A registered visitor account whose saved username is shown in the header after registration or login.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "date_of_birth",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's date of birth.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "email",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's contact email address, identified regardless of letter case.",
+              "properties": {
+                "max_length": 254,
+                "unique": true,
+                "comparison": "case_insensitive"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's gender as declared in the account profile.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1"
+              ],
+              "read": [],
+              "write": []
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's full name as recorded for the account and passport.",
+              "properties": {
+                "min_length": 2,
+                "max_length": 100
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "nationality",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's nationality country selected when registering the account.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_expiration_date",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The expiry date of the traveler's passport.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_number",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's passport number identifying the travel document.",
+              "properties": {
+                "min_length": 6,
+                "max_length": 30
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "password",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's password credential used to authenticate the traveler.",
+              "properties": {
+                "min_length": 12,
+                "max_length": 128
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "username",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Saved account username displayed in the header after registration or login.",
+              "properties": {
+                "min_length": 3,
+                "max_length": 32,
+                "unique": true,
+                "comparison": "exact"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [
+                "REQ-1"
+              ],
+              "write": [
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+--- user ---
+## Selected page and UI tree
+
+```json
+{
+  "selected_ui_tree": [
+    {
+      "id": "UI_000001",
+      "name": "home",
+      "kind": "page",
+      "description": "Page: home.",
+      "reqs": [],
+      "children": [
+        {
+          "id": "UI_000002",
+          "name": "Header",
+          "kind": "region",
+          "description": "Home page header containing the account entries and navigation that the visitor views on the public home page.",
+          "reqs": [
+            "REQ-1"
+          ],
+          "children": [
+            {
+              "id": "UI_000003",
+              "name": "BrandBlock",
+              "kind": "region",
+              "description": "China Railway 12306 brand mark block: red circular railway emblem with product name 中国铁路12306 and gray subtitle 12306 CHINA RAILWAY.",
+              "reqs": [],
+              "children": [
+                {
+                  "id": "UI_000004",
+                  "name": "BrandEmblem",
+                  "kind": "image",
+                  "description": "Red circular railway emblem at the left of the header brand block.",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000005",
+                  "name": "BrandName",
+                  "kind": "text",
+                  "description": "Brand product name text 中国铁路12306.",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000006",
+                  "name": "BrandSubtitle",
+                  "kind": "text",
+                  "description": "Small gray uppercase subtitle 12306 CHINA RAILWAY.",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000007",
+              "name": "HeaderUtilityNav",
+              "kind": "navigation",
+              "description": "Header utility navigation shown to every visitor: My 12306 link, 简体中文 language button and Contact us link with telephone icon.",
+              "reqs": [],
+              "children": [
+                {
+                  "id": "UI_000008",
+                  "name": "MyAccountLink",
+                  "kind": "button",
+                  "description": "Header utility entry with visible text My 12306 and a down chevron, exposed as a link.",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000009",
+                  "name": "LanguageButton",
+                  "kind": "button",
+                  "description": "Language control with visible text 简体中文 and a down chevron, exposed as a button.",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000010",
+                  "name": "ContactUsLink",
+                  "kind": "button",
+                  "description": "Contact us link with telephone icon, visible text and accessible name Contact us.",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000011",
+              "name": "HeaderAccountArea",
+              "kind": "region",
+              "description": "Account entry area at the right of the header. It takes exactly one of two states: guest (Register and Login links) or signed in (saved username text plus Sign out link).",
+              "reqs": [
+                "REQ-1"
+              ],
+              "children": [
+                {
+                  "id": "UI_000012",
+                  "name": "GuestAccountLinks",
+                  "kind": "region",
+                  "description": "Unauthenticated visitor viewing the home header account area: Register and Login links are shown; the signed-in username and Sign out are hidden.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [
+                    {
+                      "id": "UI_000013",
+                      "name": "RegisterLink",
+                      "kind": "button",
+                      "description": "User registration entry: Register link, role=link, with exact visible text and accessible name Register, opening /register.",
+                      "reqs": [
+                        "REQ-1"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000014",
+                      "name": "LoginLink",
+                      "kind": "button",
+                      "description": "User login entry: Login link, role=link, with exact visible text and accessible name Login, opening /login.",
+                      "reqs": [
+                        "REQ-1"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000015",
+                  "name": "SignedInAccountArea",
+                  "kind": "region",
+                  "description": "After a successful registration or login the header shows the saved username as plain text and a Sign out link instead of Register and Login.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [
+                    {
+                      "id": "UI_000016",
+                      "name": "UsernameDisplay",
+                      "kind": "text",
+                      "description": "Header displays the saved username of the registered or logged-in account as text.",
+                      "reqs": [
+                        "REQ-1"
+                      ],
+                      "children": [],
+                      "data": [
+                        "DATA_000001"
+                      ],
+                      "events": []
+                    },
+                    {
+                      "id": "UI_000017",
+                      "name": "SignOutLink",
+                      "kind": "button",
+                      "description": "Sign out link with exact visible text and accessible name Sign out; activating it clears the persisted session and restores the Register and Login state.",
+                      "reqs": [
+                        "REQ-1"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [
+                "DATA_000001"
+              ],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000018",
+          "name": "PrimaryNavigation",
+          "kind": "navigation",
+          "description": "Full-width blue primary navigation bar beneath the header with white text entries and thin light vertical separators.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000019",
+              "name": "HomeNavLink",
+              "kind": "button",
+              "description": "Primary navigation entry Home, role=link, visible text and accessible name Home.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000020",
+              "name": "BookingNavLink",
+              "kind": "button",
+              "description": "Primary navigation entry Booking with down chevron, role=link, visible text and accessible name Booking.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000021",
+              "name": "TravelGuidesNavLink",
+              "kind": "button",
+              "description": "Primary navigation entry Travel guides with down chevron, role=link, visible text and accessible name Travel guides.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000022",
+          "name": "HeroBanner",
+          "kind": "region",
+          "description": "Full-bleed nighttime railway photograph hero area with three carousel indicators near the lower left and the search panel overlapping its lower edge.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000023",
+              "name": "HeroImage",
+              "kind": "image",
+              "description": "Night scene railway photograph with a silver-white high-speed train on an elevated structure, warm orange bokeh and light trails.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000024",
+              "name": "BannerIndicators",
+              "kind": "region",
+              "description": "Row of three carousel indicator dot buttons; the first is filled/active and the other two are dimmed. The controls are icon-only.",
+              "reqs": [],
+              "children": [
+                {
+                  "id": "UI_000025",
+                  "name": "Banner1Button",
+                  "kind": "button",
+                  "description": "Carousel indicator button with no visible text and accessible name Show banner 1.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000026",
+                  "name": "Banner2Button",
+                  "kind": "button",
+                  "description": "Carousel indicator button with no visible text and accessible name Show banner 2.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000027",
+                  "name": "Banner3Button",
+                  "kind": "button",
+                  "description": "Carousel indicator button with no visible text and accessible name Show banner 3.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000028",
+              "name": "SearchPanel",
+              "kind": "form",
+              "description": "White rounded search card overlapping the banner's lower edge: information notice across the top, then a horizontal From/To/Date/Search row, with the High-speed trains only checkbox below the fields at the left.",
+              "reqs": [],
+              "children": [
+                {
+                  "id": "UI_000029",
+                  "name": "SearchNotice",
+                  "kind": "text",
+                  "description": "Small gray notice with information icon: The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday).",
+                  "reqs": [],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000030",
+                  "name": "FromInput",
+                  "kind": "input",
+                  "description": "Editable From textbox with visible label and accessible name From holding the station value Beijing(北京).",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000031",
+                  "name": "SwapStationsButton",
+                  "kind": "button",
+                  "description": "Swap stations icon-only button with accessible name Swap stations and no visible text, between From and To.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000032",
+                  "name": "ToInput",
+                  "kind": "input",
+                  "description": "Editable To textbox with visible label and accessible name To holding the station value Shanghai(上海).",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000033",
+                  "name": "DateInput",
+                  "kind": "input",
+                  "description": "Editable Date textbox with visible label and accessible name Date holding Fri, May 29.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000034",
+                  "name": "SearchButton",
+                  "kind": "button",
+                  "description": "Search button with exact visible text and accessible name Search.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000035",
+                  "name": "HighSpeedTrainsOnlyCheckbox",
+                  "kind": "input",
+                  "description": "High-speed trains only checkbox with exact visible label and accessible name.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000036",
+          "name": "QuickGuideSection",
+          "kind": "region",
+          "description": "White content section below the hero with a blue Quick Guide heading and two FAQ columns plus a More> link under the right column.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000037",
+              "name": "QuickGuideHeading",
+              "kind": "text",
+              "description": "Medium-large blue section heading Quick Guide.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000038",
+              "name": "QuickGuideLinkList",
+              "kind": "list",
+              "description": "Quick Guide link with exact visible text and accessible name What services does 12306.cn English website provide?, matching the second FAQ item.",
+              "reqs": [
+                "REQ-1"
+              ],
+              "children": [
+                {
+                  "id": "UI_000039",
+                  "name": "QuickGuideFaqItem",
+                  "kind": "item",
+                  "description": "Representative FAQ link row: blue square bullet followed by a dark gray link. Used repeatedly for the four Quick Guide link texts.",
+                  "reqs": [],
+                  "children": [
+                    {
+                      "id": "UI_000040",
+                      "name": "QuickGuideFaqLink",
+                      "kind": "button",
+                      "description": "Quick Guide link with exact visible text and accessible name What ID documents are accepted by 12306.cn English website?.",
+                      "reqs": [
+                        "REQ-1"
+                      ],
+                      "children": [],
+                      "data": [],
+                      "events": []
+                    }
+                  ],
+                  "data": [],
+                  "events": []
+                },
+                {
+                  "id": "UI_000041",
+                  "name": "MoreLink",
+                  "kind": "button",
+                  "description": "Quick Guide link with exact visible text and accessible name More>.",
+                  "reqs": [
+                    "REQ-1"
+                  ],
+                  "children": [],
+                  "data": [],
+                  "events": []
+                }
+              ],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        },
+        {
+          "id": "UI_000042",
+          "name": "Footer",
+          "kind": "region",
+          "description": "Pale gray full-width footer band with three centered lines: copyright, registration and policy text.",
+          "reqs": [],
+          "children": [
+            {
+              "id": "UI_000043",
+              "name": "FooterCopyrightText",
+              "kind": "text",
+              "description": "Centered copyright line: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000044",
+              "name": "FooterRegistrationText",
+              "kind": "text",
+              "description": "Centered registration line: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证：京B2-20202537.",
+              "reqs": [],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000045",
+              "name": "PrivacyPolicyLink",
+              "kind": "button",
+              "description": "Ancestor constraint: footer provides Privacy Policy link with matching visible text and accessible name.",
+              "reqs": [
+                "REQ-1"
+              ],
+              "children": [],
+              "data": [],
+              "events": []
+            },
+            {
+              "id": "UI_000046",
+              "name": "CookieStatementLink",
+              "kind": "button",
+              "description": "Ancestor constraint: footer provides Cookie Statement link with matching visible text and accessible name.",
+              "reqs": [
+                "REQ-1"
+              ],
+              "children": [],
+              "data": [],
+              "events": []
+            }
+          ],
+          "data": [],
+          "events": []
+        }
+      ],
+      "data": [],
+      "events": []
+    }
+  ],
+  "app": {
+    "id": "UI_APP",
+    "name": "Application",
+    "kind": "app"
+  },
+  "loaded_ui_ids": [
+    "UI_000001",
+    "UI_000002",
+    "UI_000003",
+    "UI_000004",
+    "UI_000005",
+    "UI_000006",
+    "UI_000007",
+    "UI_000008",
+    "UI_000009",
+    "UI_000010",
+    "UI_000011",
+    "UI_000012",
+    "UI_000013",
+    "UI_000014",
+    "UI_000015",
+    "UI_000016",
+    "UI_000017",
+    "UI_000018",
+    "UI_000019",
+    "UI_000020",
+    "UI_000021",
+    "UI_000022",
+    "UI_000023",
+    "UI_000024",
+    "UI_000025",
+    "UI_000026",
+    "UI_000027",
+    "UI_000028",
+    "UI_000029",
+    "UI_000030",
+    "UI_000031",
+    "UI_000032",
+    "UI_000033",
+    "UI_000034",
+    "UI_000035",
+    "UI_000036",
+    "UI_000037",
+    "UI_000038",
+    "UI_000039",
+    "UI_000040",
+    "UI_000041",
+    "UI_000042",
+    "UI_000043",
+    "UI_000044",
+    "UI_000045",
+    "UI_000046",
+    "UI_APP"
+  ]
+}
+```
+--- user ---
+## Eligible event UI nodes
+
+```json
+{
+  "event_ui_candidates": [
+    {
+      "id": "UI_000001",
+      "name": "home",
+      "kind": "page",
+      "description": "Page: home."
+    },
+    {
+      "id": "UI_000002",
+      "name": "Header",
+      "kind": "region",
+      "description": "Home page header containing the account entries and navigation that the visitor views on the public home page."
+    },
+    {
+      "id": "UI_000003",
+      "name": "BrandBlock",
+      "kind": "region",
+      "description": "China Railway 12306 brand mark block: red circular railway emblem with product name 中国铁路12306 and gray subtitle 12306 CHINA RAILWAY."
+    },
+    {
+      "id": "UI_000004",
+      "name": "BrandEmblem",
+      "kind": "image",
+      "description": "Red circular railway emblem at the left of the header brand block."
+    },
+    {
+      "id": "UI_000005",
+      "name": "BrandName",
+      "kind": "text",
+      "description": "Brand product name text 中国铁路12306."
+    },
+    {
+      "id": "UI_000006",
+      "name": "BrandSubtitle",
+      "kind": "text",
+      "description": "Small gray uppercase subtitle 12306 CHINA RAILWAY."
+    },
+    {
+      "id": "UI_000007",
+      "name": "HeaderUtilityNav",
+      "kind": "navigation",
+      "description": "Header utility navigation shown to every visitor: My 12306 link, 简体中文 language button and Contact us link with telephone icon."
+    },
+    {
+      "id": "UI_000008",
+      "name": "MyAccountLink",
+      "kind": "button",
+      "description": "Header utility entry with visible text My 12306 and a down chevron, exposed as a link."
+    },
+    {
+      "id": "UI_000009",
+      "name": "LanguageButton",
+      "kind": "button",
+      "description": "Language control with visible text 简体中文 and a down chevron, exposed as a button."
+    },
+    {
+      "id": "UI_000010",
+      "name": "ContactUsLink",
+      "kind": "button",
+      "description": "Contact us link with telephone icon, visible text and accessible name Contact us."
+    },
+    {
+      "id": "UI_000011",
+      "name": "HeaderAccountArea",
+      "kind": "region",
+      "description": "Account entry area at the right of the header. It takes exactly one of two states: guest (Register and Login links) or signed in (saved username text plus Sign out link)."
+    },
+    {
+      "id": "UI_000012",
+      "name": "GuestAccountLinks",
+      "kind": "region",
+      "description": "Unauthenticated visitor viewing the home header account area: Register and Login links are shown; the signed-in username and Sign out are hidden."
+    },
+    {
+      "id": "UI_000013",
+      "name": "RegisterLink",
+      "kind": "button",
+      "description": "User registration entry: Register link, role=link, with exact visible text and accessible name Register, opening /register."
+    },
+    {
+      "id": "UI_000014",
+      "name": "LoginLink",
+      "kind": "button",
+      "description": "User login entry: Login link, role=link, with exact visible text and accessible name Login, opening /login."
+    },
+    {
+      "id": "UI_000015",
+      "name": "SignedInAccountArea",
+      "kind": "region",
+      "description": "After a successful registration or login the header shows the saved username as plain text and a Sign out link instead of Register and Login."
+    },
+    {
+      "id": "UI_000016",
+      "name": "UsernameDisplay",
+      "kind": "text",
+      "description": "Header displays the saved username of the registered or logged-in account as text."
+    },
+    {
+      "id": "UI_000017",
+      "name": "SignOutLink",
+      "kind": "button",
+      "description": "Sign out link with exact visible text and accessible name Sign out; activating it clears the persisted session and restores the Register and Login state."
+    },
+    {
+      "id": "UI_000018",
+      "name": "PrimaryNavigation",
+      "kind": "navigation",
+      "description": "Full-width blue primary navigation bar beneath the header with white text entries and thin light vertical separators."
+    },
+    {
+      "id": "UI_000019",
+      "name": "HomeNavLink",
+      "kind": "button",
+      "description": "Primary navigation entry Home, role=link, visible text and accessible name Home."
+    },
+    {
+      "id": "UI_000020",
+      "name": "BookingNavLink",
+      "kind": "button",
+      "description": "Primary navigation entry Booking with down chevron, role=link, visible text and accessible name Booking."
+    },
+    {
+      "id": "UI_000021",
+      "name": "TravelGuidesNavLink",
+      "kind": "button",
+      "description": "Primary navigation entry Travel guides with down chevron, role=link, visible text and accessible name Travel guides."
+    },
+    {
+      "id": "UI_000022",
+      "name": "HeroBanner",
+      "kind": "region",
+      "description": "Full-bleed nighttime railway photograph hero area with three carousel indicators near the lower left and the search panel overlapping its lower edge."
+    },
+    {
+      "id": "UI_000023",
+      "name": "HeroImage",
+      "kind": "image",
+      "description": "Night scene railway photograph with a silver-white high-speed train on an elevated structure, warm orange bokeh and light trails."
+    },
+    {
+      "id": "UI_000024",
+      "name": "BannerIndicators",
+      "kind": "region",
+      "description": "Row of three carousel indicator dot buttons; the first is filled/active and the other two are dimmed. The controls are icon-only."
+    },
+    {
+      "id": "UI_000025",
+      "name": "Banner1Button",
+      "kind": "button",
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 1."
+    },
+    {
+      "id": "UI_000026",
+      "name": "Banner2Button",
+      "kind": "button",
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 2."
+    },
+    {
+      "id": "UI_000027",
+      "name": "Banner3Button",
+      "kind": "button",
+      "description": "Carousel indicator button with no visible text and accessible name Show banner 3."
+    },
+    {
+      "id": "UI_000028",
+      "name": "SearchPanel",
+      "kind": "form",
+      "description": "White rounded search card overlapping the banner's lower edge: information notice across the top, then a horizontal From/To/Date/Search row, with the High-speed trains only checkbox below the fields at the left."
+    },
+    {
+      "id": "UI_000029",
+      "name": "SearchNotice",
+      "kind": "text",
+      "description": "Small gray notice with information icon: The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday)."
+    },
+    {
+      "id": "UI_000030",
+      "name": "FromInput",
+      "kind": "input",
+      "description": "Editable From textbox with visible label and accessible name From holding the station value Beijing(北京)."
+    },
+    {
+      "id": "UI_000031",
+      "name": "SwapStationsButton",
+      "kind": "button",
+      "description": "Swap stations icon-only button with accessible name Swap stations and no visible text, between From and To."
+    },
+    {
+      "id": "UI_000032",
+      "name": "ToInput",
+      "kind": "input",
+      "description": "Editable To textbox with visible label and accessible name To holding the station value Shanghai(上海)."
+    },
+    {
+      "id": "UI_000033",
+      "name": "DateInput",
+      "kind": "input",
+      "description": "Editable Date textbox with visible label and accessible name Date holding Fri, May 29."
+    },
+    {
+      "id": "UI_000034",
+      "name": "SearchButton",
+      "kind": "button",
+      "description": "Search button with exact visible text and accessible name Search."
+    },
+    {
+      "id": "UI_000035",
+      "name": "HighSpeedTrainsOnlyCheckbox",
+      "kind": "input",
+      "description": "High-speed trains only checkbox with exact visible label and accessible name."
+    },
+    {
+      "id": "UI_000036",
+      "name": "QuickGuideSection",
+      "kind": "region",
+      "description": "White content section below the hero with a blue Quick Guide heading and two FAQ columns plus a More> link under the right column."
+    },
+    {
+      "id": "UI_000037",
+      "name": "QuickGuideHeading",
+      "kind": "text",
+      "description": "Medium-large blue section heading Quick Guide."
+    },
+    {
+      "id": "UI_000038",
+      "name": "QuickGuideLinkList",
+      "kind": "list",
+      "description": "Quick Guide link with exact visible text and accessible name What services does 12306.cn English website provide?, matching the second FAQ item."
+    },
+    {
+      "id": "UI_000039",
+      "name": "QuickGuideFaqItem",
+      "kind": "item",
+      "description": "Representative FAQ link row: blue square bullet followed by a dark gray link. Used repeatedly for the four Quick Guide link texts."
+    },
+    {
+      "id": "UI_000040",
+      "name": "QuickGuideFaqLink",
+      "kind": "button",
+      "description": "Quick Guide link with exact visible text and accessible name What ID documents are accepted by 12306.cn English website?."
+    },
+    {
+      "id": "UI_000041",
+      "name": "MoreLink",
+      "kind": "button",
+      "description": "Quick Guide link with exact visible text and accessible name More>."
+    },
+    {
+      "id": "UI_000042",
+      "name": "Footer",
+      "kind": "region",
+      "description": "Pale gray full-width footer band with three centered lines: copyright, registration and policy text."
+    },
+    {
+      "id": "UI_000043",
+      "name": "FooterCopyrightText",
+      "kind": "text",
+      "description": "Centered copyright line: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED."
+    },
+    {
+      "id": "UI_000044",
+      "name": "FooterRegistrationText",
+      "kind": "text",
+      "description": "Centered registration line: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证：京B2-20202537."
+    },
+    {
+      "id": "UI_000045",
+      "name": "PrivacyPolicyLink",
+      "kind": "button",
+      "description": "Ancestor constraint: footer provides Privacy Policy link with matching visible text and accessible name."
+    },
+    {
+      "id": "UI_000046",
+      "name": "CookieStatementLink",
+      "kind": "button",
+      "description": "Ancestor constraint: footer provides Cookie Statement link with matching visible text and accessible name."
+    },
+    {
+      "id": "UI_APP",
+      "name": "Application",
+      "kind": "app",
+      "description": "Application root."
+    }
+  ]
+}
+```
+--- user ---
+## Backend API contracts
+
+```json
+{
+  "api_contracts": [
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "GET",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header. Absent for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"The saved account username rendered as text in the header after registration or login; null when no valid session is presented.\"}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "name": "GetCurrentSession",
+      "spec": "{no authentication precondition; session_id may be absent, unknown or expired} reads the session identifier supplied via the Cookie header and passes it to the session/account lookup {when the session exists and resolves to a user_account, responds authenticated=true with that account's username so the page header can display the saved username and offer Sign out; when session_id is absent, unknown, expired or resolves to no account, responds authenticated=false with username null so the header shows the Register and Login links} {no writes; creates, modifies and clears no session or account data}",
+      "id": "API_000001",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000001"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "DELETE",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "name": "SignOut",
+      "spec": "{invoked by an authenticated visitor clicking Sign out; session_id is read from the Cookie request header and may be absent or already unknown} deletes the persisted session identified by session_id and clears the session cookie carrier on the response by setting that cookie to an empty value with an expiry in the past, so the visitor returns to the unauthenticated state where the header again shows the Register and Login links {always responds with success, even when session_id is absent or unknown, and always clears the cookie} {no other session is affected; user_account rows, including the saved username, are preserved unchanged; no new session is created}",
+      "id": "API_000002",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000002"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/register",
+      "shared": false,
+      "method": "POST",
+      "payload": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Selected nationality, e.g. \\\"Vietnam\\\".\"}, \"name\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Traveler full name as printed on the passport.\"}, \"passport_number\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Passport number: 6-30 ASCII letters, digits or hyphens.\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Passport expiry date; must be later than the current date.\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Traveler date of birth; must be earlier than the current date.\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"], \"source\": \"body\", \"description\": \"Selected gender radio option.\"}, \"username\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"3-32 ASCII letters, digits, hyphens or underscores; must be unique.\"}, \"password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"12-128 characters including uppercase, lowercase, digit and special character.\"}, \"confirm_password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Must be identical to password.\"}, \"email\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Valid email address, at most 254 characters; unique regardless of letter case.\"}, \"agreed_to_terms\": {\"type\": \"boolean\", \"source\": \"body\", \"description\": \"True when the visitor checked the Terms of Service and Privacy Policy agreement checkbox.\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "response": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"description\": \"Saved account username displayed as text in the header after automatic login.\"}, \"error\": {\"type\": \"string\", \"description\": \"Message describing the invalid or duplicate input; present only when no account was created.\"}}, \"required\": [], \"additionalProperties\": false}",
+      "name": "RegisterAccount",
+      "spec": "{any unauthenticated visitor may call; the body supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms, all of which are mandatory} validates the supplied values before any write: agreed_to_terms must be true; name must contain 2-100 non-whitespace characters; passport_number must consist of 6-30 ASCII letters, digits or hyphens; date_of_birth must be earlier than the current date read from the clock; passport_expiration_date must be later than the current date; username must be 3-32 ASCII letters, digits, hyphens or underscores; email must be syntactically valid and at most 254 characters; password must be 12-128 characters containing an uppercase letter, a lowercase letter, a digit and a special character; confirm_password must equal password; username must not already belong to an existing account and email must not already belong to an existing account under case-insensitive comparison. When every check passes, it persists a new user_account holding exactly these validated values (a locally hashed password derived from the supplied password is stored in place of the plain password, and a locally generated account identifier is assigned) and creates a new persisted session for that account identifier; it then sets the generated session identifier as the session cookie value on the Set-Cookie response header and responds with the saved username so the header can display it and offer Sign out. If any validation check fails or the username or email is already taken, it responds with an error description and creates no account and no session. {on success the new account and session exist, the session cookie is set, and username is returned; on failure no user_account row and no session row are created and no cookie is set} {rows of other accounts and sessions are left unchanged; the agreed_to_terms value itself is not persisted; no clear-text password is stored or returned}",
+      "id": "API_000003",
+      "kind": "API",
+      "reqs": [
+        "REQ-2"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000005"
+      ]
+    }
+  ]
+}
+```
+--- user ---
+## Existing state and interaction contracts
+
+```json
+{
+  "existing_data": [
+    {
+      "owner": "UI_000011",
+      "schema": "{\"type\":\"object\",\"properties\":{\"authenticated\":{\"type\":\"boolean\"},\"username\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]}},\"required\":[\"authenticated\",\"username\"],\"additionalProperties\":false}",
+      "initial": "{\"authenticated\":false,\"username\":null}",
+      "name": "session_state",
+      "spec": "Current authentication state for the header account area, fetched from GET /api/session when the home page loads. authenticated=false with username null means show the Register and Login links; authenticated=true shows the saved username as text plus the Sign out link. Refreshed to the unauthenticated value after a successful Sign out (DELETE /api/session).",
+      "id": "DATA_000001",
+      "reqs": [
+        "REQ-1"
+      ]
+    }
+  ],
+  "reuse_handlers": [],
+  "existing_events": [],
+  "handler_name_index": []
+}
+```
+--- user ---
+## Type definitions
+
+```json
+{
+  "type_name_index": [],
+  "existing_types": []
+}
+```
+--- user ---
+## Additional context
+
+```json
+{
+  "api_index": [
+    {
+      "id": "API_000001",
+      "kind": "API",
+      "name": "GetCurrentSession",
+      "method": "GET",
+      "path": "/api/session"
+    },
+    {
+      "id": "API_000002",
+      "kind": "API",
+      "name": "SignOut",
+      "method": "DELETE",
+      "path": "/api/session"
+    },
+    {
+      "id": "API_000003",
+      "kind": "API",
+      "name": "RegisterAccount",
+      "method": "POST",
+      "path": "/api/register"
+    }
+  ]
+}
+```
+
+[2026-10-22T07:26:50.813538+00:00] [frontend_design_interaction] MODEL_OUTPUT
+{"new_types": [], "reuse_handlers": [], "blocked_reason": "", "handler_updates": [], "reuse_events": [], "new_events": [{"handler": "@LoadSessionState", "ui": "UI_000001", "name": "HomePageLoaded", "trigger": "load"}, {"handler": "@SignOutAccount", "ui": "UI_000017", "name": "SignOutClicked", "trigger": "click"}, {"handler": "@NavigateToRegister", "ui": "UI_000013", "name": "RegisterLinkClicked", "trigger": "click"}, {"handler": "@NavigateToLogin", "ui": "UI_000014", "name": "LoginLinkClicked", "trigger": "click"}], "new_handlers": [{"output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "read": [], "apis": ["API_000001"], "name": "LoadSessionState", "write": ["DATA_000001"], "spec": "{a visitor opens the home page at /, authenticated or not} requests GET /api/session, passing no session id when the browser holds no session cookie and otherwise the current session cookie value {on a response with authenticated=true, stores session_state = {authenticated:true, username:<response.username>} so the header account area renders the saved username as text plus the Sign out link instead of Register and Login; on a response with authenticated=false, stores session_state = {authenticated:false, username:null} so the header renders the Register link pointing to /register and the Login link pointing to /login; if the request fails, session_state retains its initial unauthenticated value {authenticated:false, username:null}} {writes only session_state; creates or clears no session and changes no account data}"}, {"output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "read": ["DATA_000001"], "apis": ["API_000002"], "name": "SignOutAccount", "write": ["DATA_000001"], "spec": "{the header currently shows the signed-in account area with the saved username text and the Sign out link} activating Sign out sends DELETE /api/session carrying the current session cookie so the server deletes the persisted session and clears the cookie {on success stores session_state = {authenticated:false, username:null}, so the header account area restores the Register link pointing to /register and the Login link pointing to /login and the username text and Sign out link are no longer shown; the visitor stays on the home page} {if the request fails, session_state is left unchanged so the signed-in header remains visible} {the account row and its saved username are preserved; no new session is created}"}, {"output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "read": [], "apis": [], "name": "NavigateToRegister", "write": [], "spec": "{the header account area shows the guest state with the Register link} activating the Register link navigates the visitor to /register {the registration page is opened; no session or account data is written}"}, {"output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}", "read": [], "apis": [], "name": "NavigateToLogin", "write": [], "spec": "{the header account area shows the guest state with the Login link} activating the Login link navigates the visitor to /login {the login page is opened; no session or account data is written}"}]}
+
+[2026-10-22T07:26:50.813538+00:00] [frontend_design_interaction] MODEL_USAGE {"completion_tokens": 1691, "prompt_tokens": 15893, "total_tokens": 17584, "completion_tokens_details": {"accepted_prediction_tokens": null, "audio_tokens": null, "reasoning_tokens": 798, "rejected_prediction_tokens": null, "text_tokens": null}, "prompt_tokens_details": {"audio_tokens": null, "cache_write_tokens": null, "cached_tokens": 2048, "image_tokens": null, "text_tokens": null}}
+
+[2026-10-22T07:26:50.813538+00:00] [frontend_design_interaction] MODEL_REASONING
+We need to design events/handlers for REQ-1. The home page load must fetch session state (GET /api/session) and populate DATA_000001. Also Sign out click must call DELETE /api/session and reset session_state.
+
+Register/Login links navigate to /register and /login — these are link navigation, required behavior for scenario 1. Hmm, the scenario says "两个链接分别指向 /register 和 /login". Links with href. Do we need click events for navigation? Requirement fidelity says a required button is a button, not a link merely because it navigates; but here they're links with hrefs — navigation could be rendered by href, no handler needed. However scenario THEN requires they point to /register and /login. Adding a click handler for navigation may be considered fine but a navigation handler that just navigates... The task says "Connect scenario actions, page/region load, input changes, submissions, navigation and supported failures." So navigation events are allowed. But adding speculative operations? The link's href is structural, handled by design pass. I think a click handler navigating to /register is acceptable and traceable. Hmm, but creating handlers for pure navigation might be adding operations just to fill. The requirement explicitly specifies navigation destinations. I'll add navigation handlers? Let me think: The compiler records events for scenario traceability. For link navigation with href, a handler is arguably unnecessary. But the guidance: "Where the requirement is silent..." The requirement explicitly says clicking Register opens /register. I'll add handlers for navigation to /register and /login to make behavior explicit. That's low risk? It could be seen as speculative. Actually the design pass would set href; but the design pass may not capture navigation destinations. Safer to include navigation handlers since the requirement explicitly states clicking opens those pages.
+
+Hmm, but pure client-side route navigation with no state is often captured by link href. Including handlers is allowed: "UI-only actions need no API." I'll include them.
+
+Main handlers:
+1. LoadSessionState — read DATA_000001? Load handler writes session_state. read: maybe nothing, write DATA_000001, apis API_000001. Event on UI_000001 (home page) load.
+2. SignOutUser — write DATA_000001, apis API_000002. Event on UI_000017 click.
+3. NavigateToRegister — event on UI_000013 click.
+4. NavigateToLogin — event on UI_000014 click.
+
+Should I worry about cross-page state? session_state owned by UI_000011; register/login flows are REQ-2 (another page). Sign out on home writes DATA_000001 — fine, same page.
+
+Blocked reason: none.
+
+Handler specs.
+
+LoadSessionState: {home page loads} call GET /api/session with no session cookie beyond browser's; on success set session_state = {authenticated, username} from response; on failure (network/error) keep initial unauthenticated state {authenticated:false, username:null}. write DATA_000001, apis API_000001.
+
+SignOutUser: {authenticated visitor clicks Sign out} DELETE /api/session, on success set session_state = {authenticated:false, username:null} so header displays Register and Login; failure → blocked_reason? Just say on non-success response leave state unchanged; but spec says API always succeeds.
+
+NavigateToRegister: navigate to /register; input empty object.
+
+Names globally unique PascalCase: LoadSessionState, SignOutAccount, NavigateToRegister, NavigateToLogin.
+
+Should register/login navigation handlers exist? I'd include. Fine.
+
+No new types.
+
+Events: home load on UI_000001, click on UI_000017, UI_000013, UI_000014.
+
+Write final JSON.
+
+[2026-10-22T07:27:00.051357+00:00] [frontend_design_interaction] MODEL_FINISHED duration_ms=9237

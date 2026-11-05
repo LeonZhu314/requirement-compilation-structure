@@ -203,7 +203,7 @@ class CompilerCLI(unittest.TestCase):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
             source = self.source(root)
-            for failure, status in [(ValueError('failed test acceptance'), 0), (KeyboardInterrupt(), 130)]:
+            for failure, status in [(ValueError('failed test acceptance'), 1), (KeyboardInterrupt(), 130)]:
                 with self.subTest(status=status), patch.object(main, 'Compiler') as cls, redirect_stderr(StringIO()):
                     cls.return_value.current_stage = '08_implement_backend_tdd.py'
                     cls.return_value.compile.side_effect = failure

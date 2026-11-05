@@ -18,6 +18,8 @@ import stat
 import subprocess
 import tempfile
 import zipfile
+import json
+import tomllib
 
 
 def ignored_names(directory: Path, paths: list[Path]) -> set[str]:
@@ -74,18 +76,88 @@ def package_directory(root: Path, output: Path) -> int:
     return entries
 
 
+def package_arcbench(root: Path, output: Path) -> int:
+    """Package current agent sources with checked dependencies and no local API keys."""
+    from dotenv import dotenv_values
+
+    root, output = root.resolve(), output.resolve()
+    declared = set(tomllib.loads((root / 'pyproject.toml').read_text(encoding='utf-8-sig'))['project']['dependencies'])
+    installed = {line.strip() for line in (root / 'requirements.txt').read_text(encoding='utf-8-sig').splitlines()
+        if line.strip() and not line.lstrip().startswith('#')}
+    if declared != installed:
+        raise ValueError('requirements.txt and pyproject.toml dependencies differ; '
+            f'missing from pip manifest: {sorted(declared - installed)}; '
+            f'extra in pip manifest: {sorted(installed - declared)}')
+
+    paths = {root / name for name in ('main.py', 'README.md', 'pyproject.toml', 'requirements.txt',
+        'uv.lock', '.env.example', '.gitignore', '.gitattributes', 'principle.md')}
+    paths.update(path for path in root.glob('*.py') if path.name[:2].isdigit())
+    for directory in ('infrastructure', 'scripts', 'tests', 'assets', 'input'):
+        paths.update((root / directory).rglob('*'))
+    excluded = {'.git', '__pycache__', '.venv', 'node_modules', 'outputs', 'output', '.vscode'}
+    files = {}
+    for path in sorted(paths):
+        if not path.is_file() or path.is_symlink() or path == output:
+            continue
+        if not path.resolve().is_relative_to(root):
+            continue
+        relative = path.relative_to(root)
+        if any(part in excluded or (part.startswith('.env') and part != '.env.example') for part in relative.parts):
+            continue
+        if path.suffix in {'.pyc', '.pyo', '.zip', '.log', '.db'}:
+            continue
+        files[relative.as_posix()] = path.read_bytes()
+
+    settings = {**dotenv_values(root / '.env.example'), **dotenv_values(root / '.env')}
+    allowed = ('MODEL', 'OPENAI_BASE_URL', 'MODEL_REASONING', 'VISUAL_MODEL', 'VISUAL_BASE_URL',
+        'VISUAL_REASONING', 'MAX_OUTPUT_TOKENS')
+    environment = ['# Credentials must be supplied through the benchmark environment.', 'OPENAI_API_KEY=']
+    environment.extend(key + '=' + json.dumps(str(settings[key]), ensure_ascii=False)
+        for key in allowed if settings.get(key) is not None)
+    files['.env'] = ('\n'.join(environment) + '\n').encode('utf-8')
+
+    required = {'main.py', 'requirements.txt', 'pyproject.toml', 'uv.lock',
+        '01_explore_requirement.py', '12_implement_frontend_tdd.py',
+        'infrastructure/stages/requirements/visuals.py',
+        'infrastructure/stages/frontend/triggers/exact_locators.mjs',
+        'infrastructure/shared/project/templates/frontend/src/App.tsx'}
+    if not required <= files.keys():
+        raise ValueError(f'Missing submission sources: {sorted(required - files.keys())}')
+    for name, content in files.items():
+        if name.endswith('.py'):
+            compile(content, name, 'exec')
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(prefix='.' + output.name, suffix='.tmp', dir=output.parent,
+            delete=False) as stream:
+        temporary = Path(stream.name)
+    try:
+        with zipfile.ZipFile(temporary, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+            for name, content in sorted(files.items()):
+                archive.writestr(name, content)
+        with zipfile.ZipFile(temporary) as archive:
+            if archive.testzip() is not None or any(archive.read(name) != content for name, content in files.items()):
+                raise ValueError('Submission archive verification failed')
+        os.replace(temporary, output)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return len(files)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-o", "--output", type=Path, default=Path("compiler.zip"),
         help="Output archive path (default: compiler.zip)")
+    parser.add_argument('--arcbench', action='store_true',
+        help='Package agent sources, check pip dependencies, exclude local outputs and API keys')
     args = parser.parse_args()
     root = Path.cwd().resolve()
     output = args.output.expanduser().resolve()
     print(f"Source: {root}")
     print(f"Archive: {output}")
     try:
-        entries = package_directory(root, output)
+        entries = (package_arcbench if args.arcbench else package_directory)(root, output)
     except (OSError, ValueError, zipfile.BadZipFile, zipfile.LargeZipFile) as error:
         parser.exit(1, f"Packaging failed: {error}\n")
     print(f"Created {output} ({entries} entries, {output.stat().st_size:,} bytes)")

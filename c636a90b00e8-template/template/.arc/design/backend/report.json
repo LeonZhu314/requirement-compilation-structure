@@ -1,0 +1,15 @@
+{
+  "status": "GENERATED",
+  "node_states": {
+    "REQ-1": "DESIGNED",
+    "REQ-2": "DESIGNED"
+  },
+  "warnings": [],
+  "errors": [],
+  "leaf_order": [
+    "REQ-1",
+    "REQ-2"
+  ],
+  "model_attempt": 5,
+  "model_calls": 6
+}

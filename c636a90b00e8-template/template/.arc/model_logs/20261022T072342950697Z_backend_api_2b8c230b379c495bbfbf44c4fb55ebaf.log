@@ -1,0 +1,642 @@
+[2026-10-22T07:23:42.951419+00:00] [backend_api] MODEL_CALL model=deepseek-flash attempt=1 status=SUCCEEDED
+[2026-10-22T07:23:42.951419+00:00] [backend_api] MODEL_INPUT
+
+--- system ---
+## Requirement fidelity
+For design, test generation, implementation and repair, explicit requirement descriptions, scenarios
+and applicable ancestor constraints define the observable product contract. Visual references, generated
+IR, existing source and convenience choices must not override that contract.
+Preserve explicitly specified UI wording and accessible names exactly, including spelling, case,
+punctuation and dynamic naming patterns. Do not translate, paraphrase, abbreviate or substitute another
+spelling unless the document explicitly permits it. Use the same names in design, source and tests.
+Preserve explicitly specified UI roles and states. A required button is a button, not a link merely
+because it navigates; fields need their specified associated labels. Implement the actual control
+semantics, not just matching text or an aria-label on a different control. Use alternatives only when
+the requirement explicitly allows them.
+At each specified scenario step, required controls and navigation entries must exist, be visible and
+be operable in the stated scope. Do not invent prerequisite expansion, hover or navigation steps that
+hide an expected input or action. Preserve these contracts in shared forms and prerequisite flows too.
+Tests must exercise the specified names, roles and states; do not broaden selectors or expected values
+to accept an implementation that contradicts explicit requirements.
+Where the requirement is silent, choose suitable wording, roles and interaction details consistent
+with the supplied visual evidence and existing application conventions. Do not invent extra obligations.
+
+## Background and role
+You are a backend architect designing a new application's symbol table from one leaf requirement.
+The database entities and fields already exist. This stage defines contracts and collaboration;
+it emits no implementation, SQL, UI code, fixtures, or database migrations.
+
+## Contract conventions
+Use globally unique PascalCase module names describing a single reusable responsibility.
+Module/type names use ASCII letters and digits, start with an uppercase letter and contain no spaces,
+underscores or punctuation. Module-name uniqueness is case-insensitive across ALL three layers;
+new_types names must be absent from existing_types and unique within this reply.
+spec is a concise Hoare-style behavioral contract: {preconditions} operation {postconditions};
+include explicit failures and frame conditions (what is preserved). Ground every condition in
+requirements. State authentication, authorization and transaction requirements when supported;
+do not invent unspecified policies, UI configuration endpoints or prerequisite functionality.
+The current task's ancestor descriptions constrain behavior, but are not independent features to implement.
+
+payload/response/input/output are JSON STRINGS containing JSON Schema objects with type:"object".
+Describe actual parameters in properties:{parameter_name:schema}; use snake_case names.
+List mandatory parameters in required:[...]; omit required when none are mandatory. All objects
+are closed in the IR: the compiler supplies additionalProperties:false, required:[] and properties:{}
+when omitted, including nested objects. Never set additionalProperties:true. Omission of required
+means all declared properties are optional; the compiler never guesses which parameters are mandatory.
+Void/no parameters may be written as {"type":"object"}; the compiler expands this to the canonical
+empty object. Scalar schema types: string, integer, number, boolean, null.
+Use arrays with items, objects with properties, enum, and anyOf for nullable values.
+Date, datetime and UUID are strings with format date/date-time/uuid. Never use arbitrary type names.
+Only these JSON Schema keywords are supported: type, properties, required, additionalProperties,
+items, enum, anyOf, $ref, format, description, and the API-only source extension. Every other
+keyword is forbidden, including minLength, maxLength, pattern, minimum, maximum, default,
+oneOf, allOf and definitions/$defs. format allows ONLY date/date-time/uuid, never email/uri.
+Contracts describe structure and types. Put length, numeric bounds, regex, email validation and
+other business checks in spec; do not add unused schema metadata or unused new_types.
+For custom reusable DTOs emit new_types:[{name:"NoteView",schema:"<JSON Schema object>"}];
+refer with {"$ref":"#/types/NoteView"}. Reuse loaded definitions unchanged; new names cannot overwrite
+existing definitions. Define only types reachable from interfaces. Recursive types are unsupported.
+Every new type must be used by a new module's interface, directly or through another used type.
+The interface root itself must be an object with properties; place $ref on a property or array item,
+not in place of the entire payload/response/input/output object. $ref nodes may only add description
+and an API parameter source; do not combine $ref with type/properties. anyOf nodes likewise contain
+only alternatives plus description/source; put nullability and type inside the alternatives.
+required contains unique names declared in that same object's properties. enum values must be unique
+and match the scalar type. Empty objects remain valid only when consistent with the declared behavior.
+source is an ARC extension to JSON Schema, used ONLY on top-level API payload properties.
+It identifies each parameter's HTTP location; it is not part of a reusable DTO or a return value.
+
+## Explicit data flow across module boundaries
+Design signatures together with behavior, not just a call graph. Every value needed to execute a
+module's spec must come from its declared input, a declared callee's output, or a local computation
+explicitly described in spec (e.g. hashing a supplied password, generating an identifier, reading
+the clock). Database connection/transaction infrastructure is available; request-specific business
+values are NOT implicit globals. FUNC/DB cannot read an HTTP request, browser cookie, current user,
+current session or an undeclared runtime context. Pass identity, lookup conditions and write values
+as explicit typed parameters. Never use an empty input to hide missing identity or selection data.
+Optional/nullable inputs must have explicit absent-value behavior; required does not mean non-null.
+
+Within spec explain the essential mappings in plain language: which input supplies each downstream
+argument, which earlier result or local computation supplies derived arguments, and which downstream
+result becomes the module's output or an HTTP effect. Describe ordering when one call needs another
+call's result. Mapping may rename, select, combine or transform fields; signatures need not be identical.
+Callers/callees are relationships, NOT argument mappings or execution order. Do not add a separate
+data-flow field; keep these explanations in existing spec and values in existing typed contracts.
+Each required callee argument needs a producer. Each caller result or promised effect needs a source.
+Do not reuse a module merely because its name fits: its input/output must support these mappings.
+
+An empty input is valid for an unfiltered list or an operation needing no caller-specific values.
+An empty output is valid for a command whose caller needs only success/failure. A lookup must return
+the data or existence result its caller needs. An insert must return its generated ID/token when a
+caller needs it for a subsequent operation or transport response. Do not return passwords/hashes to
+the public API merely because an internal module uses them. Keep secret transport effects explicit.
+
+## Reuse and shared symbols
+reuse_candidates contains full immutable contracts retrieved by entity/field overlap and lexical relevance.
+These are initial suggestions, not the whole system's capabilities. module_index lists all existing
+module IDs/names/kinds/routes. Use exact indexed IDs in the normal reuse/callees fields when needed:
+the compiler loads their contracts and asks you to review the design before accepting it. No separate
+context-request response is needed. Unknown IDs remain invalid. Name/route collisions also load the
+matching existing contracts automatically; conflict_contracts is read-only context for other layers.
+Prefer reuse ONLY if inputs, outputs, behavior, data requirements and existing callees already suffice
+without any modification. Reuse does not permit strengthening a spec or extending an existing call graph.
+reuse contains existing IDs only. Never repeat an existing name or method+equivalent route as new.
+Only IDs in THIS pass's reuse_candidates may appear in reuse, and their kind must match the pass:
+API reuses API; FUNC reuses FUNC; DB reuses DB. List each reuse ID ONCE, combining all callers in
+that entry. reference_catalog is a catalog of available callee contracts, not extra reuse candidates.
+Calling an existing lower-layer module is declared in a new module's callees; do not also put that
+module in reuse. Adding another caller to an unchanged module is allowed; changing that module's
+input/output/spec or adding new callees to its established graph is forbidden.
+shared is a classification, not a permission: an entity-specific module may have multiple callers
+without shared:true. Multiple FUNCs can call the same DB; multiple APIs can call the same FUNC.
+shared:true is exceptional: only stable cross-domain infrastructure such as authentication, payment
+provider integration or logging with a domain-independent contract. A feature used by two requirements,
+CRUD, or an entity-specific helper is not automatically shared. shared_reason must justify the flag;
+otherwise shared:false and shared_reason:"". Consider shared candidates only when their responsibility fits.
+
+## Response protocol
+Return exactly the JSON delta described by the response schema, without Markdown. Do NOT emit id,
+reqs, kind or other compiler-owned properties. In the same reply, refer to a new module as @Name;
+refer to existing modules by their exact supplied ID. Never guess a future module ID.
+validation_feedback and previous_output describe a rejected reply: return a complete corrected delta.
+Every delta contains new_modules, reuse and new_types; use [] when absent, never omit a required key.
+All caller/callee arrays contain unique IDs or @Name aliases. Indexed IDs may trigger automatic
+contract loading; wiring is accepted only after the full contract is supplied for review.
+Loading does not permit modifying a reused module or attaching an arbitrary upstream caller.
+IDs merely mentioned in spec and IDs in upstream_api_contracts do not themselves authorize wiring. An @Name must name a
+new module in THIS reply; it cannot refer to a future pass's module or a type definition.
+Allowed call directions are API -> FUNC, FUNC -> FUNC/DB, DB -> DB; no self calls or cycles.
+All new or explicitly reused modules must be reachable from the selected upstream operations;
+do not create disconnected helpers. Reciprocal links and requirement association are compiler-owned.
+Reusing an established operation also associates its existing downstream graph with this requirement;
+do not redeclare that entire graph, reselect its children, or invent new collaborators for it.
+Before returning, map every server-side scenario step to an operation or a reused contract.
+Split transport, business and storage responsibilities when useful; this is design guidance,
+not a requirement to populate every layer. Any module may complete its responsibility directly
+with callees:[]. Never create helpers or database access just to fill a layer, or add a module
+solely to mirror a visual control. Empty arrays are valid when the current layer needs no modules.
+## Current task: external API interfaces
+An API provides an externally callable HTTP service. Discover all required server operations from
+this leaf's description and scenarios. Define method, absolute path, payload and response. For request
+properties add source:path/query/header/body. Path uses :parameter syntax; path fields are required.
+GET/HEAD have no body. Pure client behavior may yield empty arrays.
+Declare identity/session transport when required by behavior: a session cookie may be represented
+by its named value with source:header; spec explains extraction from Cookie. Do not assume every
+authentication request carries a session: session lookup/sign-out may accept an absent value.
+For login/registration spec must explain how a generated session token reaches Set-Cookie (or the
+requirement's supported carrier), and logout how the carrier is cleared. response describes the
+JSON response body; do not expose a session token in that body unless the requirement needs it.
+Describe where transport values originate: local API behavior or declared collaborator outputs.
+An API may fulfill the operation directly; a FUNC is optional. The compiler generates IDs and
+empty callees, and the FUNC pass attaches business collaborators only when useful.
+API reuse entries contain only id. Do not design FUNC or DB.
+Paths are absolute URL paths only: no query string, fragment, whitespace or brace parameters.
+Each :parameter has an exact matching payload property with source:path and is listed in required;
+do not add path-source properties absent from the route. Routes with the same method differing only
+in parameter names or a trailing slash are equivalent and cannot be created twice.
+
+## Return format
+{"type": "object", "additionalProperties": false, "properties": {"new_modules": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"name": {"type": "string"}, "spec": {"type": "string"}, "shared": {"type": "boolean"}, "shared_reason": {"type": "string"}, "method": {"type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]}, "path": {"type": "string"}, "payload": {"type": "string"}, "response": {"type": "string"}}, "required": ["name", "spec", "shared", "shared_reason", "method", "path", "payload", "response"]}}, "reuse": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string"}}, "required": ["id"]}}, "new_types": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"name": {"type": "string"}, "schema": {"type": "string"}}, "required": ["name", "schema"]}}}, "required": ["new_modules", "reuse", "new_types"]}
+## Example (IDs are illustrative; use supplied IDs)
+{"new_modules": [{"name": "GetNote", "spec": "{valid note_id from route} pass note_id to the business reader and use its title result as the response body {returns the selected note title; absent -> not found; no writes}", "shared": false, "shared_reason": "", "method": "GET", "path": "/api/notes/:note_id", "payload": "{\"type\": \"object\", \"properties\": {\"note_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"path\"}}, \"required\": [\"note_id\"], \"additionalProperties\": false}", "response": "{\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\"}}, \"required\": [\"title\"], \"additionalProperties\": false}"}], "reuse": [], "new_types": []}
+## Wiring example (assume the shown contracts are loaded and behavior matches)
+{"new_modules": [], "reuse": [{"id": "API_000001"}], "new_types": []}
+--- user ---
+## Current task
+
+```json
+{
+  "current_task": {
+    "requirement": {
+      "id": "REQ-2",
+      "name": "Register a traveler account",
+      "description": "点击未登录页头中的 \"Register\"(role=link)，打开 /register 注册页。面包屑的可见文案为 \"Current location: HOME > Create an account\"；其中 \"HOME\"(role=link) 返回 /，\"Create an account\" 是当前页面的文本。表单遵循提供的参考图片，按展示顺序明确以下交互身份：\n\n\"Nationality\"(role=combobox) 的可见标签为 \"Nationality\"，初始显示 \"Please select\"，包含可选择的 \"Vietnam\"(role=option)。\"Name\"(role=textbox) 和 \"Passport number\"(role=textbox) 使用上述精确可见标签。\"Passport expiration date\"(role=textbox) 和 \"Date of birth\"(role=textbox) 使用上述精确可见标签，允许输入日期。如果其日历图标可独立交互，则图标的 role=button，没有可见文本，可访问名称分别为 \"Choose passport expiration date\" 和 \"Choose date of birth\"。\"Gender\"(role=radiogroup) 的可见分组标签为 \"Gender\"，包含 \"Male\"(role=radio) 和 \"Female\"(role=radio)，使用上述精确可见标签和可访问名称。\n\n\"Username\"(role=textbox) 的可见标签为 \"Username\"。隐藏输入内容的两个密码字段，其可见标签和可访问名称分别为 \"Password\" 和 \"Confirm Password\"，没有隐式 ARIA role。\"Email address\"(role=textbox) 使用上述精确可见标签。帮助链接的可见文案和可访问名称为 \"Check the rules for filling out passport information\"(role=link)。\n\n协议控件的 role=checkbox，可见标签和可访问名称均为 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"。其中可独立交互的 \"Terms of Service\"(role=link) 和 \"Privacy Policy\"(role=link) 使用上述精确可见文案；它们位于协议区域，与页脚的 Privacy Policy 链接区分。提交操作为 \"Next step\"(role=button)，可见文案和可访问名称均为 \"Next step\"。护照信息填写指南和协议链接保留上述交互身份；其文档内容不属于本账户创建需求。\n\n所有字段均为必填，且必须勾选同意协议。姓名必须包含 2–100 个非空白字符；护照号码必须包含 6–30 个 ASCII 字母、数字或连字符；出生日期必须早于当前日期，护照有效期必须晚于当前日期。用户名必须包含 3–32 个 ASCII 字母、数字、连字符或下划线。邮箱格式必须有效，长度最多 254 个字符。密码必须包含 12–128 个字符，且包含大写字母、小写字母、数字和特殊字符；Confirm Password 必须与 Password 一致。用户名和邮箱必须唯一，邮箱比较不区分大小写。通过 Next step 提交有效信息后，保存账户、自动登录并返回首页。无效或重复的输入需要显示错误，且不创建账户或会话。",
+      "scenarios": [
+        {
+          "id": "REQ-2:scenario:1",
+          "name": "Register a valid traveler",
+          "steps": [
+            {
+              "keyword": "GIVEN",
+              "content": "一位未登录访客打开 /，准备好未使用的用户名和邮箱、有效的姓名和护照号码、国籍 Vietnam、早于当前日期的出生日期、晚于当前日期的护照有效期，以及有效密码。"
+            },
+            {
+              "keyword": "WHEN",
+              "content": "访客点击页头的 \"Register\"(role=link)，在 \"Nationality\"(role=combobox) 中选择 Vietnam，填写 \"Name\"(role=textbox)、\"Passport number\"(role=textbox)、\"Passport expiration date\"(role=textbox)、\"Date of birth\"(role=textbox)、\"Username\"(role=textbox) 和 \"Email address\"(role=textbox)，在 \"Gender\"(role=radiogroup) 中选择 \"Male\"(role=radio)，在带标签的密码输入框 \"Password\" 和 \"Confirm Password\" 中填写相同的有效密码，勾选 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"(role=checkbox)，然后点击 \"Next step\"(role=button)。"
+            },
+            {
+              "keyword": "THEN",
+              "content": "首页以可见文本显示已保存的用户名，并显示 \"Sign out\"(role=link)，使用上述精确可见文案和可访问名称；刷新页面后仍显示该用户名和已登录状态下的操作。"
+            }
+          ]
+        }
+      ],
+      "pages": [
+        {
+          "name": "registration",
+          "reference": "reference/register.png",
+          "analysis": "regions:\n- Page > Header: white top bar with the China Railway 12306 logo at the left and a pale, rounded utility area at the right containing account, language and contact entries.\n- Page > Primary navigation: full-width blue bar directly beneath the header with Home, Booking and Travel guides entries.\n- Page > Breadcrumb strip: white area between navigation and the main card, showing the current-location path.\n- Page > Main registration card: large white panel with a thin light border, centered in the page and containing the registration form.\n- Main registration card > Form fields: repeated rows with a right-aligned required-label column, a fixed-width input/control column, and optional helper text or links at the right.\n- Main registration card > Gender group: two side-by-side bordered radio-option boxes beneath the Gender label.\n- Main registration card > Consent and submit area: an unchecked agreement checkbox with policy links, followed by a centered orange submit button.\n- Page > Footer: full-width pale gray band containing copyright text, Chinese registration numbers and two policy links, all centered.\n\nvisible_controls:\n- Header > Logo: red circular railway emblem plus 中国铁路12306 and 12306 CHINA RAILWAY text.\n- Header utility bar: Login link; Register link; My 12306 dropdown with down caret; 简体中文 dropdown with down caret; headset icon with Contact us link.\n- Header far right: faint small icon/control partially visible at the edge; its exact shape is unclear.\n- Primary navigation: Home link; Booking dropdown link with down caret; Travel guides dropdown link with down caret.\n- Breadcrumb: HOME link and blue Create an account link.\n- Nationality: select control showing placeholder Please select, with a down caret.\n- Name: blank text input, with adjacent blue link Check the rules for filling out passport information.\n- Passport number: blank text input.\n- Passport expiration date: blank date input with a calendar icon at its right edge.\n- Date of birth: blank date input with a calendar icon at its right edge.\n- Gender: two bordered radio-option controls labeled Male and Female; both radio circles appear unselected.\n- Username: blank text input.\n- Password: blank text input.\n- Confirm Password: blank text input.\n- Email address: blank text input, with orange helper text at the right.\n- Consent: unchecked square checkbox followed by agreement text containing Terms of Service and Privacy Policy links.\n- Next step: large orange button, enabled.\n- Footer: Privacy Policy link and Cookie Statement link.\n\nlayout_cues:\n- Header spans the full width and is roughly 70 px tall. The logo is left-aligned with generous page margin; account and language utilities sit right, grouped inside a large pale rounded container.\n- The blue primary navigation is a full-width horizontal band roughly 42 px tall. Its three entries are left-aligned with moderate spacing rather than spread across the full width.\n- The breadcrumb sits below the navigation, left-aligned with the content area, at a much smaller text size than the header and navigation.\n- The main card is centered horizontally with roughly 120 px side margins and a height covering most of the viewport below the breadcrumb. It has spacious white padding above and around the form.\n- The registration form is vertically stacked. Labels are right-aligned in a fixed column; inputs and selects share a consistent width of roughly 365 px and start at a common left edge.\n- Form rows are separated by substantial vertical whitespace, producing a low-density layout. Helper notices are aligned to the right of their corresponding controls on the same row.\n- The Gender controls form two equal-width bordered boxes in one horizontal row. Each contains a radio circle at the left and text beside it.\n- The agreement row sits below the form fields, inset from the input column, with the checkbox on the left and wrapped policy text beside it. The Next step button is centered beneath this block.\n- The footer occupies a separate full-width band below the card, with all content centered in three stacked lines and wide horizontal breathing room.\n- No sidebar, dialog, overlay, pagination or additional columns are visible. Content is fully contained within the screenshot.\n\nstyle_cues:\n- Overall page background is white; the header is white, the primary navigation is a saturated medium blue, and the footer is very light gray.\n- The logo emblem is bright red with a dark/black interior mark. The Chinese brand text is large, bold and near-black; the Latin tagline below is smaller, lighter gray and spaced out.\n- Header utility text is dark gray/black in a small sans-serif font. The utility group sits on a subtly shaded pale-gray rounded surface. The Register link has no visible selected treatment.\n- Primary navigation text is white and regular-weight; no active underline or highlighted navigation item is apparent.\n- Breadcrumb text is small and muted gray, with the final breadcrumb link in blue.\n- Form labels are dark gray/black, regular weight, with a red asterisk preceding each required field. Colons follow every label.\n- Text inputs and selects have white fills, thin light-gray borders, small corner radii and plain placeholder text in gray. Date fields include small outline calendar icons aligned at the right.\n- Helper text is orange and small; the passport-information helper is a blue underlined link. Agreement links are blue and underlined.\n- Gender option boxes have thin light-gray borders and a slightly off-white background. Radio circles are neutral gray outlines with no visible selected dot.\n- The Next step button is solid orange, wide and low-profile, with white centered text, modest rounded corners and no prominent shadow.\n- Footer text is medium gray, centered and small, with vertical-bar separators between the registration-number entries and between the policy links.\n- Typography is sans-serif throughout, with stronger/larger branding text and smaller, lighter body and utility text. No photographic imagery, gradients or decorative illustrations are visible beyond the logo and small line icons.\n\ntext_cues:\n- Header: 中国铁路12306; 12306 CHINA RAILWAY; Login; Register; My 12306; 简体中文; Contact us.\n- Primary navigation: Home; Booking; Travel guides.\n- Breadcrumb: Current location: HOME > Create an account.\n- Form: * Nationality:; Please select; At present, only foreign passports are accepted for registration.\n- Form: * Name:; Check the rules for filling out passport information.\n- Form: *Passport number:.\n- Form: *Passport expiration date:.\n- Form: *Date of birth:.\n- Form: *Gender:; Male; Female.\n- Form: *Username:; *Password:; *Confirm Password:; *Email address:.\n- Email helper: Related notifications will be sent to you via email.\n- Consent: I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\n- Submit: Next step.\n- Footer: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\n- Footer: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\n- Footer: Privacy Policy | Cookie Statement."
+        }
+      ],
+      "ancestor_constraints": [
+        {
+          "id": "ROOT",
+          "name": "Train Ticket Booking Demo",
+          "description": "这是一个小型网站，访客可以注册或登录。\n\n首页和注册页的共享导航提供 \"Home\"(role=link)、\"Booking\"(role=link)、\"Travel guides\"(role=link)、\"My 12306\"(role=link)、\"简体中文\"(role=button) 和 \"Contact us\"(role=link)，可见文案与参考图片完全一致。账户入口控件及其行为见 REQ-1。每个页面的页脚提供 \"Privacy Policy\"(role=link) 和 \"Cookie Statement\"(role=link)，可见文案和可访问名称相同。名称重复的控件通过其语义位置区分，例如注册协议区域与页脚。这里明确了参考控件的展示和交互身份；这次命名说明不增加下拉菜单内容、政策文档、联系服务或旅行指南的业务流程。"
+        }
+      ]
+    },
+    "data": {
+      "read": [
+        "user_account"
+      ],
+      "write": [
+        "session",
+        "user_account",
+        "user_account.date_of_birth",
+        "user_account.email",
+        "user_account.gender",
+        "user_account.name",
+        "user_account.nationality",
+        "user_account.passport_expiration_date",
+        "user_account.passport_number",
+        "user_account.password",
+        "user_account.username"
+      ],
+      "entities": [
+        {
+          "key": "session",
+          "description": "A persisted authentication session that keeps a visitor logged in until sign out clears it.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [],
+              "write": []
+            }
+          ],
+          "read": [
+            "REQ-1"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        },
+        {
+          "key": "user_account",
+          "description": "A registered visitor account whose saved username is shown in the header after registration or login.",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "fields": [
+            {
+              "name": "date_of_birth",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's date of birth.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "email",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's contact email address, identified regardless of letter case.",
+              "properties": {
+                "max_length": 254,
+                "unique": true,
+                "comparison": "case_insensitive"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's gender as declared in the account profile.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primary_key": true,
+              "description": "Compiler-provided stable primary key.",
+              "properties": {},
+              "origin": "SYSTEM",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1"
+              ],
+              "read": [],
+              "write": []
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's full name as recorded for the account and passport.",
+              "properties": {
+                "min_length": 2,
+                "max_length": 100
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "nationality",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's nationality country selected when registering the account.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_expiration_date",
+              "type": "date",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The expiry date of the traveler's passport.",
+              "properties": {},
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "passport_number",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The traveler's passport number identifying the travel document.",
+              "properties": {
+                "min_length": 6,
+                "max_length": 30
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "password",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "The account's password credential used to authenticate the traveler.",
+              "properties": {
+                "min_length": 12,
+                "max_length": 128
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "read": [],
+              "write": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "username",
+              "type": "string",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Saved account username displayed in the header after registration or login.",
+              "properties": {
+                "min_length": 3,
+                "max_length": 32,
+                "unique": true,
+                "comparison": "exact"
+              },
+              "origin": "REQUIREMENT",
+              "references": null,
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "read": [
+                "REQ-1"
+              ],
+              "write": [
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "write": [
+            "REQ-1",
+            "REQ-2"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+--- user ---
+## Upstream modules
+
+```json
+{
+  "upstream_modules": []
+}
+```
+--- user ---
+## Reusable contracts
+
+```json
+{
+  "reuse_candidates": [
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "DELETE",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {}, \"required\": [], \"additionalProperties\": false}",
+      "name": "SignOut",
+      "spec": "{invoked by an authenticated visitor clicking Sign out; session_id is read from the Cookie request header and may be absent or already unknown} deletes the persisted session identified by session_id and clears the session cookie carrier on the response by setting that cookie to an empty value with an expiry in the past, so the visitor returns to the unauthenticated state where the header again shows the Register and Login links {always responds with success, even when session_id is absent or unknown, and always clears the cookie} {no other session is affected; user_account rows, including the saved username, are preserved unchanged; no new session is created}",
+      "id": "API_000002",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000002"
+      ]
+    },
+    {
+      "shared_reason": "",
+      "path": "/api/session",
+      "shared": false,
+      "method": "GET",
+      "payload": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"source\": \"header\", \"description\": \"Session identifier carried by the session cookie; extracted from the Cookie request header. Absent for an anonymous visitor.\"}}, \"additionalProperties\": false, \"required\": []}",
+      "response": "{\"type\": \"object\", \"properties\": {\"authenticated\": {\"type\": \"boolean\"}, \"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"description\": \"The saved account username rendered as text in the header after registration or login; null when no valid session is presented.\"}}, \"required\": [\"authenticated\", \"username\"], \"additionalProperties\": false}",
+      "name": "GetCurrentSession",
+      "spec": "{no authentication precondition; session_id may be absent, unknown or expired} reads the session identifier supplied via the Cookie header and passes it to the session/account lookup {when the session exists and resolves to a user_account, responds authenticated=true with that account's username so the page header can display the saved username and offer Sign out; when session_id is absent, unknown, expired or resolves to no account, responds authenticated=false with username null so the header shows the Register and Login links} {no writes; creates, modifies and clears no session or account data}",
+      "id": "API_000001",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000001"
+      ]
+    }
+  ],
+  "reference_catalog": []
+}
+```
+--- user ---
+## Type definitions
+
+```json
+{
+  "existing_types": []
+}
+```
+--- user ---
+## Additional context
+
+```json
+{
+  "module_index": [
+    {
+      "id": "API_000001",
+      "kind": "API",
+      "name": "GetCurrentSession",
+      "method": "GET",
+      "path": "/api/session"
+    },
+    {
+      "id": "API_000002",
+      "kind": "API",
+      "name": "SignOut",
+      "method": "DELETE",
+      "path": "/api/session"
+    },
+    {
+      "id": "FUNC_000001",
+      "kind": "FUNC",
+      "name": "ResolveActiveSession"
+    },
+    {
+      "id": "FUNC_000002",
+      "kind": "FUNC",
+      "name": "RevokeSession"
+    },
+    {
+      "id": "DB_000001",
+      "kind": "DB",
+      "name": "FindSessionAccountById"
+    },
+    {
+      "id": "DB_000002",
+      "kind": "DB",
+      "name": "DeleteSessionById"
+    }
+  ]
+}
+```
+
+[2026-10-22T07:23:42.951419+00:00] [backend_api] MODEL_OUTPUT
+{"new_types":[],"reuse":[],"new_modules":[{"shared_reason":"","path":"/api/register","shared":false,"method":"POST","payload":"{\"type\":\"object\",\"properties\":{\"nationality\":{\"type\":\"string\",\"source\":\"body\",\"description\":\"Selected nationality, e.g. \\\"Vietnam\\\".\"},\"name\":{\"type\":\"string\",\"source\":\"body\",\"description\":\"Traveler full name as printed on the passport.\"},\"passport_number\":{\"type\":\"string\",\"source\":\"body\",\"description\":\"Passport number: 6-30 ASCII letters, digits or hyphens.\"},\"passport_expiration_date\":{\"type\":\"string\",\"format\":\"date\",\"source\":\"body\",\"description\":\"Passport expiry date; must be later than the current date.\"},\"date_of_birth\":{\"type\":\"string\",\"format\":\"date\",\"source\":\"body\",\"description\":\"Traveler date of birth; must be earlier than the current date.\"},\"gender\":{\"type\":\"string\",\"enum\":[\"Male\",\"Female\"],\"source\":\"body\",\"description\":\"Selected gender radio option.\"},\"username\":{\"type\":\"string\",\"source\":\"body\",\"description\":\"3-32 ASCII letters, digits, hyphens or underscores; must be unique.\"},\"password\":{\"type\":\"string\",\"source\":\"body\",\"description\":\"12-128 characters including uppercase, lowercase, digit and special character.\"},\"confirm_password\":{\"type\":\"string\",\"source\":\"body\",\"description\":\"Must be identical to password.\"},\"email\":{\"type\":\"string\",\"source\":\"body\",\"description\":\"Valid email address, at most 254 characters; unique regardless of letter case.\"},\"agreed_to_terms\":{\"type\":\"boolean\",\"source\":\"body\",\"description\":\"True when the visitor checked the Terms of Service and Privacy Policy agreement checkbox.\"}},\"required\":[\"nationality\",\"name\",\"passport_number\",\"passport_expiration_date\",\"date_of_birth\",\"gender\",\"username\",\"password\",\"confirm_password\",\"email\",\"agreed_to_terms\"],\"additionalProperties\":false}","response":"{\"type\":\"object\",\"properties\":{\"username\":{\"type\":\"string\",\"description\":\"Saved account username displayed as text in the header after automatic login.\"},\"error\":{\"type\":\"string\",\"description\":\"Message describing the invalid or duplicate input; present only when no account was created.\"}},\"required\":[],\"additionalProperties\":false}","name":"RegisterAccount","spec":"{any unauthenticated visitor may call; the body supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms, all of which are mandatory} validates the supplied values before any write: agreed_to_terms must be true; name must contain 2-100 non-whitespace characters; passport_number must consist of 6-30 ASCII letters, digits or hyphens; date_of_birth must be earlier than the current date read from the clock; passport_expiration_date must be later than the current date; username must be 3-32 ASCII letters, digits, hyphens or underscores; email must be syntactically valid and at most 254 characters; password must be 12-128 characters containing an uppercase letter, a lowercase letter, a digit and a special character; confirm_password must equal password; username must not already belong to an existing account and email must not already belong to an existing account under case-insensitive comparison. When every check passes, it persists a new user_account holding exactly these validated values (a locally hashed password derived from the supplied password is stored in place of the plain password, and a locally generated account identifier is assigned) and creates a new persisted session for that account identifier; it then sets the generated session identifier as the session cookie value on the Set-Cookie response header and responds with the saved username so the header can display it and offer Sign out. If any validation check fails or the username or email is already taken, it responds with an error description and creates no account and no session. {on success the new account and session exist, the session cookie is set, and username is returned; on failure no user_account row and no session row are created and no cookie is set} {rows of other accounts and sessions are left unchanged; the agreed_to_terms value itself is not persisted; no clear-text password is stored or returned}"}]}
+
+[2026-10-22T07:23:42.951419+00:00] [backend_api] MODEL_USAGE {"completion_tokens": 1907, "prompt_tokens": 8985, "total_tokens": 10892, "completion_tokens_details": {"accepted_prediction_tokens": null, "audio_tokens": null, "reasoning_tokens": 883, "rejected_prediction_tokens": null, "text_tokens": null}, "prompt_tokens_details": {"audio_tokens": null, "cache_write_tokens": null, "cached_tokens": 4480, "image_tokens": null, "text_tokens": null}}
+
+[2026-10-22T07:23:42.951419+00:00] [backend_api] MODEL_REASONING
+I need a POST /api/register API endpoint. Registration creates account, auto-login (creates session, sets cookie), returns success with username. Response returns username; session token in Set-Cookie.
+
+Payload: nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email.
+
+Response: username maybe.
+
+Spec: validation, uniqueness, error, session cookie.
+
+Should I reuse GetCurrentSession? No, it's a different operation. Registration endpoint is new. No reuse.
+
+Path: /api/register.
+
+Response: {"username": string} or authenticated flag. The requirement: after submit, save account, auto login, return home. Header displays saved username and Sign out. So response body can be username.
+
+Let me write spec carefully.
+
+Payload properties with source:body.
+
+Password/confirm_password format: string.
+
+Dates: format date.
+
+gender enum? Male/Female — enum ["Male","Female"] acceptable. Requirement lists Male and Female. Use enum.
+
+Now spec Hoare-style.
+
+{precondition: any visitor; all fields supplied in body} validates... creates account... creates session... sets Set-Cookie... {postconditions}. Explicit failures: invalid input -> 400 error, duplicate username/email -> 409 error, no account or session created.
+
+Response on success: username.
+
+Error response structure? Response describes JSON response body. I could include error field. Keep simple: response {username} on success; on failure maybe {"error": string}. Hmm response schema must describe. I'll include both with required? The schema needs consistent. I'll do response with properties username (optional) and error (optional)? Better: response only success body? The spec says error response. Let's include fields: username nullable? Let's design response as object with "username" string optional and "error" string optional. But required? Keep required [] — that is all optional. Hmm.
+
+Simpler: response {"username": string, "error": string} both optional, spec explains. I'll do that.
+
+Actually to be clean: response properties: username (anyOf string/null), error (anyOf string/null). Let me just do required [] with optional.
+
+I'll write:
+
+response: {"type":"object","properties":{"username":{"type":"string","description":"Saved account username shown in the header after automatic login."},"error":{"type":"string","description":"Human-readable validation error when registration fails."}},"required":[],"additionalProperties":false}
+
+Spec:
+
+{any unauthenticated visitor may call; body supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email} validates every field is present (all required), name 2-100 non-whitespace chars, passport_number 6-30 ASCII alnum/hyphen, date_of_birth earlier than current date, passport_expiration_date later than current date, username 3-32 ASCII alnum/hyphen/underscore, email valid format ≤254 chars, password 12-128 chars with uppercase, lowercase, digit and special char, confirm_password equals password, agreement checkbox... wait agreement is client-side; not part of payload? The requirement says all fields required and must check agreement. The agreement checkbox is UI state; including it as payload may be reasonable ("agreed_to_terms" boolean). Requirement: "所有字段均为必填，且必须勾选同意协议。" The server could enforce. Ancestor says names not increasing doc content. I'll include agreed_to_terms boolean required, spec says must be true. Hmm, is that inventing? It's stated in requirement that agreement must be checked. I'll include it.
+
+Then uniqueness checks via FUNC/DB which is next pass. Since API pass just defines interface; callees empty.
+
+Spec continues: if any validation fails or username/email already taken (email case-insensitive), respond with error and do not create account or session. On success create user_account, create persisted session, set session cookie value on Set-Cookie, respond username.
+
+Frame conditions: existing accounts/sessions other than new ones untouched.
+
+I'll name module "RegisterAccount".
+
+Should I reuse SignOut/GetCurrentSession? No.
+
+new_types: []
+
+[2026-10-22T07:24:00.305737+00:00] [backend_api] MODEL_FINISHED duration_ms=17354

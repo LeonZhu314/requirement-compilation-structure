@@ -1,0 +1,7 @@
+{
+  "files": {
+    "backend/src/db/client.ts": "41ce349bd3322dbf5d2bf3cc4f982e8694f3eac427988302b768255baa92cb9c",
+    "backend/src/db/initialize.ts": "e4bb68b8da04a1b7ced9aac8d31bbbec40d4888ffee1b8d9371ba0af9a32add7",
+    "backend/src/db/seed.ts": "cb17e3aa2203420f303c30a71a9c3858eb8ce2b4a5194826c473dcb4e9fddb80"
+  }
+}

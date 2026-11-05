@@ -1,0 +1,20 @@
+{
+  "files": {
+    "backend/src/types/contracts.ts": "1dbfbb71b0a15b33c13b4458a2cc8021ede8a6b36c16901b5c084370558c9b46",
+    "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts": "8e97deeabef0cbf55d64e6e2d7c6e0ee367a58c4833e995e5340b060694e5458",
+    "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts": "ca3efac3de9b11a5b49cc3e1587ff02d8e96904a50c750d6972f4817aab9977a",
+    "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts": "a6368a33987accae021467eeba41bfe74e6c34ef7983901d245b155c4ac40630",
+    "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts": "3fc1f0ce4caf6564a240a1e252bb7eb40cefedc99c850ddad878e4c18b5a536a",
+    "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts": "cf16e8321cb3854ac4e8f522af93a84bf56c9c575df10d8449616ca677845932",
+    "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts": "55aec6f9254b9b8fb7d084032f39c97974718465634bb825a2354181d2d7164c",
+    "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts": "43f8a2860deec1c2d2e429e942848f9a526b2e1b5f4a5219c30e5c7d4b033b48",
+    "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts": "2c7867cb39a815d18c08df747ddbf411ef94d5537ec494e78fa090e9cc565cde",
+    "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts": "5ddc39e93fdd555e2f8df10d8d617e693b295bbf04adb824c9269d109a696a39",
+    "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts": "eed41859e7ca38d8593451d610f4738c284ba9110dc3b41ac5a4a948a42ff61c",
+    "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts": "bbcce03f7a42c65935e77026989d241ded5dcd973b92f1e225f8fec120f52c88",
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts": "5310165e294263a4b61cfd682f96697fca428f894bfd77871f0d07292659f43d",
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts": "36a4b351a474cb1aca35d0a79a9a3e84b7b4882c7e46deff7d6b1f5241f4b35e",
+    "backend/src/app.ts": "4cfd8f4f007bd2935893ab01f7fa9a8785e7251c890dc0cb6628486b7cdeb377",
+    "backend/src/server.ts": "bd27a400a876c4d29073d0cbef19f3c4c2854078f840af384331863973ea48c0"
+  }
+}

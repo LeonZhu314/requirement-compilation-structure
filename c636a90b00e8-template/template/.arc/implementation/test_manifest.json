@@ -1,0 +1,12 @@
+{
+  "REQ-1": [
+    "tests/unit/req-1-6aa2db3c.test.ts",
+    "tests/integration/req-1-6aa2db3c.test.ts",
+    "tests/e2e/req-1-6aa2db3c.spec.ts"
+  ],
+  "REQ-2": [
+    "tests/unit/req-2-381ffd4c.test.ts",
+    "tests/integration/req-2-381ffd4c.test.ts",
+    "tests/e2e/req-2-381ffd4c.spec.ts"
+  ]
+}

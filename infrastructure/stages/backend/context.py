@@ -19,12 +19,12 @@ def load_context(arc_dir: Path):
 
 def requirement_context(tree, rid: str) -> dict:
     """Return one requirement with its own structured steps and their concatenated teaching/model context."""
-    return {**tree.requirements[rid], "steps": [tree.steps[sid] for sid in tree.own_steps[rid]]}
+    return {**tree.context(rid), "steps": [tree.steps[sid] for sid in tree.own_steps[rid]]}
 
 
 def api_requirement_uses(tree, allocations: dict, aid: str) -> list[dict]:
     """Supply every API owner once, with structured steps as the sole scenario representation."""
-    return [{**tree.requirements[rid], "steps": [tree.steps[sid] for sid in tree.own_steps[rid]]}
+    return [{**tree.context(rid), "steps": [tree.steps[sid] for sid in tree.own_steps[rid]]}
         for rid, ids in allocations.items() if aid in ids]
 
 
@@ -42,6 +42,9 @@ def supplied_sources(output: Path, api: dict, schema: dict) -> dict:
                     pending.append(target)
     paths = ["backend/src/api/types.ts", "backend/src/db/client.ts", "backend/tests/support/context.ts"]
     paths.extend(f"backend/src/db/tables/{name}.sql" for name in sorted(entities))
+    paths.extend(path for path in ('backend/src/db/initialize.ts', 'backend/src/db/seed.ts',
+        'backend/src/api/register.ts', 'backend/src/app.ts', 'backend/src/server.ts',
+        *(f'backend/src/db/seeds/{name}.sql' for name in sorted(entities))) if (output / path).is_file())
     return {relative: (output / relative).read_text(encoding="utf-8-sig") for relative in paths}
 
 

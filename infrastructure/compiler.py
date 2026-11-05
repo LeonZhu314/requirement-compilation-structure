@@ -8,6 +8,7 @@ from infrastructure.utils.presentation.console import show_panel
 from infrastructure.utils.presentation.logging import console_log
 from infrastructure.utils.files import save_json
 from infrastructure.shared.project.git import checkpoint
+from infrastructure.shared.models.errors import ModelServiceError
 
 
 class Compiler:
@@ -38,6 +39,20 @@ class Compiler:
             save_json(self.arc_dir / "compilation.json", self.report)
             checkpoint(self.output_dir, stage=module, task="stage report", action="Record interrupted pass",
                 status="INTERRUPTED", details=self.report["stages"][module])
+            raise
+        except ModelServiceError as error:
+            # A missing provider result cannot be replaced by partial downstream
+            # artifacts. Stop here instead of spending calls on an unusable site.
+            self.report["status"] = "FAILED"
+            self.report["stages"][module] = {"status": "FAILED", "error": str(error),
+                "error_type": type(error).__name__, "provider": error.feedback}
+            save_json(self.arc_dir / "compilation.json", self.report)
+            checkpoint(self.output_dir, stage=module, task="model service",
+                action="Stop compilation after terminal model service failure", status="FAILED",
+                details=self.report["stages"][module])
+            show_panel("[FAILED] Model service | " + module,
+                str(error) + "\nTransport recovery was exhausted or the request was rejected. "
+                "Compilation stopped; accepted artifacts remain available.", tone="error")
             raise
         except Exception as error:
             result = {"status": "FAILED", "error": str(error),
@@ -92,12 +107,15 @@ class Compiler:
         self.current_stage = None
         incomplete = [stage for stage, result in self.report["stages"].items()
             if result["status"] in {"FAILED", "COMPLETED_WITH_FAILURES"}]
-        self.report["status"] = "COMPLETED_WITH_FAILURES" if incomplete else "GREEN"
+        degraded = [stage for stage, result in self.report["stages"].items() if result["status"] == "DEGRADED"]
+        self.report["status"] = "COMPLETED_WITH_FAILURES" if incomplete else "DEGRADED" if degraded else "GREEN"
         save_json(self.arc_dir / "compilation.json", self.report)
         checkpoint(self.output_dir, stage="compiler", task="pipeline", action="Publish final compilation report",
-            status=self.report["status"], details={"stages": self.report["stages"], "incomplete_stages": incomplete})
+            status=self.report["status"], details={"stages": self.report["stages"],
+                "incomplete_stages": incomplete, "degraded_stages": degraded})
         show_panel("[DONE] Requirement compilation | " + self.report["status"],
             f"Application: {self.output_dir}\nReport: {self.arc_dir / 'compilation.json'}"
-            + ("\nIncomplete stages: " + ", ".join(incomplete) if incomplete else ""),
-            tone="error" if incomplete else "success")
+            + ("\nIncomplete stages: " + ", ".join(incomplete) if incomplete else "")
+            + ("\nDegraded visual evidence: " + ", ".join(degraded) if degraded else ""),
+            tone="error" if incomplete else "waiting" if degraded else "success")
         return self.output_dir

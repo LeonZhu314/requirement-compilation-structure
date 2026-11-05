@@ -12,7 +12,7 @@ from infrastructure.utils.presentation.logging import console_log
 
 
 def design_frontend_ui(input_dir: Path, arc_dir: Path, pause: bool = False, top_k: int = 3,
-        max_attempts: int = 10) -> dict:
+        max_attempts: int | None = None) -> dict:
     if top_k < 1:
         raise ValueError("--top-k must be positive")
     tree, images, contexts = load_ui_context(arc_dir, input_dir)
@@ -26,7 +26,7 @@ def design_frontend_ui(input_dir: Path, arc_dir: Path, pause: bool = False, top_
 def main() -> None:
     parser = create_parser("Step 09: UI/data Design with Page RAG")
     parser.add_argument("--top-k", type=int, default=3, help="Number of coarse page RAG candidates")
-    parser.add_argument("--max-attempts", type=int, default=10, help="Maximum proposals per requirement; including the first proposal (default: 10)")
+    parser.add_argument("--max-attempts", type=int, default=None, help="Optional limit (default: unlimited). Maximum proposals per requirement; including the first proposal")
     args = parser.parse_args()
     with ExitStack() as stack:
         try:

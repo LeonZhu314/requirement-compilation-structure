@@ -1,0 +1,10 @@
+{
+  "status": "COMPILED",
+  "generated_files": 3,
+  "retained_modified_files": [],
+  "validation": "Generated skeleton sources checked against the initialized project settings.",
+  "compilation": {
+    "status": "COMPILED",
+    "exit_code": 0
+  }
+}

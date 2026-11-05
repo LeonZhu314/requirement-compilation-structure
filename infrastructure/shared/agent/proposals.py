@@ -1,6 +1,7 @@
 """Retry model proposals when parsing or consuming their returned records fails."""
 
 import json
+from itertools import count
 
 from infrastructure.shared.agent.discovery import DISCOVERY_RULES, DiscoverySession
 from infrastructure.shared.project.git import checkpoint
@@ -36,17 +37,17 @@ def response_feedback(error, response):
     return feedback
 
 
-def propose_json(model, instructions, request, accept, console, label, max_attempts=10, context_index=None):
-    """Generate and repair a proposal within a finite total model-call budget."""
-    if max_attempts < 1:
+def propose_json(model, instructions, request, accept, console, label, max_attempts=None, context_index=None):
+    """Generate and repair until accepted, unless a caller explicitly limits attempts."""
+    if max_attempts is not None and max_attempts < 1:
         raise ValueError("--max-attempts must be positive")
     request = dict(request)
     if context_index is not None:
         instructions += "\n\n" + DISCOVERY_RULES
         request["context_kinds"] = list(context_index.records())
     discovery = DiscoverySession(context_index) if context_index is not None else None
-    for attempt in range(1, max_attempts + 1):
-        progress = f"{attempt}/{max_attempts}"
+    for attempt in count(1):
+        progress = f"{attempt}/{max_attempts}" if max_attempts is not None else str(attempt)
         console.show(f"{label} | Model proposal {progress}", "Generate the proposal; response-reading and obligation errors receive repair feedback.")
         response = None
         try:
@@ -57,7 +58,7 @@ def propose_json(model, instructions, request, accept, console, label, max_attem
                 if correction.get("details"):
                     prompt += "\nRepair details:\n" + json.dumps(correction["details"], ensure_ascii=False, indent=2)
             response = model.generate_json(prompt, request)
-            while context_index is not None and isinstance(response, dict) and "context_request" in response:
+            while context_index is not None and isinstance(response, dict) and response.get("context_request") is not None:
                 query = response["context_request"]
                 console.show(label + " | Context query", json.dumps(query, ensure_ascii=False))
                 request["context_result"] = discovery.resolve(query)
@@ -73,6 +74,6 @@ def propose_json(model, instructions, request, accept, console, label, max_attem
             feedback["failed_attempt"] = attempt
             checkpoint(task=label, action=f"Reject design proposal {attempt}", status="REJECTED", details=feedback)
             console.show(f"{label} | Repair feedback", json.dumps(feedback, ensure_ascii=False, indent=2))
-            if attempt >= max_attempts:
+            if max_attempts is not None and attempt >= max_attempts:
                 raise RuntimeError(f"{label} exhausted {max_attempts} proposals: {feedback['error']}") from error
             request["correction"] = feedback

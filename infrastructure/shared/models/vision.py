@@ -63,7 +63,7 @@ class VisualModel:
         self._reasoning_supported = True
         self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=600, max_retries=2, http_client=http_client())
 
-    def analyze(self, image: Path, max_attempts: int = 10) -> dict:
+    def analyze(self, image: Path, max_attempts: int | None = None) -> dict:
         """Send one supported reference image and parse the returned layout, elements, and style evidence."""
         mime = mimetypes.guess_type(image.name)[0]
         if mime not in {"image/png", "image/jpeg", "image/webp", "image/gif"}:

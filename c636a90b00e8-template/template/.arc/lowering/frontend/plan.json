@@ -1,0 +1,1550 @@
+{
+  "ir_kind": "frontend_lowering",
+  "strategy": "shallow_structural_subtrees",
+  "component_depth": 2,
+  "min_nodes": 4,
+  "entrypoint": "frontend/src/main.tsx",
+  "app_file_path": "frontend/src/App.tsx",
+  "app": {
+    "ui_id": "UI_APP",
+    "file_path": "frontend/src/App.tsx",
+    "export": "App"
+  },
+  "components": [
+    {
+      "ui_id": "UI_000001",
+      "name": "home",
+      "export": "Home",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 0,
+      "reason": "page"
+    },
+    {
+      "ui_id": "UI_000002",
+      "name": "Header",
+      "export": "Header",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000003",
+      "name": "BrandBlock",
+      "export": "BrandBlock",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "reqs": [],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 2,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000007",
+      "name": "HeaderUtilityNav",
+      "export": "HeaderUtilityNav",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "reqs": [],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 2,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000011",
+      "name": "HeaderAccountArea",
+      "export": "HeaderAccountArea",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 2,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000018",
+      "name": "PrimaryNavigation",
+      "export": "PrimaryNavigation",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "reqs": [],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000022",
+      "name": "HeroBanner",
+      "export": "HeroBanner",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000024",
+      "name": "BannerIndicators",
+      "export": "BannerIndicators",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 2,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000028",
+      "name": "SearchPanel",
+      "export": "SearchPanel",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 2,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000036",
+      "name": "QuickGuideSection",
+      "export": "QuickGuideSection",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000038",
+      "name": "QuickGuideLinkList",
+      "export": "QuickGuideLinkList",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 2,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000042",
+      "name": "Footer",
+      "export": "Footer",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000047",
+      "name": "registration",
+      "export": "Registration",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 0,
+      "reason": "page"
+    },
+    {
+      "ui_id": "UI_000048",
+      "name": "RegistrationHeader",
+      "export": "RegistrationHeader",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000055",
+      "name": "PrimaryNavigation",
+      "export": "RegistrationPrimaryNavigation",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "reqs": [],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000059",
+      "name": "BreadcrumbRegion",
+      "export": "BreadcrumbRegion",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000064",
+      "name": "RegistrationCard",
+      "export": "RegistrationCard",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationCard.tsx",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000065",
+      "name": "RegistrationForm",
+      "export": "RegistrationForm",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 2,
+      "reason": "shallow_structural_region"
+    },
+    {
+      "ui_id": "UI_000111",
+      "name": "RegistrationFooter",
+      "export": "RegistrationFooter",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "depth_from_page": 1,
+      "reason": "shallow_structural_region"
+    }
+  ],
+  "ui": [
+    {
+      "id": "UI_APP",
+      "component_ui_id": "UI_APP",
+      "file_path": "frontend/src/App.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000001",
+      "component_ui_id": "UI_000001",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000002",
+      "component_ui_id": "UI_000002",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000003",
+      "component_ui_id": "UI_000003",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000004",
+      "component_ui_id": "UI_000003",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000005",
+      "component_ui_id": "UI_000003",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000006",
+      "component_ui_id": "UI_000003",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000007",
+      "component_ui_id": "UI_000007",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000008",
+      "component_ui_id": "UI_000007",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000009",
+      "component_ui_id": "UI_000007",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000010",
+      "component_ui_id": "UI_000007",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000011",
+      "component_ui_id": "UI_000011",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000012",
+      "component_ui_id": "UI_000011",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000013",
+      "component_ui_id": "UI_000011",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000014",
+      "component_ui_id": "UI_000011",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000015",
+      "component_ui_id": "UI_000011",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000016",
+      "component_ui_id": "UI_000011",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000017",
+      "component_ui_id": "UI_000011",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000018",
+      "component_ui_id": "UI_000018",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000019",
+      "component_ui_id": "UI_000018",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000020",
+      "component_ui_id": "UI_000018",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000021",
+      "component_ui_id": "UI_000018",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000022",
+      "component_ui_id": "UI_000022",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000023",
+      "component_ui_id": "UI_000022",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000024",
+      "component_ui_id": "UI_000024",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000025",
+      "component_ui_id": "UI_000024",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000026",
+      "component_ui_id": "UI_000024",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000027",
+      "component_ui_id": "UI_000024",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000028",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000029",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000030",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000031",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000032",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000033",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000034",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000035",
+      "component_ui_id": "UI_000028",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000036",
+      "component_ui_id": "UI_000036",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000037",
+      "component_ui_id": "UI_000036",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000038",
+      "component_ui_id": "UI_000038",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000039",
+      "component_ui_id": "UI_000038",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000040",
+      "component_ui_id": "UI_000038",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000041",
+      "component_ui_id": "UI_000038",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000042",
+      "component_ui_id": "UI_000042",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000043",
+      "component_ui_id": "UI_000042",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000044",
+      "component_ui_id": "UI_000042",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000045",
+      "component_ui_id": "UI_000042",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000046",
+      "component_ui_id": "UI_000042",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000048",
+      "component_ui_id": "UI_000048",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000049",
+      "component_ui_id": "UI_000048",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000050",
+      "component_ui_id": "UI_000048",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000051",
+      "component_ui_id": "UI_000048",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000052",
+      "component_ui_id": "UI_000048",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000053",
+      "component_ui_id": "UI_000048",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000054",
+      "component_ui_id": "UI_000048",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000055",
+      "component_ui_id": "UI_000055",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000056",
+      "component_ui_id": "UI_000055",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000057",
+      "component_ui_id": "UI_000055",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000058",
+      "component_ui_id": "UI_000055",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000059",
+      "component_ui_id": "UI_000059",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000060",
+      "component_ui_id": "UI_000059",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000061",
+      "component_ui_id": "UI_000059",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000062",
+      "component_ui_id": "UI_000059",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000063",
+      "component_ui_id": "UI_000059",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000064",
+      "component_ui_id": "UI_000064",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationCard.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000065",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000066",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000067",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000068",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000069",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000070",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000071",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000072",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000073",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000074",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000075",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000076",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000077",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000078",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000079",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000080",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000081",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000082",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000083",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000084",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000085",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000086",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000087",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000088",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000089",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000090",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000091",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000092",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000093",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000094",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000095",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000096",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000097",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000098",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000099",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000100",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000101",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000102",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000103",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000104",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000105",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000106",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000107",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000108",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000109",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000110",
+      "component_ui_id": "UI_000065",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000111",
+      "component_ui_id": "UI_000111",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "standalone": true
+    },
+    {
+      "id": "UI_000112",
+      "component_ui_id": "UI_000111",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000113",
+      "component_ui_id": "UI_000111",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000114",
+      "component_ui_id": "UI_000111",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000115",
+      "component_ui_id": "UI_000111",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "standalone": false
+    },
+    {
+      "id": "UI_000116",
+      "component_ui_id": "UI_000111",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "standalone": false
+    }
+  ],
+  "data": [
+    {
+      "id": "DATA_000001",
+      "owner_ui_id": "UI_000001",
+      "component_ui_id": "UI_000001",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+      "export": "HomeState",
+      "property": "session_state"
+    },
+    {
+      "id": "DATA_000002",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "nationality"
+    },
+    {
+      "id": "DATA_000003",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "name"
+    },
+    {
+      "id": "DATA_000004",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "passport_number"
+    },
+    {
+      "id": "DATA_000005",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "passport_expiration_date"
+    },
+    {
+      "id": "DATA_000006",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "date_of_birth"
+    },
+    {
+      "id": "DATA_000007",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "gender"
+    },
+    {
+      "id": "DATA_000008",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "username"
+    },
+    {
+      "id": "DATA_000009",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "password"
+    },
+    {
+      "id": "DATA_000010",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "confirm_password"
+    },
+    {
+      "id": "DATA_000011",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "email"
+    },
+    {
+      "id": "DATA_000012",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "agreed_to_terms"
+    },
+    {
+      "id": "DATA_000013",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "registration_error_message"
+    },
+    {
+      "id": "DATA_000014",
+      "owner_ui_id": "UI_000047",
+      "component_ui_id": "UI_000047",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "export": "RegistrationState",
+      "property": "registration_submitting"
+    }
+  ],
+  "events": [
+    {
+      "id": "EVENT_000001",
+      "ui_id": "UI_000001",
+      "handler_id": "HANDLER_000001",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000002",
+      "ui_id": "UI_000017",
+      "handler_id": "HANDLER_000002",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000003",
+      "ui_id": "UI_000013",
+      "handler_id": "HANDLER_000003",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000004",
+      "ui_id": "UI_000014",
+      "handler_id": "HANDLER_000004",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000005",
+      "ui_id": "UI_000051",
+      "handler_id": "HANDLER_000003",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000006",
+      "ui_id": "UI_000061",
+      "handler_id": "HANDLER_000005",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000007",
+      "ui_id": "UI_000068",
+      "handler_id": "HANDLER_000006",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000008",
+      "ui_id": "UI_000073",
+      "handler_id": "HANDLER_000007",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000009",
+      "ui_id": "UI_000077",
+      "handler_id": "HANDLER_000008",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000010",
+      "ui_id": "UI_000080",
+      "handler_id": "HANDLER_000009",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000011",
+      "ui_id": "UI_000084",
+      "handler_id": "HANDLER_000010",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000012",
+      "ui_id": "UI_000088",
+      "handler_id": "HANDLER_000011",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000013",
+      "ui_id": "UI_000093",
+      "handler_id": "HANDLER_000012",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000014",
+      "ui_id": "UI_000096",
+      "handler_id": "HANDLER_000013",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000015",
+      "ui_id": "UI_000099",
+      "handler_id": "HANDLER_000014",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000016",
+      "ui_id": "UI_000102",
+      "handler_id": "HANDLER_000015",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000017",
+      "ui_id": "UI_000105",
+      "handler_id": "HANDLER_000016",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts",
+      "wired": false
+    },
+    {
+      "id": "EVENT_000018",
+      "ui_id": "UI_000110",
+      "handler_id": "HANDLER_000017",
+      "component_file_path": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "handler_file_path": "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts",
+      "wired": false
+    }
+  ],
+  "handlers": [
+    {
+      "id": "HANDLER_000001",
+      "name": "LoadSessionState",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+      "export": "LoadSessionState",
+      "input_type": "LoadSessionStateInput",
+      "output_type": "LoadSessionStateOutput",
+      "read": [],
+      "write": [
+        "DATA_000001"
+      ],
+      "apis": [
+        "API_000001"
+      ]
+    },
+    {
+      "id": "HANDLER_000002",
+      "name": "SignOutAccount",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+      "export": "SignOutAccount",
+      "input_type": "SignOutAccountInput",
+      "output_type": "SignOutAccountOutput",
+      "read": [
+        "DATA_000001"
+      ],
+      "write": [
+        "DATA_000001"
+      ],
+      "apis": [
+        "API_000002"
+      ]
+    },
+    {
+      "id": "HANDLER_000003",
+      "name": "NavigateToRegister",
+      "reqs": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+      "export": "NavigateToRegister",
+      "input_type": "NavigateToRegisterInput",
+      "output_type": "NavigateToRegisterOutput",
+      "read": [],
+      "write": [],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000004",
+      "name": "NavigateToLogin",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+      "export": "NavigateToLogin",
+      "input_type": "NavigateToLoginInput",
+      "output_type": "NavigateToLoginOutput",
+      "read": [],
+      "write": [],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000005",
+      "name": "NavigateToHome",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts",
+      "export": "NavigateToHome",
+      "input_type": "NavigateToHomeInput",
+      "output_type": "NavigateToHomeOutput",
+      "read": [],
+      "write": [],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000006",
+      "name": "ChangeNationality",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+      "export": "ChangeNationality",
+      "input_type": "ChangeNationalityInput",
+      "output_type": "ChangeNationalityOutput",
+      "read": [],
+      "write": [
+        "DATA_000002"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000007",
+      "name": "ChangeName",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+      "export": "ChangeName",
+      "input_type": "ChangeNameInput",
+      "output_type": "ChangeNameOutput",
+      "read": [],
+      "write": [
+        "DATA_000003"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000008",
+      "name": "ChangePassportNumber",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+      "export": "ChangePassportNumber",
+      "input_type": "ChangePassportNumberInput",
+      "output_type": "ChangePassportNumberOutput",
+      "read": [],
+      "write": [
+        "DATA_000004"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000009",
+      "name": "ChangePassportExpirationDate",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+      "export": "ChangePassportExpirationDate",
+      "input_type": "ChangePassportExpirationDateInput",
+      "output_type": "ChangePassportExpirationDateOutput",
+      "read": [],
+      "write": [
+        "DATA_000005"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000010",
+      "name": "ChangeDateOfBirth",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+      "export": "ChangeDateOfBirth",
+      "input_type": "ChangeDateOfBirthInput",
+      "output_type": "ChangeDateOfBirthOutput",
+      "read": [],
+      "write": [
+        "DATA_000006"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000011",
+      "name": "ChangeGender",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+      "export": "ChangeGender",
+      "input_type": "ChangeGenderInput",
+      "output_type": "ChangeGenderOutput",
+      "read": [],
+      "write": [
+        "DATA_000007"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000012",
+      "name": "ChangeUsername",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts",
+      "export": "ChangeUsername",
+      "input_type": "ChangeUsernameInput",
+      "output_type": "ChangeUsernameOutput",
+      "read": [],
+      "write": [
+        "DATA_000008"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000013",
+      "name": "ChangePassword",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts",
+      "export": "ChangePassword",
+      "input_type": "ChangePasswordInput",
+      "output_type": "ChangePasswordOutput",
+      "read": [],
+      "write": [
+        "DATA_000009"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000014",
+      "name": "ChangeConfirmPassword",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+      "export": "ChangeConfirmPassword",
+      "input_type": "ChangeConfirmPasswordInput",
+      "output_type": "ChangeConfirmPasswordOutput",
+      "read": [],
+      "write": [
+        "DATA_000010"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000015",
+      "name": "ChangeEmailAddress",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+      "export": "ChangeEmailAddress",
+      "input_type": "ChangeEmailAddressInput",
+      "output_type": "ChangeEmailAddressOutput",
+      "read": [],
+      "write": [
+        "DATA_000011"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000016",
+      "name": "ChangeTermsAgreement",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts",
+      "export": "ChangeTermsAgreement",
+      "input_type": "ChangeTermsAgreementInput",
+      "output_type": "ChangeTermsAgreementOutput",
+      "read": [],
+      "write": [
+        "DATA_000012"
+      ],
+      "apis": []
+    },
+    {
+      "id": "HANDLER_000017",
+      "name": "SubmitRegistration",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts",
+      "export": "SubmitRegistration",
+      "input_type": "SubmitRegistrationInput",
+      "output_type": "SubmitRegistrationOutput",
+      "read": [
+        "DATA_000002",
+        "DATA_000003",
+        "DATA_000004",
+        "DATA_000005",
+        "DATA_000006",
+        "DATA_000007",
+        "DATA_000008",
+        "DATA_000009",
+        "DATA_000010",
+        "DATA_000011",
+        "DATA_000012",
+        "DATA_000014"
+      ],
+      "write": [
+        "DATA_000013",
+        "DATA_000014"
+      ],
+      "apis": [
+        "API_000003"
+      ]
+    }
+  ],
+  "types": [],
+  "retained_modified_files": [],
+  "files": [
+    "frontend/src/App.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationCard.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts",
+    "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+    "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+    "frontend/src/main.tsx",
+    "frontend/src/types/contracts.ts"
+  ]
+}

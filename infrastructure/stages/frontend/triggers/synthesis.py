@@ -14,7 +14,7 @@ from infrastructure.shared.agent.conventions import load_conventions, select_con
 from infrastructure.stages.backend.primitives import validate_design, ObligationCoverageError
 
 
-def synthesize_triggers(arc_dir, ui, tree, backend, contexts, model, console, max_attempts=10):
+def synthesize_triggers(arc_dir, ui, tree, backend, contexts, model, console, max_attempts=None):
     result = empty_triggers(tree)
     obligations = normalize_obligations(read_artifact(arc_dir, "db_obligations.json"), tree)
     accepted = []

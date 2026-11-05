@@ -48,6 +48,51 @@ uv run main.py input --output-dir outputs/demo
 
 Add `--model-log` to display and save detailed model input/output, or `--port 33000` to change the backend port (default: 3000). Token usage and model latency are always shown.
 
+Agent tasks have no default limit on model calls, proposals or repair rounds. They continue
+until their acceptance checks pass. Optional `--max-attempts` and `--max-turns` flags can
+set explicit limits for individual steps. Independent reads should be batched to reduce
+round trips; acceptance checks and failure reporting remain enforced.
+
+Step 12 generates requirement-grounded acceptance tests before implementing each workflow.
+These tests also serve as its TDD suite, avoiding a second overlapping test-generation call.
+Implementation agents cannot edit these suites; final acceptance retains a separate,
+requirement-grounded test review and real browser regression checks. Locator ambiguities
+are corrected by the independent test owner during TDD, so the application agent does
+not loop on denied test edits. Literal role/name contracts are made exact using the
+TypeScript parser before implementation; dynamic names and regex locators are preserved.
+Implementation context keeps relevant controls and actual sources rather than resending
+every decorative UI declaration. Shared backend runtime/seed definitions are supplied
+up front, and already supplied source content is not duplicated in read excerpts. Navigation context
+includes entry/loading triggers on directly involved pages without pulling in other workflows.
+Shared ancestor descriptions remain in leaf-task context. Both structured Given/When/Then
+steps and keyword/content scenarios with page references are normalized locally. UI
+presence checks also validate explicit original role/name pairs for matching controls.
+
+Visual analysis is optional evidence: an image-provider failure is recorded under
+`.arc/visual_analysis_report.json` with status `DEGRADED`. Functional UI generation
+continues from the original text, roles and routes; unavailable image observations are
+never treated as verified. Real compilation or acceptance failures return a nonzero
+CLI exit code. `DEGRADED` remains visible when only optional visual evidence is missing.
+
+For an Arcbench source submission, run `python scripts/package.py --arcbench --output
+outputs/compiler-arcbench.zip`. The archive includes working-tree sources and dependency
+manifests, excludes local outputs and API keys, and checks dependency consistency.
+
+The lean candidate uses the confirmed fast-review baseline, compact JSON request
+serialization (all values/source strings preserved) and `context_request: null` handling
+that consumes valid edits/design records directly. Models, reasoning settings, business
+prompts, tools, checks and application templates match that baseline.
+
+If a model request still returns 503 after standard SDK retries, the client waits five
+seconds and probes the exact request once with nested SDK retries disabled. Provider
+no-retry/Retry-After headers are respected; timeout and authentication retry policies
+are unchanged. A terminal provider error stops compilation with its status/task recorded
+in `.arc/compilation.json`, rather than skipping a requirement and generating an unusable
+downstream application. Proposal validation failures keep their existing repair/task flow.
+No workflow-round cap is added. Baseline fingerprints and request-fidelity tests are in
+`tests/test_fast_review_lean.py`; HTTP fault tests are in `tests/test_model_service_recovery.py`.
+Only a new Arcbench run can confirm the score and total cost.
+
 ### Step by step
 
 Run these commands in order. They call the same 13 passes with the same default settings as `main.py`. Step 01 uses `--no-browse` to match the non-interactive pipeline.

@@ -1,6 +1,7 @@
-"""Bounded file editing with failure attribution and real acceptance checks."""
+"""File editing with failure attribution and real acceptance checks."""
 
 import json
+from itertools import count
 
 from infrastructure.shared.agent.discovery import DISCOVERY_RULES, DiscoverySession
 from infrastructure.shared.agent.conventions import task_conventions
@@ -10,6 +11,7 @@ from infrastructure.shared.agent.tools.protocol import FILE_TOOL_RULES
 from infrastructure.shared.agent.proposals import RESPONSE_ERRORS, response_feedback
 from infrastructure.shared.project.git import checkpoint
 from infrastructure.utils.files import read_source
+from infrastructure.shared.models.errors import ModelServiceError
 
 
 class AgentExhausted(ValueError):
@@ -22,14 +24,14 @@ class AgentExhausted(ValueError):
 
 
 def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
-        max_turns: int, console, label: str, feedback=None, feedback_filter=None, context_index=None,
-        allow_discovery=True) -> dict:
+        max_turns: int | None, console, label: str, feedback=None, feedback_filter=None, context_index=None,
+        allow_discovery=True, test_review=None) -> dict:
     """Refresh files and paths; optionally select failure-related files before repair.
 
     The stage-owned feedback filter may add writable sources/read-only references
     and condense check reports. It cannot change the acceptance gate or its result.
     """
-    if max_turns < 1:
+    if max_turns is not None and max_turns < 1:
         raise ValueError("--max-turns must be positive")
     index = context_index if allow_discovery else None
     allow_discovery = index is not None
@@ -37,8 +39,11 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
     read_files = {}
     feedback = [] if feedback is None else [feedback_filter(feedback) if feedback_filter else feedback]
     check_feedback = list(feedback)
-    for turn in range(1, max_turns + 1):
-        console.show(f"{label} | Edit round {turn}/{max_turns}",
+    for turn in count(1):
+        if max_turns is not None and turn > max_turns:
+            raise AgentExhausted(label, max_turns, feedback)
+        progress = f"{turn}/{max_turns}" if max_turns is not None else str(turn)
+        console.show(f"{label} | Edit round {progress}",
             "Generate file edits, then run the stage's compilation and test acceptance checks.")
         response, applied, checking = None, False, False
         try:
@@ -57,8 +62,10 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                             break
                 request = {"task": files.task_state(task), "files": files.state(), "feedback": feedback,
                     "context_kinds": list(index.records()) if index is not None else [], "tools": files.schemas()}
-                if read_files:
-                    request["read_files"] = read_files
+                retained = {path: excerpts for path, excerpts in read_files.items()
+                    if path not in request["files"] or request["files"][path]["content"] is None}
+                if retained:
+                    request["read_files"] = retained
                 if discovery.evidence:
                     request["context_records"] = discovery.evidence
                 if any(discovery.candidates.values()):
@@ -76,7 +83,7 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                 return model.generate_json(rules, request)
             response = request_model()
             while isinstance(response, dict):
-                if "context_request" in response:
+                if response.get("context_request") is not None:
                     if not allow_discovery:
                         raise ValueError("Semantic discovery is disabled for this task; use the supplied task evidence and read_file within its allowed scope")
                     query = response["context_request"]
@@ -124,7 +131,7 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
             applied = True
             if files.pending_target:
                 raise ValueError("Create task.file_target with edit_file before running acceptance checks")
-            console.show(f"{label} | Edit round {turn}/{max_turns}",
+            console.show(f"{label} | Edit round {progress}",
                 str([change["path"] for change in files.last_changes]))
             checkpoint(files.output, task=label, action=f"Apply file edits in round {turn}", status="PROPOSED",
                 details={"round": turn, "files": [change["path"] for change in files.last_changes],
@@ -135,10 +142,36 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                 details={"round": turn, "checks": checks})
             return {"turns": turn, "checks": checks}
         except (*RESPONSE_ERRORS, RuntimeError, OSError) as error:
+            if isinstance(error, ModelServiceError):
+                raise
+            if isinstance(error, RuntimeError) and not applied:
+                # The model client already handles transport retries. Re-prompting
+                # cannot repair an unavailable endpoint or exhausted provider quota.
+                raise
+            details = getattr(error, 'feedback', {})
+            protected_test = details.get('path', '') if isinstance(details, dict) else ''
+            if (isinstance(details, dict) and details.get('code') == 'WRITE_NOT_ALLOWED'
+                    and protected_test.startswith('frontend/tests/e2e/acceptance/') and test_review is not None):
+                changed = test_review(protected_test, check_feedback)
+                if changed:
+                    try:
+                        checks = gate()
+                    except (*RESPONSE_ERRORS, RuntimeError, OSError) as reviewed_error:
+                        error, applied, checking = reviewed_error, True, True
+                    else:
+                        checkpoint(files.output, task=label, action='Accept after independent test review',
+                            details={'round': turn, 'checks': checks})
+                        return {'turns': turn, 'checks': checks}
+                else:
+                    error = ValueError('Independent review retained the required assertions. '
+                        'Repair the application; this implementation task cannot edit acceptance tests.')
             message = str(error)
             console.show(f"{label} | Repair feedback", message)
             rejected = (getattr(error, "feedback", {"error": message}) if applied
                 else response_feedback(error, response))
+            if protected_test.startswith('frontend/tests/e2e/acceptance/') and isinstance(rejected, dict):
+                # The denied patch is not useful repair context and may repeat a whole suite.
+                rejected.pop('previous_response', None)
             if isinstance(response, dict) and response.get("diagnosis") and isinstance(rejected, dict):
                 rejected = {**rejected, "previous_diagnosis": response["diagnosis"]}
             rejected = feedback_filter(rejected) if feedback_filter else rejected
@@ -149,4 +182,3 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                 feedback = [*check_feedback, rejected]
             checkpoint(files.output, task=label, action=f"Reject edit round {turn}", status="REJECTED",
                 details={"round": turn, "applied": applied, "feedback": feedback})
-    raise AgentExhausted(label, max_turns, feedback)

@@ -41,6 +41,8 @@ INCREMENTAL COMPILATION IS MANDATORY
 Each task extends the application already compiled for earlier requirements. The current
 requirement and supplied excerpts are a partial view, never a replacement specification
 for the entire application. Earlier behavior remains required even when omitted here.
+ancestor_requirements supplies shared constraints inherited from parent descriptions;
+apply those relevant to this task, without taking on sibling business workflows.
 Read the relevant existing code and make local additions or corrections. Never rewrite
 an existing file from scratch, replace its full contents, empty a shared function and
 rebuild it for only this requirement, or delete earlier code to make room for new code.
@@ -73,11 +75,17 @@ Group related edit_file calls in one tool_calls list. Calls run sequentially aga
 previous staged result, and the batch is published only if all calls succeed. Read calls
 form a separate batch so you can inspect their results before editing. Edits are followed
 by the stage's real compilation/tests; passing tools do not mean the task passed.
+Batch independent read_file calls as well to reduce round trips.
+Prefer small exact edits; omit unchanged code.
 An empty tool_calls list runs acceptance checks; it cannot finish a missing target.
 After a failed check, edits remain available for repair. Tool errors explain failed exact
 matches, paths and destinations; inspect only needed evidence and retry.
 Earlier compilation/test failures remain unresolved until checks run again. A tool-call
 format error does not prove the application correct or replace the last check result.
+Independent acceptance suites are reviewed by their separate owner when a locator/test
+defect is identified. An implementation agent must repair application code and preserve
+explicit names. Never rename a valid Name/Username or Home/HOME to work around ambiguous
+test matching, and never repeatedly submit writes to a read-only acceptance suite.
 
 When feedback is present, add diagnosis before choosing changes:
 {"diagnosis":{"cause":"implementation","reason":"Evidence and proposed repair"},"tool_calls":[...]}.

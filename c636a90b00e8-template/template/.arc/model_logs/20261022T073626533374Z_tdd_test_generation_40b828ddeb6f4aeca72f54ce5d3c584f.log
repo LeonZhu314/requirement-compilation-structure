@@ -1,0 +1,2587 @@
+[2026-10-22T07:36:26.535953+00:00] [tdd_test_generation] MODEL_CALL model=deepseek-flash attempt=1 status=SUCCEEDED
+[2026-10-22T07:36:26.535953+00:00] [tdd_test_generation] MODEL_INPUT
+
+--- system ---
+## Requirement fidelity
+For design, test generation, implementation and repair, explicit requirement descriptions, scenarios
+and applicable ancestor constraints define the observable product contract. Visual references, generated
+IR, existing source and convenience choices must not override that contract.
+Preserve explicitly specified UI wording and accessible names exactly, including spelling, case,
+punctuation and dynamic naming patterns. Do not translate, paraphrase, abbreviate or substitute another
+spelling unless the document explicitly permits it. Use the same names in design, source and tests.
+Preserve explicitly specified UI roles and states. A required button is a button, not a link merely
+because it navigates; fields need their specified associated labels. Implement the actual control
+semantics, not just matching text or an aria-label on a different control. Use alternatives only when
+the requirement explicitly allows them.
+At each specified scenario step, required controls and navigation entries must exist, be visible and
+be operable in the stated scope. Do not invent prerequisite expansion, hover or navigation steps that
+hide an expected input or action. Preserve these contracts in shared forms and prerequisite flows too.
+Tests must exercise the specified names, roles and states; do not broaden selectors or expected values
+to accept an implementation that contradicts explicit requirements.
+Where the requirement is silent, choose suitable wording, roles and interaction details consistent
+with the supplied visual evidence and existing application conventions. Do not invent extra obligations.
+
+## Background and role
+You implement ONE leaf requirement in a generated TypeScript Express/React application using TDD.
+The database, backend and frontend symbol tables and lowering plans supply exact contracts and file paths.
+Parent descriptions constrain behavior; dependency requirements are not additional implementation tasks.
+Preserve previously implemented behavior, especially when files/components are shared.
+When current_task.recovery is present, design or lowering could not supply complete contracts.
+Its file_paths are loaded editable recovery files, not implemented modules. Derive missing interfaces
+and behavior from the requirement/scenarios, implement those files, and load shared app/router,
+page composition, types or database initialization to wire the real flows. Recovery placeholders
+impose no signatures or routes. Preserve valid existing behavior; do not treat an incomplete IR as
+a reason to abandon this requirement. Generate HTTP/browser acceptance tests from observable
+behavior without importing nonexistent recovery exports; source implementation follows test generation.
+During frontend recovery, the recovered backend files and app.ts may be supplied read-only so
+you can integrate actual routes even when design-stage API contracts were unavailable.
+
+## File scope and incremental loading
+editable_files contains current full text for the entire writable allowlist.
+always_loaded_files lists current requirement-associated module/UI files supplied in this invocation. Their
+FULL CONTENTS are already in editable_files or read_only_files, not merely available for discovery.
+Read those supplied contents directly. You can return edits on the FIRST invocation without a
+preliminary file request. Re-reading a supplied file is supported and returns its latest version.
+Their editability depends on this phase: editable_files is the ONLY write allowlist; read_only_files
+remains read-only. Shared files not directly associated with the current requirement (including schema,
+connection, seed, server entrypoints and styles) are listed with paths/summaries in shared_catalog;
+their source is loaded only after a request. Directly bound modules are initially supplied even
+when shared; released or budget-evicted files can be read again through file_index. Other modules are
+retrieved as summaries in related_catalog. Request exact paths via request_files before using/editing them.
+Catalogs omit files whose contents are already supplied. Summaries are compact discovery hints;
+load a record to obtain its complete source and contract. Backend/frontend implementation source and
+discovery catalogs are restricted to that layer; frontend additionally receives needed backend APIs
+as contracts only. Unit/integration tests accompany backend, browser tests accompany frontend.
+Discovery summaries do not authorize edits. Loading a module supplies its source on the next invocation;
+the compiler recomputes phase-specific permissions. Loading does not override read-only restrictions.
+Configurations are read-only. Tests are writable in test_generation and repair; initial implementation
+phases keep tests read-only. During repair, loaded current or regression acceptance tests can be
+corrected when their assumptions, setup, selectors or assertions contradict the governing requirement.
+Never guess source.
+Do not request a dependency closure or every component. Load the few files required by actual imports,
+call chains, composition or observed errors. Any file request must have no edits in that same response.
+No recursive context dump; no automatic dependency source inclusion. Preserve public contracts and IDs.
+file_index lists discoverable paths/symbols outside the current working set. Read through request_files;
+optionally use release_files to drop unneeded full source from context (not from disk). Reads and
+releases may be combined, but not combined with edits. Current/failing tests stay pinned. The compiler
+may release older optional files to fit the source budget; requested files are delivered whole, never
+truncated. Reload any released file before editing it. Permission rules remain phase-specific.
+context_state.last_operation pairs the latest read/release request with results and content_ref
+pointing into editable_files/read_only_files, where each source appears once with its current content.
+Every invocation refreshes source from disk; old source versions and full history remain in traces,
+not in this prompt. Context requests do not install rejected edits.
+
+## Patch protocol and corrections
+Return exactly the JSON schema: request_files, release_files, edits, blocked_reason, no Markdown.
+Include all four fields. Use [] for unused arrays and "" for an empty blocked_reason.
+These are the only allowed top-level keys. Never emit type, json_object, response_format,
+schema, status or explanatory fields. JSON Schema's type and the API transport's json_object mode
+describe the format; they are NOT fields to copy into your response. Start with {"request_files": ...}.
+Each edit supplies only the file path and full replacement content for a loaded writable file.
+The compiler manages source versions internally and refreshes context if a file changed during the call.
+Do not include unchanged files, delete files or modify .arc artifacts. Edit only the supplied allowlist.
+validation_feedback describes the last failure. rejected_patch lists only the files proposed by
+the rejected reply: installed:false means NONE of that reply's edits are installed. Their replacement
+contents are deliberately omitted. Use the freshly supplied editable_files/read_only_files as the
+actual source state; earlier accepted patches remain installed. If the failed proposal coordinated
+several files, inspect their actual contents and submit all necessary changes together.
+blocked_reason is empty unless a real design/dependency gap prevents implementation. Do not claim success
+from reasoning: the compiler runs compilation and tests. Test edits must preserve scenario coverage
+and the intended acceptance behavior; never weaken tests merely to match a faulty implementation.
+
+## Shared database and seed
+backend/src/db/seed.ts is the single cumulative seed module. Every application startup resets only its
+selected database connection, creates schema, then inserts all accumulated fixture data before listening.
+Load seed.ts when GIVEN or description explicitly needs existing records. Add fixtures from this leaf;
+preserve all earlier fixtures. Do not create a session merely because a user account exists. Use the same
+encoding/hashing as real authentication. Seed must not derive fixtures from test code or incoming requests.
+Database connection and table-creation source are shared modules that can be loaded and edited explicitly.
+Do not add per-requirement seeds, test-local inserts, endpoint seeding or lazy fixture hacks.
+## Task: generate acceptance tests before implementing
+Write tests only at test_targets. Derive observable expected results from this requirement's scenarios.
+Requirements, scenarios and ancestor constraints define acceptance behavior. IR contracts identify typed
+seams and paths; visual analysis describes presentation. Neither implementation placeholders nor IR
+details may create new acceptance requirements. Do not test every visible control merely because the
+UI pass discovered the complete screenshot; test behavior covered by this leaf. If evidence is genuinely
+contradictory, explain it in blocked_reason instead of inventing policy, fixture data or exact outcomes.
+Do not edit application source yet, nor import seed to insert data inside tests. Assert real behavior,
+not placeholders, snapshots of generated skeletons, or the fact that an implementation throws.
+Write assertions for the FINISHED product even though current source is a scaffold: successful actions
+must assert the expected data, persistence, response and visible interaction from the scenarios.
+Never expect Not implemented/NotImplementedError, placeholder HTTP 501, empty placeholder UI or
+missing behavior as a successful outcome. Legitimate requirement-defined validation/authentication
+errors are still testable. Current source supplies import paths/signatures, never the acceptance oracle.
+Generated tests are compiled without execution first; implementation is completed before their first
+runtime execution. Do not make tests pass against the scaffold or suppress an expected future failure.
+unit: test business contracts when isolated seams are sufficient. integration: HTTP/DB interactions.
+e2e: user-visible browser behavior when this leaf has frontend UI. Use the loaded project test runner
+configuration and contracts. Tests must compile and be discovered; do not use skip/todo/fixme or mocks
+that replace the behavior under test. Pure compilation is not an acceptance assertion.
+Application starts in an isolated database with the cumulative startup seed; assertions never preseed
+inside test code. Initially create every assigned target; on correction return only changed files,
+with full replacement text. Preserve valid existing tests; unchanged targets need no edit.
+Unsupported test layers have no target. Infrastructure failures are repaired by the executor,
+not by weakening tests or changing expected behavior.
+
+## Return format
+{"type": "object", "additionalProperties": false, "properties": {"request_files": {"type": "array", "items": {"type": "string"}}, "release_files": {"type": "array", "items": {"type": "string"}}, "edits": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"file": {"type": "string"}, "content": {"type": "string"}}, "required": ["file", "content"]}}, "blocked_reason": {"type": "string"}}, "required": ["request_files", "release_files", "edits", "blocked_reason"]}
+## Example: read a file when needed
+{"request_files": ["tests/tdd/vitest.config.ts"], "release_files": [], "edits": [], "blocked_reason": ""}
+## Example: replace a changed file (use actual allowed paths and contents)
+{"request_files": [], "release_files": [], "edits": [{"file": "tests/unit/example.test.ts", "content": "<complete changed file contents>"}], "blocked_reason": ""}
+--- user ---
+## Current task
+
+```json
+{
+  "current_task": {
+    "requirement": {
+      "id": "REQ-2",
+      "name": "Register a traveler account",
+      "type": "ATOMIC",
+      "description": "点击未登录页头中的 \"Register\"(role=link)，打开 /register 注册页。面包屑的可见文案为 \"Current location: HOME > Create an account\"；其中 \"HOME\"(role=link) 返回 /，\"Create an account\" 是当前页面的文本。表单遵循提供的参考图片，按展示顺序明确以下交互身份：\n\n\"Nationality\"(role=combobox) 的可见标签为 \"Nationality\"，初始显示 \"Please select\"，包含可选择的 \"Vietnam\"(role=option)。\"Name\"(role=textbox) 和 \"Passport number\"(role=textbox) 使用上述精确可见标签。\"Passport expiration date\"(role=textbox) 和 \"Date of birth\"(role=textbox) 使用上述精确可见标签，允许输入日期。如果其日历图标可独立交互，则图标的 role=button，没有可见文本，可访问名称分别为 \"Choose passport expiration date\" 和 \"Choose date of birth\"。\"Gender\"(role=radiogroup) 的可见分组标签为 \"Gender\"，包含 \"Male\"(role=radio) 和 \"Female\"(role=radio)，使用上述精确可见标签和可访问名称。\n\n\"Username\"(role=textbox) 的可见标签为 \"Username\"。隐藏输入内容的两个密码字段，其可见标签和可访问名称分别为 \"Password\" 和 \"Confirm Password\"，没有隐式 ARIA role。\"Email address\"(role=textbox) 使用上述精确可见标签。帮助链接的可见文案和可访问名称为 \"Check the rules for filling out passport information\"(role=link)。\n\n协议控件的 role=checkbox，可见标签和可访问名称均为 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"。其中可独立交互的 \"Terms of Service\"(role=link) 和 \"Privacy Policy\"(role=link) 使用上述精确可见文案；它们位于协议区域，与页脚的 Privacy Policy 链接区分。提交操作为 \"Next step\"(role=button)，可见文案和可访问名称均为 \"Next step\"。护照信息填写指南和协议链接保留上述交互身份；其文档内容不属于本账户创建需求。\n\n所有字段均为必填，且必须勾选同意协议。姓名必须包含 2–100 个非空白字符；护照号码必须包含 6–30 个 ASCII 字母、数字或连字符；出生日期必须早于当前日期，护照有效期必须晚于当前日期。用户名必须包含 3–32 个 ASCII 字母、数字、连字符或下划线。邮箱格式必须有效，长度最多 254 个字符。密码必须包含 12–128 个字符，且包含大写字母、小写字母、数字和特殊字符；Confirm Password 必须与 Password 一致。用户名和邮箱必须唯一，邮箱比较不区分大小写。通过 Next step 提交有效信息后，保存账户、自动登录并返回首页。无效或重复的输入需要显示错误，且不创建账户或会话。",
+      "parent_id": "ROOT",
+      "dependencies": [],
+      "pages": [
+        {
+          "name": "registration",
+          "reference": "reference/register.png",
+          "analysis": "regions:\n- Page > Header: white top bar with the China Railway 12306 logo at the left and a pale, rounded utility area at the right containing account, language and contact entries.\n- Page > Primary navigation: full-width blue bar directly beneath the header with Home, Booking and Travel guides entries.\n- Page > Breadcrumb strip: white area between navigation and the main card, showing the current-location path.\n- Page > Main registration card: large white panel with a thin light border, centered in the page and containing the registration form.\n- Main registration card > Form fields: repeated rows with a right-aligned required-label column, a fixed-width input/control column, and optional helper text or links at the right.\n- Main registration card > Gender group: two side-by-side bordered radio-option boxes beneath the Gender label.\n- Main registration card > Consent and submit area: an unchecked agreement checkbox with policy links, followed by a centered orange submit button.\n- Page > Footer: full-width pale gray band containing copyright text, Chinese registration numbers and two policy links, all centered.\n\nvisible_controls:\n- Header > Logo: red circular railway emblem plus 中国铁路12306 and 12306 CHINA RAILWAY text.\n- Header utility bar: Login link; Register link; My 12306 dropdown with down caret; 简体中文 dropdown with down caret; headset icon with Contact us link.\n- Header far right: faint small icon/control partially visible at the edge; its exact shape is unclear.\n- Primary navigation: Home link; Booking dropdown link with down caret; Travel guides dropdown link with down caret.\n- Breadcrumb: HOME link and blue Create an account link.\n- Nationality: select control showing placeholder Please select, with a down caret.\n- Name: blank text input, with adjacent blue link Check the rules for filling out passport information.\n- Passport number: blank text input.\n- Passport expiration date: blank date input with a calendar icon at its right edge.\n- Date of birth: blank date input with a calendar icon at its right edge.\n- Gender: two bordered radio-option controls labeled Male and Female; both radio circles appear unselected.\n- Username: blank text input.\n- Password: blank text input.\n- Confirm Password: blank text input.\n- Email address: blank text input, with orange helper text at the right.\n- Consent: unchecked square checkbox followed by agreement text containing Terms of Service and Privacy Policy links.\n- Next step: large orange button, enabled.\n- Footer: Privacy Policy link and Cookie Statement link.\n\nlayout_cues:\n- Header spans the full width and is roughly 70 px tall. The logo is left-aligned with generous page margin; account and language utilities sit right, grouped inside a large pale rounded container.\n- The blue primary navigation is a full-width horizontal band roughly 42 px tall. Its three entries are left-aligned with moderate spacing rather than spread across the full width.\n- The breadcrumb sits below the navigation, left-aligned with the content area, at a much smaller text size than the header and navigation.\n- The main card is centered horizontally with roughly 120 px side margins and a height covering most of the viewport below the breadcrumb. It has spacious white padding above and around the form.\n- The registration form is vertically stacked. Labels are right-aligned in a fixed column; inputs and selects share a consistent width of roughly 365 px and start at a common left edge.\n- Form rows are separated by substantial vertical whitespace, producing a low-density layout. Helper notices are aligned to the right of their corresponding controls on the same row.\n- The Gender controls form two equal-width bordered boxes in one horizontal row. Each contains a radio circle at the left and text beside it.\n- The agreement row sits below the form fields, inset from the input column, with the checkbox on the left and wrapped policy text beside it. The Next step button is centered beneath this block.\n- The footer occupies a separate full-width band below the card, with all content centered in three stacked lines and wide horizontal breathing room.\n- No sidebar, dialog, overlay, pagination or additional columns are visible. Content is fully contained within the screenshot.\n\nstyle_cues:\n- Overall page background is white; the header is white, the primary navigation is a saturated medium blue, and the footer is very light gray.\n- The logo emblem is bright red with a dark/black interior mark. The Chinese brand text is large, bold and near-black; the Latin tagline below is smaller, lighter gray and spaced out.\n- Header utility text is dark gray/black in a small sans-serif font. The utility group sits on a subtly shaded pale-gray rounded surface. The Register link has no visible selected treatment.\n- Primary navigation text is white and regular-weight; no active underline or highlighted navigation item is apparent.\n- Breadcrumb text is small and muted gray, with the final breadcrumb link in blue.\n- Form labels are dark gray/black, regular weight, with a red asterisk preceding each required field. Colons follow every label.\n- Text inputs and selects have white fills, thin light-gray borders, small corner radii and plain placeholder text in gray. Date fields include small outline calendar icons aligned at the right.\n- Helper text is orange and small; the passport-information helper is a blue underlined link. Agreement links are blue and underlined.\n- Gender option boxes have thin light-gray borders and a slightly off-white background. Radio circles are neutral gray outlines with no visible selected dot.\n- The Next step button is solid orange, wide and low-profile, with white centered text, modest rounded corners and no prominent shadow.\n- Footer text is medium gray, centered and small, with vertical-bar separators between the registration-number entries and between the policy links.\n- Typography is sans-serif throughout, with stronger/larger branding text and smaller, lighter body and utility text. No photographic imagery, gradients or decorative illustrations are visible beyond the logo and small line icons.\n\ntext_cues:\n- Header: 中国铁路12306; 12306 CHINA RAILWAY; Login; Register; My 12306; 简体中文; Contact us.\n- Primary navigation: Home; Booking; Travel guides.\n- Breadcrumb: Current location: HOME > Create an account.\n- Form: * Nationality:; Please select; At present, only foreign passports are accepted for registration.\n- Form: * Name:; Check the rules for filling out passport information.\n- Form: *Passport number:.\n- Form: *Passport expiration date:.\n- Form: *Date of birth:.\n- Form: *Gender:; Male; Female.\n- Form: *Username:; *Password:; *Confirm Password:; *Email address:.\n- Email helper: Related notifications will be sent to you via email.\n- Consent: I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\n- Submit: Next step.\n- Footer: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED， ALL RIGHTS RESERVED.\n- Footer: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证: 京B2-20202537.\n- Footer: Privacy Policy | Cookie Statement."
+        }
+      ],
+      "scenarios": [
+        {
+          "id": "REQ-2:scenario:1",
+          "name": "Register a valid traveler",
+          "steps": [
+            {
+              "keyword": "GIVEN",
+              "content": "一位未登录访客打开 /，准备好未使用的用户名和邮箱、有效的姓名和护照号码、国籍 Vietnam、早于当前日期的出生日期、晚于当前日期的护照有效期，以及有效密码。"
+            },
+            {
+              "keyword": "WHEN",
+              "content": "访客点击页头的 \"Register\"(role=link)，在 \"Nationality\"(role=combobox) 中选择 Vietnam，填写 \"Name\"(role=textbox)、\"Passport number\"(role=textbox)、\"Passport expiration date\"(role=textbox)、\"Date of birth\"(role=textbox)、\"Username\"(role=textbox) 和 \"Email address\"(role=textbox)，在 \"Gender\"(role=radiogroup) 中选择 \"Male\"(role=radio)，在带标签的密码输入框 \"Password\" 和 \"Confirm Password\" 中填写相同的有效密码，勾选 \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"(role=checkbox)，然后点击 \"Next step\"(role=button)。"
+            },
+            {
+              "keyword": "THEN",
+              "content": "首页以可见文本显示已保存的用户名，并显示 \"Sign out\"(role=link)，使用上述精确可见文案和可访问名称；刷新页面后仍显示该用户名和已登录状态下的操作。"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "document": "requirements.yaml",
+        "pointer": "/children/1"
+      },
+      "ancestor_constraints": [
+        {
+          "id": "ROOT",
+          "name": "Train Ticket Booking Demo",
+          "description": "这是一个小型网站，访客可以注册或登录。\n\n首页和注册页的共享导航提供 \"Home\"(role=link)、\"Booking\"(role=link)、\"Travel guides\"(role=link)、\"My 12306\"(role=link)、\"简体中文\"(role=button) 和 \"Contact us\"(role=link)，可见文案与参考图片完全一致。账户入口控件及其行为见 REQ-1。每个页面的页脚提供 \"Privacy Policy\"(role=link) 和 \"Cookie Statement\"(role=link)，可见文案和可访问名称相同。名称重复的控件通过其语义位置区分，例如注册协议区域与页脚。这里明确了参考控件的展示和交互身份；这次命名说明不增加下拉菜单内容、政策文档、联系服务或旅行指南的业务流程。"
+        }
+      ]
+    },
+    "phase": "test_generation",
+    "data_access": {
+      "read": [
+        "user_account"
+      ],
+      "write": [
+        "session",
+        "user_account",
+        "user_account.date_of_birth",
+        "user_account.email",
+        "user_account.gender",
+        "user_account.name",
+        "user_account.nationality",
+        "user_account.passport_expiration_date",
+        "user_account.passport_number",
+        "user_account.password",
+        "user_account.username"
+      ]
+    }
+  }
+}
+```
+--- user ---
+## Current module contracts and types
+
+```json
+{
+  "current_contracts": [
+    {
+      "shared_reason": "",
+      "path": "/api/register",
+      "shared": false,
+      "method": "POST",
+      "payload": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Selected nationality, e.g. \\\"Vietnam\\\".\"}, \"name\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Traveler full name as printed on the passport.\"}, \"passport_number\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Passport number: 6-30 ASCII letters, digits or hyphens.\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Passport expiry date; must be later than the current date.\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\", \"source\": \"body\", \"description\": \"Traveler date of birth; must be earlier than the current date.\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"], \"source\": \"body\", \"description\": \"Selected gender radio option.\"}, \"username\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"3-32 ASCII letters, digits, hyphens or underscores; must be unique.\"}, \"password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"12-128 characters including uppercase, lowercase, digit and special character.\"}, \"confirm_password\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Must be identical to password.\"}, \"email\": {\"type\": \"string\", \"source\": \"body\", \"description\": \"Valid email address, at most 254 characters; unique regardless of letter case.\"}, \"agreed_to_terms\": {\"type\": \"boolean\", \"source\": \"body\", \"description\": \"True when the visitor checked the Terms of Service and Privacy Policy agreement checkbox.\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "response": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"description\": \"Saved account username displayed as text in the header after automatic login.\"}, \"error\": {\"type\": \"string\", \"description\": \"Message describing the invalid or duplicate input; present only when no account was created.\"}}, \"required\": [], \"additionalProperties\": false}",
+      "name": "RegisterAccount",
+      "spec": "{any unauthenticated visitor may call; the body supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms, all of which are mandatory} validates the supplied values before any write: agreed_to_terms must be true; name must contain 2-100 non-whitespace characters; passport_number must consist of 6-30 ASCII letters, digits or hyphens; date_of_birth must be earlier than the current date read from the clock; passport_expiration_date must be later than the current date; username must be 3-32 ASCII letters, digits, hyphens or underscores; email must be syntactically valid and at most 254 characters; password must be 12-128 characters containing an uppercase letter, a lowercase letter, a digit and a special character; confirm_password must equal password; username must not already belong to an existing account and email must not already belong to an existing account under case-insensitive comparison. When every check passes, it persists a new user_account holding exactly these validated values (a locally hashed password derived from the supplied password is stored in place of the plain password, and a locally generated account identifier is assigned) and creates a new persisted session for that account identifier; it then sets the generated session identifier as the session cookie value on the Set-Cookie response header and responds with the saved username so the header can display it and offer Sign out. If any validation check fails or the username or email is already taken, it responds with an error description and creates no account and no session. {on success the new account and session exist, the session cookie is set, and username is returned; on failure no user_account row and no session row are created and no cookie is set} {rows of other accounts and sessions are left unchanged; the agreed_to_terms value itself is not persisted; no clear-text password is stored or returned}",
+      "id": "API_000003",
+      "kind": "API",
+      "reqs": [
+        "REQ-2"
+      ],
+      "callers": [],
+      "callees": [
+        "FUNC_000005"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"username_taken\": {\"type\": \"boolean\"}, \"email_taken\": {\"type\": \"boolean\"}}, \"required\": [\"username_taken\", \"email_taken\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"description\": \"Candidate username taken from CheckAccountUniqueness.input.username.\"}, \"email\": {\"type\": \"string\", \"description\": \"Candidate email taken from CheckAccountUniqueness.input.email.\"}}, \"required\": [\"username\", \"email\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[\"user_account.username\",\"user_account.email\"]",
+      "callees": [],
+      "name": "FindAccountByUsernameOrEmail",
+      "callers": [
+        "FUNC_000003"
+      ],
+      "write": "[]",
+      "spec": "{username is supplied by CheckAccountUniqueness.input.username and email by CheckAccountUniqueness.input.email after every syntactic registration check has already passed; no other precondition} perform an existence lookup on the persisted user_account rows for a row whose username equals input.username under exact comparison, and an existence lookup for a row whose email equals input.email ignoring letter case {return username_taken=true when such a username row exists and false otherwise; return email_taken=true when such an email row exists under case-insensitive comparison and false otherwise; CheckAccountUniqueness maps these two flags directly to its own output.username_taken and output.email_taken so ValidateRegistration can reject duplicate usernames and duplicate emails before any write happens} {frame: read-only; no user_account or session row is created, modified or deleted, and no cookie or other persistent state is altered} {callees: none; both lookups are executed directly against the user_account data}",
+      "id": "DB_000003",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\"}}, \"required\": [\"session_id\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"session_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Session identifier generated locally by CreateTravelerAccount.\"}, \"account_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Identifier of the just-created user_account, taken from InsertUserAccount.output.account_id.\"}}, \"required\": [\"session_id\", \"account_id\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[]",
+      "callees": [],
+      "name": "InsertSession",
+      "callers": [
+        "FUNC_000005"
+      ],
+      "write": "[\"session\"]",
+      "spec": "{CreateTravelerAccount has already inserted the account, has locally generated input.session_id and passes as input.account_id the value it received from InsertUserAccount.output.account_id; no other precondition} insert exactly one new session row whose primary key is input.session_id and which is associated with the account identified by input.account_id, so that a later FindSessionAccountById lookup by this session identifier resolves to that account and its username {return session_id=input.session_id so CreateTravelerAccount can return the same value as output.session_id and API_000003 can set it as the session cookie value for the newly registered traveler} {if the insert fails, no session row is created and the failure is reported to CreateTravelerAccount, which rolls back the account insert of the same transaction} {frame: on success exactly one session row is created; on failure none is created; existing sessions of other accounts and all user_account rows other than the account created in this same transaction are left unchanged} {callees: none; the insertion is executed directly against the session data}",
+      "id": "DB_000005",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"account_id\": {\"type\": \"string\", \"format\": \"uuid\"}}, \"required\": [\"account_id\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"account_id\": {\"type\": \"string\", \"format\": \"uuid\", \"description\": \"Account identifier generated locally by CreateTravelerAccount.\"}, \"nationality\": {\"type\": \"string\"}, \"name\": {\"type\": \"string\"}, \"passport_number\": {\"type\": \"string\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"]}, \"username\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"password_hash\": {\"type\": \"string\", \"description\": \"Password hash computed locally by CreateTravelerAccount from input.password; the clear-text password is never supplied here.\"}}, \"required\": [\"account_id\", \"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"email\", \"password_hash\"], \"additionalProperties\": false}",
+      "shared": false,
+      "read": "[\"user_account.username\",\"user_account.email\"]",
+      "callees": [],
+      "name": "InsertUserAccount",
+      "callers": [
+        "FUNC_000005"
+      ],
+      "write": "[\"user_account\",\"user_account.username\",\"user_account.name\",\"user_account.passport_number\",\"user_account.passport_expiration_date\",\"user_account.date_of_birth\",\"user_account.gender\",\"user_account.nationality\",\"user_account.email\",\"user_account.password\"]",
+      "spec": "{the caller CreateTravelerAccount has already validated every value through ValidateRegistration and has locally generated input.account_id and computed input.password_hash from the supplied clear-text password; no other precondition} insert exactly one new user_account row whose primary key is input.account_id holding input.nationality, input.name, input.passport_number, input.passport_expiration_date, input.date_of_birth, input.gender, input.username, input.email and input.password_hash stored in the user_account.password field in place of the plain password; the agreement flag is not part of this input and is not persisted {return account_id=input.account_id so CreateTravelerAccount can pass the same identifier as the account linkage for the session it inserts next, keeping both writes in one transaction} {if the insert fails, no user_account row is created and the failure is reported to CreateTravelerAccount, which rolls back the transaction} {frame: on success exactly one user_account row is created; on failure none is created; rows of other accounts and all session rows are left unchanged; no session row is created here} {callees: none; the insertion is executed directly against the user_account data}",
+      "id": "DB_000004",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"username_taken\": {\"type\": \"boolean\"}, \"email_taken\": {\"type\": \"boolean\"}}, \"required\": [\"username_taken\", \"email_taken\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}}, \"required\": [\"username\", \"email\"], \"additionalProperties\": false}",
+      "shared": false,
+      "callees": [
+        "DB_000003"
+      ],
+      "name": "CheckAccountUniqueness",
+      "callers": [
+        "FUNC_000004"
+      ],
+      "spec": "{username and email are supplied by ValidateRegistration.input.username and ValidateRegistration.input.email after all syntactic registration checks have already passed; no other precondition} look up the persisted user_account data for an existing account whose username equals input.username under exact comparison and for an existing account whose email equals input.email under case-insensitive comparison {return username_taken=true when an account with the exact username exists and false otherwise; return email_taken=true when an account with the same email ignoring letter case exists and false otherwise, so ValidateRegistration can reject duplicate usernames and duplicate emails before any write happens} {frame: read-only; no user_account or session row is created, modified or deleted, and no cookie or other persistent state is altered} {callees: none; the lookups are executed directly against user_account data} {downstream data requirement for the storage pass: an existence lookup by user_account.username with exact comparison and an existence lookup by user_account.email with case-insensitive comparison}. ",
+      "id": "FUNC_000003",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"username\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}, \"session_id\": {\"anyOf\": [{\"type\": \"string\", \"format\": \"uuid\"}, {\"type\": \"null\"}]}, \"error\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}}, \"required\": [\"username\", \"session_id\", \"error\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\"}, \"name\": {\"type\": \"string\"}, \"passport_number\": {\"type\": \"string\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"]}, \"username\": {\"type\": \"string\"}, \"password\": {\"type\": \"string\"}, \"confirm_password\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"agreed_to_terms\": {\"type\": \"boolean\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "shared": false,
+      "callees": [
+        "FUNC_000004",
+        "DB_000004",
+        "DB_000005"
+      ],
+      "name": "CreateTravelerAccount",
+      "callers": [
+        "API_000003"
+      ],
+      "spec": "{API_000003 supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms for an unauthenticated visitor; the API has already received them from the registration form} pass all eleven supplied values unchanged to ValidateRegistration and inspect its result. {when ValidateRegistration returns valid=false, return username=null, session_id=null and error equal to ValidateRegistration.output.error, and create no account and no session} {when ValidateRegistration returns valid=true, locally compute a password hash from input.password using the application password-hashing routine, locally generate a new account identifier and a new session identifier, persist one new user_account row holding the generated account identifier, input.nationality, input.name, input.passport_number, input.passport_expiration_date, input.date_of_birth, input.gender, input.username, input.email and the computed password hash in place of the plain password, and persist one new session row with the generated session identifier associated with that new account so the session resolves to the account as required by ResolveActiveSession; perform both inserts in one transaction; return username=input.username, session_id=the generated session identifier and error=null so API_000003 can set the session cookie and respond with the saved username} {if persisting either row fails, roll back both inserts, return error=null username and null session_id with an error description, and leave no account and no session} {frame: on failure no user_account row and no session row are created; on success exactly one user_account row and one session row are created; rows of other accounts and sessions are left unchanged; agreed_to_terms itself is not persisted; no clear-text password is stored or returned} {callees: none besides validation for storage; the account and session inserts are executed directly against user_account and session data} {downstream data requirements for the storage pass: insert a user_account with all validated profile fields and a hashed password returning its generated identifier, and insert a session linked to that account returning its generated identifier, both participating in one transaction}. ",
+      "id": "FUNC_000005",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\": \"object\", \"properties\": {\"valid\": {\"type\": \"boolean\"}, \"error\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}]}}, \"required\": [\"valid\", \"error\"], \"additionalProperties\": false}",
+      "shared_reason": "",
+      "input": "{\"type\": \"object\", \"properties\": {\"nationality\": {\"type\": \"string\"}, \"name\": {\"type\": \"string\"}, \"passport_number\": {\"type\": \"string\"}, \"passport_expiration_date\": {\"type\": \"string\", \"format\": \"date\"}, \"date_of_birth\": {\"type\": \"string\", \"format\": \"date\"}, \"gender\": {\"type\": \"string\", \"enum\": [\"Male\", \"Female\"]}, \"username\": {\"type\": \"string\"}, \"password\": {\"type\": \"string\"}, \"confirm_password\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"agreed_to_terms\": {\"type\": \"boolean\"}}, \"required\": [\"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"password\", \"confirm_password\", \"email\", \"agreed_to_terms\"], \"additionalProperties\": false}",
+      "shared": false,
+      "callees": [
+        "FUNC_000003"
+      ],
+      "name": "ValidateRegistration",
+      "callers": [
+        "FUNC_000005"
+      ],
+      "spec": "{API_000003 supplies nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms; any unauthenticated visitor may register} validate the supplied values in this order before any write: input.agreed_to_terms must be true; input.name must contain between 2 and 100 non-whitespace characters; input.passport_number must consist of 6 to 30 characters each being an ASCII letter, digit or hyphen; input.date_of_birth must be earlier than the current date read from the clock; input.passport_expiration_date must be later than the current date read from the clock; input.gender must be Male or Female; input.username must consist of 3 to 32 characters each being an ASCII letter, digit, hyphen or underscore; input.email must be syntactically valid and at most 254 characters; input.password must be 12 to 128 characters and contain at least one uppercase letter, one lowercase letter, one digit and one special character; input.confirm_password must equal input.password. Only after every preceding syntactic check passes, call CheckAccountUniqueness with input.username and input.email and use its result: if username_taken is true, fail with a duplicate-username error; otherwise if email_taken is true, fail with a duplicate-email error. {on any failed check return valid=false and error describing the first failure, and perform no writes; when every check passes including uniqueness, return valid=true and error=null} {frame: read-only; no user_account or session row is created, modified or deleted, and no cookie or other persistent state is altered}. ",
+      "id": "FUNC_000004",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "id": "UI_000059",
+      "name": "BreadcrumbRegion",
+      "kind": "region",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The breadcrumb strip realizes the visible \"Current location: HOME > Create an account\" path specified for /register.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000061",
+      "name": "BreadcrumbHomeLink",
+      "kind": "navigation",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The breadcrumb \"HOME\" entry is a link with the exact visible text \"HOME\" and returns to /.",
+      "data": [],
+      "events": [
+        "EVENT_000006"
+      ]
+    },
+    {
+      "id": "UI_000063",
+      "name": "BreadcrumbCurrentPageText",
+      "kind": "text",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The breadcrumb's final entry is current-page text with the exact visible text \"Create an account\" rather than a link.",
+      "data": [],
+      "events": []
+    },
+    {
+      "handler": "HANDLER_000005",
+      "ui": "UI_000061",
+      "name": "GoHomeFromBreadcrumb",
+      "trigger": "click",
+      "id": "EVENT_000006",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "id": "UI_000115",
+      "name": "FooterPrivacyPolicyLink",
+      "kind": "navigation",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The footer \"Privacy Policy\" link is the shared footer policy entry and is semantically distinguished from the agreement-area Privacy Policy link.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000065",
+      "name": "RegistrationForm",
+      "kind": "form",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The registration form groups all required account fields and the consent block in the reference display order.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000068",
+      "name": "NationalitySelect",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Nationality\" is a combobox with the visible label \"Nationality\", initially displays \"Please select\", and supports choosing \"Vietnam\"; the scenario selects Vietnam.",
+      "data": [
+        "DATA_000002"
+      ],
+      "events": [
+        "EVENT_000007"
+      ]
+    },
+    {
+      "id": "UI_000069",
+      "name": "VietnamOption",
+      "kind": "item",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Vietnam\" is a selectable option with role=option inside the Nationality combobox.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000073",
+      "name": "NameInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Name\" is a textbox with the exact visible label \"Name\"; the scenario fills a valid 2–100 non-whitespace name.",
+      "data": [
+        "DATA_000003"
+      ],
+      "events": [
+        "EVENT_000008"
+      ]
+    },
+    {
+      "id": "UI_000074",
+      "name": "PassportRulesLink",
+      "kind": "navigation",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Check the rules for filling out passport information\" is a link with the exact visible and accessible name for passport guidance.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000077",
+      "name": "PassportNumberInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Passport number\" is a textbox with the exact visible label \"Passport number\"; the scenario fills a valid 6–30 character ASCII passport number.",
+      "data": [
+        "DATA_000004"
+      ],
+      "events": [
+        "EVENT_000009"
+      ]
+    },
+    {
+      "id": "UI_000080",
+      "name": "PassportExpirationDateInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Passport expiration date\" is a date-entry textbox with the exact visible label \"Passport expiration date\"; the scenario fills a date later than the current date.",
+      "data": [
+        "DATA_000005"
+      ],
+      "events": [
+        "EVENT_000010"
+      ]
+    },
+    {
+      "id": "UI_000081",
+      "name": "PassportExpirationCalendarButton",
+      "kind": "button",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The independently operable calendar button has no visible text and the accessible name \"Choose passport expiration date\", role=button.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000084",
+      "name": "DateOfBirthInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Date of birth\" is a date-entry textbox with the exact visible label \"Date of birth\"; the scenario fills a date earlier than the current date.",
+      "data": [
+        "DATA_000006"
+      ],
+      "events": [
+        "EVENT_000011"
+      ]
+    },
+    {
+      "id": "UI_000085",
+      "name": "DateOfBirthCalendarButton",
+      "kind": "button",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The independently operable calendar button has no visible text and the accessible name \"Choose date of birth\", role=button.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000088",
+      "name": "GenderRadioGroup",
+      "kind": "form",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Gender\" is a radiogroup with the visible group label \"Gender\" and contains the required Male and Female radio options.",
+      "data": [
+        "DATA_000007"
+      ],
+      "events": [
+        "EVENT_000012"
+      ]
+    },
+    {
+      "id": "UI_000089",
+      "name": "MaleRadio",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Male\" is a radio with the exact visible label and accessible name \"Male\"; the scenario selects it.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000090",
+      "name": "FemaleRadio",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Female\" is a radio with the exact visible label and accessible name \"Female\".",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000093",
+      "name": "UsernameInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Username\" is a textbox with the exact visible label \"Username\"; the scenario fills a unique 3–32 character username.",
+      "data": [
+        "DATA_000008"
+      ],
+      "events": [
+        "EVENT_000013"
+      ]
+    },
+    {
+      "id": "UI_000096",
+      "name": "PasswordInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Password\" is a hidden-content password field with the visible label and accessible name \"Password\" and no implicit ARIA role; the scenario fills a valid matching password.",
+      "data": [
+        "DATA_000009"
+      ],
+      "events": [
+        "EVENT_000014"
+      ]
+    },
+    {
+      "id": "UI_000099",
+      "name": "ConfirmPasswordInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Confirm Password\" is a hidden-content password field with the visible label and accessible name \"Confirm Password\" and no implicit ARIA role; it must match Password.",
+      "data": [
+        "DATA_000010"
+      ],
+      "events": [
+        "EVENT_000015"
+      ]
+    },
+    {
+      "id": "UI_000102",
+      "name": "EmailAddressInput",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Email address\" is a textbox with the exact visible label \"Email address\"; the scenario fills a valid unique email address.",
+      "data": [
+        "DATA_000011"
+      ],
+      "events": [
+        "EVENT_000016"
+      ]
+    },
+    {
+      "id": "UI_000105",
+      "name": "TermsConsentCheckbox",
+      "kind": "input",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The agreement control is a checkbox with the visible label and accessible name exactly \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\"; the scenario checks it.",
+      "data": [
+        "DATA_000012"
+      ],
+      "events": [
+        "EVENT_000017"
+      ]
+    },
+    {
+      "id": "UI_000107",
+      "name": "TermsOfServiceLink",
+      "kind": "navigation",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Terms of Service\" is an independently interactive link with the exact visible text inside the agreement area.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000108",
+      "name": "ConsentPrivacyPolicyLink",
+      "kind": "navigation",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Privacy Policy\" is an independently interactive link with the exact visible text inside the agreement area and is distinct from the footer Privacy Policy link.",
+      "data": [],
+      "events": []
+    },
+    {
+      "id": "UI_000109",
+      "name": "FormErrorMessage",
+      "kind": "text",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "Invalid or duplicate input displays an error in this message area and prevents creating an account or session.",
+      "data": [
+        "DATA_000013"
+      ],
+      "events": []
+    },
+    {
+      "id": "UI_000110",
+      "name": "NextStepButton",
+      "kind": "button",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "\"Next step\" is a button with the exact visible and accessible name; clicking it submits the valid registration to save the account, sign the visitor in and return to the home page.",
+      "data": [
+        "DATA_000014"
+      ],
+      "events": [
+        "EVENT_000018"
+      ]
+    },
+    {
+      "handler": "HANDLER_000006",
+      "ui": "UI_000068",
+      "name": "NationalitySelected",
+      "trigger": "change",
+      "id": "EVENT_000007",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000007",
+      "ui": "UI_000073",
+      "name": "NameEntered",
+      "trigger": "input",
+      "id": "EVENT_000008",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000008",
+      "ui": "UI_000077",
+      "name": "PassportNumberEntered",
+      "trigger": "input",
+      "id": "EVENT_000009",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000009",
+      "ui": "UI_000080",
+      "name": "PassportExpirationDateEntered",
+      "trigger": "change",
+      "id": "EVENT_000010",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000010",
+      "ui": "UI_000084",
+      "name": "DateOfBirthEntered",
+      "trigger": "change",
+      "id": "EVENT_000011",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000011",
+      "ui": "UI_000088",
+      "name": "GenderSelected",
+      "trigger": "change",
+      "id": "EVENT_000012",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000012",
+      "ui": "UI_000093",
+      "name": "UsernameEntered",
+      "trigger": "input",
+      "id": "EVENT_000013",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000013",
+      "ui": "UI_000096",
+      "name": "PasswordEntered",
+      "trigger": "input",
+      "id": "EVENT_000014",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000014",
+      "ui": "UI_000099",
+      "name": "ConfirmPasswordEntered",
+      "trigger": "input",
+      "id": "EVENT_000015",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000015",
+      "ui": "UI_000102",
+      "name": "EmailAddressEntered",
+      "trigger": "input",
+      "id": "EVENT_000016",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000016",
+      "ui": "UI_000105",
+      "name": "TermsAgreementToggled",
+      "trigger": "change",
+      "id": "EVENT_000017",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "handler": "HANDLER_000017",
+      "ui": "UI_000110",
+      "name": "NextStepClicked",
+      "trigger": "click",
+      "id": "EVENT_000018",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "id": "UI_000051",
+      "name": "RegisterLink",
+      "kind": "navigation",
+      "reqs": [
+        "REQ-2"
+      ],
+      "description": "The unauthenticated page header provides \"Register\" (role=link) with the exact visible name; the scenario starts by clicking it to open /register.",
+      "data": [],
+      "events": [
+        "EVENT_000005"
+      ]
+    },
+    {
+      "handler": "HANDLER_000003",
+      "ui": "UI_000051",
+      "name": "OpenRegistrationPage",
+      "trigger": "click",
+      "id": "EVENT_000005",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeConfirmPassword",
+      "write": [
+        "DATA_000010"
+      ],
+      "spec": "{the registration \"Confirm Password\" field is displayed empty with hidden input content} the visitor types the confirmation password {confirm_password equals the entered hidden text; no API calls and the match with password is evaluated on submission}",
+      "id": "HANDLER_000014",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeDateOfBirth",
+      "write": [
+        "DATA_000006"
+      ],
+      "spec": "{the registration \"Date of birth\" textbox is displayed empty} the visitor types or picks a date, either directly in the textbox or through the \"Choose date of birth\" calendar button {date_of_birth equals the entered date string; no API calls}",
+      "id": "HANDLER_000010",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeEmailAddress",
+      "write": [
+        "DATA_000011"
+      ],
+      "spec": "{the registration \"Email address\" textbox is displayed empty} the visitor types an email address {email equals the entered text; no API calls and format or uniqueness is only checked on submission}",
+      "id": "HANDLER_000015",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeGender",
+      "write": [
+        "DATA_000007"
+      ],
+      "spec": "{the \"Gender\" radiogroup is displayed with neither \"Male\" nor \"Female\" selected} the visitor selects \"Male\" or \"Female\" {gender equals the selected radio option's label (\"Male\" or \"Female\"); no API calls}",
+      "id": "HANDLER_000011",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeName",
+      "write": [
+        "DATA_000003"
+      ],
+      "spec": "{the registration \"Name\" textbox is displayed empty} the visitor types a name {name equals the entered text; no API calls}",
+      "id": "HANDLER_000007",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeNationality",
+      "write": [
+        "DATA_000002"
+      ],
+      "spec": "{the registration form is displayed with the \"Nationality\" combobox showing \"Please select\"} the visitor picks an option such as \"Vietnam\" {nationality equals the selected option value; no API calls and no validation error is produced at this point}",
+      "id": "HANDLER_000006",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangePassportExpirationDate",
+      "write": [
+        "DATA_000005"
+      ],
+      "spec": "{the registration \"Passport expiration date\" textbox is displayed empty} the visitor types or picks a date, either directly in the textbox or through the \"Choose passport expiration date\" calendar button {passport_expiration_date equals the entered date string; no API calls}",
+      "id": "HANDLER_000009",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangePassportNumber",
+      "write": [
+        "DATA_000004"
+      ],
+      "spec": "{the registration \"Passport number\" textbox is displayed empty} the visitor types a passport number {passport_number equals the entered text; no API calls}",
+      "id": "HANDLER_000008",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangePassword",
+      "write": [
+        "DATA_000009"
+      ],
+      "spec": "{the registration \"Password\" field is displayed empty with hidden input content} the visitor types a password {password equals the entered hidden text; no API calls}",
+      "id": "HANDLER_000013",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"boolean\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeTermsAgreement",
+      "write": [
+        "DATA_000012"
+      ],
+      "spec": "{the agreement checkbox labeled \"I have read and agree to abide by Terms of Service and Privacy Policy of 12306.cn.\" is displayed unchecked} the visitor checks or unchecks the checkbox {agreed_to_terms equals the checkbox checked state; no API calls}",
+      "id": "HANDLER_000016",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"string\"}},\"required\":[\"value\"],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "ChangeUsername",
+      "write": [
+        "DATA_000008"
+      ],
+      "spec": "{the registration \"Username\" textbox is displayed empty} the visitor types a username {username equals the entered text; no API calls and uniqueness is only checked on submission}",
+      "id": "HANDLER_000012",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "NavigateToHome",
+      "write": [],
+      "spec": "{the registration page breadcrumb shows \"Current location: HOME > Create an account\"} activating the \"HOME\" link navigates the visitor to / {the home page is opened; no session or account data is written and the current authentication state is unchanged}",
+      "id": "HANDLER_000005",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [],
+      "apis": [],
+      "name": "NavigateToRegister",
+      "write": [],
+      "spec": "{the header account area shows the guest state with the Register link} activating the Register link navigates the visitor to /register {the registration page is opened; no session or account data is written}",
+      "id": "HANDLER_000003",
+      "reqs": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    },
+    {
+      "output": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "input": "{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false}",
+      "read": [
+        "DATA_000002",
+        "DATA_000003",
+        "DATA_000004",
+        "DATA_000005",
+        "DATA_000006",
+        "DATA_000007",
+        "DATA_000008",
+        "DATA_000009",
+        "DATA_000010",
+        "DATA_000011",
+        "DATA_000012",
+        "DATA_000014"
+      ],
+      "apis": [
+        "API_000003"
+      ],
+      "name": "SubmitRegistration",
+      "write": [
+        "DATA_000013",
+        "DATA_000014"
+      ],
+      "spec": "{the visitor has entered the registration fields and clicks the \"Next step\" button while no submission is in flight} clears any previous error (registration_error_message = null), sets registration_submitting = true, and calls POST /api/register with the body built from the current form state: nationality, name, passport_number, passport_expiration_date, date_of_birth, gender, username, password, confirm_password, email and agreed_to_terms (true only when the consent checkbox is checked). All requirement validations (required fields, 2-100 non-whitespace characters for name, 6-30 ASCII letters/digits/hyphens for passport_number, date_of_birth earlier than today, passport_expiration_date later than today, 3-32 ASCII letters/digits/hyphens/underscores for username, valid email of at most 254 characters, 12-128 character password containing uppercase, lowercase, digit and special character, identical confirm_password, unique username and case-insensitively unique email) are enforced by the RegisterAccount API, so the handler does not bypass them. {on a response carrying an error} sets registration_submitting = false and sets registration_error_message to the returned error text, keeping the visitor on /register with the entered values and creating no account or session. {on a response carrying username} the API has already persisted the account and session and set the session cookie, so sets registration_submitting = false and navigates the visitor to / where the header load resolves the session and displays the saved username as text with the \"Sign out\" link} {a successful submission leaves registration_error_message null; a failed submission leaves the form data, account and session state otherwise unchanged}",
+      "id": "HANDLER_000017",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "nationality",
+      "spec": "Currently selected nationality value in the registration \"Nationality\" combobox; empty string until the visitor picks \"Vietnam\". Sent to RegisterAccount as nationality.",
+      "id": "DATA_000002",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "name",
+      "spec": "Current text of the registration \"Name\" textbox. Sent to RegisterAccount as name.",
+      "id": "DATA_000003",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "passport_number",
+      "spec": "Current text of the registration \"Passport number\" textbox. Sent to RegisterAccount as passport_number.",
+      "id": "DATA_000004",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "passport_expiration_date",
+      "spec": "Current value of the registration \"Passport expiration date\" date textbox, as an entered date string. Sent to RegisterAccount as passport_expiration_date.",
+      "id": "DATA_000005",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "date_of_birth",
+      "spec": "Current value of the registration \"Date of birth\" date textbox, as an entered date string. Sent to RegisterAccount as date_of_birth.",
+      "id": "DATA_000006",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "gender",
+      "spec": "Selected option of the registration \"Gender\" radiogroup: \"Male\", \"Female\", or empty string when nothing is selected. Sent to RegisterAccount as gender.",
+      "id": "DATA_000007",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "username",
+      "spec": "Current text of the registration \"Username\" textbox. Sent to RegisterAccount as username.",
+      "id": "DATA_000008",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "password",
+      "spec": "Current hidden text of the registration \"Password\" field. Sent to RegisterAccount as password.",
+      "id": "DATA_000009",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "confirm_password",
+      "spec": "Current hidden text of the registration \"Confirm Password\" field; must match password before submission. Sent to RegisterAccount as confirm_password.",
+      "id": "DATA_000010",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"string\"}",
+      "initial": "\"\"",
+      "name": "email",
+      "spec": "Current text of the registration \"Email address\" textbox. Sent to RegisterAccount as email.",
+      "id": "DATA_000011",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"boolean\"}",
+      "initial": "false",
+      "name": "agreed_to_terms",
+      "spec": "Whether the registration agreement checkbox is checked; must be true before submission. Sent to RegisterAccount as agreed_to_terms.",
+      "id": "DATA_000012",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]}",
+      "initial": "null",
+      "name": "registration_error_message",
+      "spec": "Error message describing invalid or duplicate registration input returned when submission fails; null when there is no error. Shown in the form error area and no account or session is created while it is set.",
+      "id": "DATA_000013",
+      "reqs": [
+        "REQ-2"
+      ]
+    },
+    {
+      "owner": "UI_000047",
+      "schema": "{\"type\":\"boolean\"}",
+      "initial": "false",
+      "name": "registration_submitting",
+      "spec": "True while the registration submission is in flight after \"Next step\" is clicked; used to reflect the submitting state of the button until the request resolves.",
+      "id": "DATA_000014",
+      "reqs": [
+        "REQ-2"
+      ]
+    }
+  ],
+  "types": []
+}
+```
+--- user ---
+## Always loaded requirement files
+
+```json
+{
+  "always_loaded_files": [
+    "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts",
+    "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts",
+    "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts",
+    "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts",
+    "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+    "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts",
+    "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx"
+  ]
+}
+```
+--- user ---
+## Working context and latest read results
+
+```json
+{
+  "context_state": {
+    "file_chars": 16646,
+    "file_budget_chars": 400000,
+    "budget_exceeded": false,
+    "pinned_files": [
+      "tests/e2e/req-2-381ffd4c.spec.ts",
+      "tests/integration/req-2-381ffd4c.test.ts",
+      "tests/unit/req-2-381ffd4c.test.ts"
+    ],
+    "automatically_released_files": []
+  }
+}
+```
+--- user ---
+## Editable files with current contents
+
+### editable_files
+
+```json
+{
+  "tests/e2e/req-2-381ffd4c.spec.ts": {
+    "content": "",
+    "exists": false,
+    "context_location": "editable_files"
+  },
+  "tests/integration/req-2-381ffd4c.test.ts": {
+    "content": "",
+    "exists": false,
+    "context_location": "editable_files"
+  },
+  "tests/unit/req-2-381ffd4c.test.ts": {
+    "content": "",
+    "exists": false,
+    "context_location": "editable_files"
+  }
+}
+```
+--- user ---
+## Read-only source and phase-protected tests
+
+```json
+{
+  "read_only_files": {
+    "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts": {
+      "content": "import { CreateTravelerAccount } from \"../services/CreateTravelerAccount.js\";\n\nexport type RegisterAccountInput = { \"nationality\": string; \"name\": string; \"passport_number\": string; \"passport_expiration_date\": string; \"date_of_birth\": string; \"gender\": (\"Male\" | \"Female\"); \"username\": string; \"password\": string; \"confirm_password\": string; \"email\": string; \"agreed_to_terms\": boolean; };\nexport type RegisterAccountOutput = { \"username\"?: string; \"session_id\"?: string; \"error\"?: string; };\n\nexport async function RegisterAccount(input: RegisterAccountInput): Promise<RegisterAccountOutput> {\n  const result = await CreateTravelerAccount(input);\n  if (result.error || !result.username || !result.session_id) {\n    return { error: result.error ?? \"Registration failed.\" };\n  }\n  return { username: result.username, session_id: result.session_id };\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts": {
+      "content": "import { getDatabase } from \"../../../db/client.js\";\n\nexport type FindAccountByUsernameOrEmailInput = { \"username\": string; \"email\": string; };\nexport type FindAccountByUsernameOrEmailOutput = { \"username_taken\": boolean; \"email_taken\": boolean; };\n\nexport async function FindAccountByUsernameOrEmail(input: FindAccountByUsernameOrEmailInput): Promise<FindAccountByUsernameOrEmailOutput> {\n  const database = getDatabase();\n  const usernameMatch = database\n    .prepare('SELECT 1 AS \"present\" FROM \"user_account\" WHERE \"username\" = ? LIMIT 1')\n    .get(input.username) as { present: number } | undefined;\n  const emailMatch = database\n    .prepare('SELECT 1 AS \"present\" FROM \"user_account\" WHERE \"email\" = ? COLLATE NOCASE LIMIT 1')\n    .get(input.email) as { present: number } | undefined;\n\n  return { username_taken: Boolean(usernameMatch), email_taken: Boolean(emailMatch) };\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts": {
+      "content": "import { getDatabase } from \"../../../db/client.js\";\n\nexport type InsertSessionInput = { \"session_id\": string; \"account_id\": string; };\nexport type InsertSessionOutput = { \"session_id\": string; };\n\nexport async function InsertSession(input: InsertSessionInput): Promise<InsertSessionOutput> {\n  getDatabase()\n    .prepare('INSERT INTO \"session\" (\"id\", \"user_account_id\") VALUES (?, ?)')\n    .run(input.session_id, input.account_id);\n  return { session_id: input.session_id };\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts": {
+      "content": "import { getDatabase } from \"../../../db/client.js\";\n\nexport type InsertUserAccountInput = { \"account_id\": string; \"nationality\": string; \"name\": string; \"passport_number\": string; \"passport_expiration_date\": string; \"date_of_birth\": string; \"gender\": (\"Male\" | \"Female\"); \"username\": string; \"email\": string; \"password_hash\": string; };\nexport type InsertUserAccountOutput = { \"account_id\": string; };\n\nexport async function InsertUserAccount(input: InsertUserAccountInput): Promise<InsertUserAccountOutput> {\n  getDatabase()\n    .prepare(\n      'INSERT INTO \"user_account\" (\"id\", \"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"email\", \"password\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'\n    )\n    .run(\n      input.account_id,\n      input.nationality,\n      input.name,\n      input.passport_number,\n      input.passport_expiration_date,\n      input.date_of_birth,\n      input.gender,\n      input.username,\n      input.email,\n      input.password_hash\n    );\n  return { account_id: input.account_id };\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts": {
+      "content": "import { FindAccountByUsernameOrEmail } from \"../repositories/FindAccountByUsernameOrEmail.js\";\n\nexport type CheckAccountUniquenessInput = { \"username\": string; \"email\": string; };\nexport type CheckAccountUniquenessOutput = { \"username_taken\": boolean; \"email_taken\": boolean; };\n\nexport async function CheckAccountUniqueness(input: CheckAccountUniquenessInput): Promise<CheckAccountUniquenessOutput> {\n  return FindAccountByUsernameOrEmail({ username: input.username, email: input.email });\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts": {
+      "content": "import { randomBytes, randomUUID, scryptSync } from \"node:crypto\";\nimport { getDatabase } from \"../../../db/client.js\";\nimport { ValidateRegistration } from \"./ValidateRegistration.js\";\n\nexport type CreateTravelerAccountInput = { \"nationality\": string; \"name\": string; \"passport_number\": string; \"passport_expiration_date\": string; \"date_of_birth\": string; \"gender\": (\"Male\" | \"Female\"); \"username\": string; \"password\": string; \"confirm_password\": string; \"email\": string; \"agreed_to_terms\": boolean; };\nexport type CreateTravelerAccountOutput = { \"username\": (string | null); \"session_id\": (string | null); \"error\": (string | null); };\n\nfunction hashPassword(plainPassword: string): string {\n  const salt = randomBytes(16).toString(\"hex\");\n  const derived = scryptSync(plainPassword, salt, 64).toString(\"hex\");\n  return `scrypt$${salt}$${derived}`;\n}\n\nexport async function CreateTravelerAccount(input: CreateTravelerAccountInput): Promise<CreateTravelerAccountOutput> {\n  const validation = await ValidateRegistration(input);\n  if (!validation.valid) {\n    return { username: null, session_id: null, error: validation.error ?? \"Registration failed.\" };\n  }\n\n  const accountId = randomUUID();\n  const sessionId = randomUUID();\n  const passwordHash = hashPassword(input.password);\n\n  try {\n    const database = getDatabase();\n    const persist = database.transaction(() => {\n      database\n        .prepare(\n          'INSERT INTO \"user_account\" (\"id\", \"nationality\", \"name\", \"passport_number\", \"passport_expiration_date\", \"date_of_birth\", \"gender\", \"username\", \"email\", \"password\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'\n        )\n        .run(\n          accountId,\n          input.nationality,\n          input.name,\n          input.passport_number,\n          input.passport_expiration_date,\n          input.date_of_birth,\n          input.gender,\n          input.username,\n          input.email,\n          passwordHash\n        );\n      database\n        .prepare('INSERT INTO \"session\" (\"id\", \"user_account_id\") VALUES (?, ?)')\n        .run(sessionId, accountId);\n    });\n    persist();\n  } catch (error) {\n    const message = error instanceof Error ? error.message : \"Registration failed.\";\n    return { username: null, session_id: null, error: message };\n  }\n\n  return { username: input.username, session_id: sessionId, error: null };\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts": {
+      "content": "import { CheckAccountUniqueness } from \"./CheckAccountUniqueness.js\";\n\nexport type ValidateRegistrationInput = { \"nationality\": string; \"name\": string; \"passport_number\": string; \"passport_expiration_date\": string; \"date_of_birth\": string; \"gender\": (\"Male\" | \"Female\"); \"username\": string; \"password\": string; \"confirm_password\": string; \"email\": string; \"agreed_to_terms\": boolean; };\nexport type ValidateRegistrationOutput = { \"valid\": boolean; \"error\": (string | null); };\n\nfunction fail(error: string): ValidateRegistrationOutput {\n  return { valid: false, error };\n}\n\nfunction todayDateOnly(): string {\n  return new Date().toISOString().slice(0, 10);\n}\n\nfunction dateOnly(value: string): string | null {\n  if (typeof value !== \"string\") return null;\n  const match = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(value);\n  if (!match) return null;\n  const parsed = new Date(value);\n  if (Number.isNaN(parsed.getTime())) return null;\n  return `${match[1]}-${match[2]}-${match[3]}`;\n}\n\nfunction isValidEmail(value: string): boolean {\n  if (typeof value !== \"string\") return false;\n  if (value.length === 0 || value.length > 254) return false;\n  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);\n}\n\nfunction isStrongPassword(value: string): boolean {\n  if (typeof value !== \"string\") return false;\n  if (value.length < 12 || value.length > 128) return false;\n  if (!/[A-Z]/.test(value)) return false;\n  if (!/[a-z]/.test(value)) return false;\n  if (!/[0-9]/.test(value)) return false;\n  if (!/[^A-Za-z0-9]/.test(value)) return false;\n  return true;\n}\n\nexport async function ValidateRegistration(input: ValidateRegistrationInput): Promise<ValidateRegistrationOutput> {\n  if (input.agreed_to_terms !== true) {\n    return fail(\"You must agree to the Terms of Service and Privacy Policy.\");\n  }\n\n  const nameNonWhitespace = (input.name ?? \"\").replace(/\\s/g, \"\").length;\n  if (nameNonWhitespace < 2 || nameNonWhitespace > 100) {\n    return fail(\"Name must contain between 2 and 100 non-whitespace characters.\");\n  }\n\n  if (!/^[A-Za-z0-9-]{6,30}$/.test(input.passport_number ?? \"\")) {\n    return fail(\"Passport number must be 6-30 letters, digits or hyphens.\");\n  }\n\n  const today = todayDateOnly();\n  const dateOfBirth = dateOnly(input.date_of_birth);\n  if (!dateOfBirth || dateOfBirth >= today) {\n    return fail(\"Date of birth must be earlier than today.\");\n  }\n\n  const expiration = dateOnly(input.passport_expiration_date);\n  if (!expiration || expiration <= today) {\n    return fail(\"Passport expiration date must be later than today.\");\n  }\n\n  if (input.gender !== \"Male\" && input.gender !== \"Female\") {\n    return fail(\"Gender must be Male or Female.\");\n  }\n\n  if (!/^[A-Za-z0-9_-]{3,32}$/.test(input.username ?? \"\")) {\n    return fail(\"Username must be 3-32 letters, digits, hyphens or underscores.\");\n  }\n\n  if (!isValidEmail(input.email)) {\n    return fail(\"Email must be a valid address of at most 254 characters.\");\n  }\n\n  if (!isStrongPassword(input.password)) {\n    return fail(\"Password must be 12-128 characters including an uppercase letter, a lowercase letter, a digit and a special character.\");\n  }\n\n  if (input.password !== input.confirm_password) {\n    return fail(\"Passwords must match.\");\n  }\n\n  const uniqueness = await CheckAccountUniqueness({ username: input.username, email: input.email });\n  if (uniqueness.username_taken) {\n    return fail(\"That username is already taken.\");\n  }\n  if (uniqueness.email_taken) {\n    return fail(\"That email is already registered.\");\n  }\n\n  return { valid: true, error: null };\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx": {
+      "content": "export type BreadcrumbRegionState = {  };\nexport type BreadcrumbRegionProps = {};\nexport function BreadcrumbRegion(_props: BreadcrumbRegionProps) {\n  return <section data-ui-id=\"UI_000059\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx": {
+      "content": "export type RegistrationFooterState = {  };\nexport type RegistrationFooterProps = {};\nexport function RegistrationFooter(_props: RegistrationFooterProps) {\n  return <section data-ui-id=\"UI_000111\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx": {
+      "content": "export type RegistrationFormState = {  };\nexport type RegistrationFormProps = {};\nexport function RegistrationForm(_props: RegistrationFormProps) {\n  return <section data-ui-id=\"UI_000065\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx": {
+      "content": "export type RegistrationHeaderState = {  };\nexport type RegistrationHeaderProps = {};\nexport function RegistrationHeader(_props: RegistrationHeaderProps) {\n  return <section data-ui-id=\"UI_000048\">\n\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts": {
+      "content": "export type ChangeConfirmPasswordInput = { \"value\": string; };\nexport type ChangeConfirmPasswordOutput = {  };\nexport async function ChangeConfirmPassword(_input: ChangeConfirmPasswordInput): Promise<ChangeConfirmPasswordOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts": {
+      "content": "export type ChangeDateOfBirthInput = { \"value\": string; };\nexport type ChangeDateOfBirthOutput = {  };\nexport async function ChangeDateOfBirth(_input: ChangeDateOfBirthInput): Promise<ChangeDateOfBirthOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts": {
+      "content": "export type ChangeEmailAddressInput = { \"value\": string; };\nexport type ChangeEmailAddressOutput = {  };\nexport async function ChangeEmailAddress(_input: ChangeEmailAddressInput): Promise<ChangeEmailAddressOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts": {
+      "content": "export type ChangeGenderInput = { \"value\": string; };\nexport type ChangeGenderOutput = {  };\nexport async function ChangeGender(_input: ChangeGenderInput): Promise<ChangeGenderOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts": {
+      "content": "export type ChangeNameInput = { \"value\": string; };\nexport type ChangeNameOutput = {  };\nexport async function ChangeName(_input: ChangeNameInput): Promise<ChangeNameOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts": {
+      "content": "export type ChangeNationalityInput = { \"value\": string; };\nexport type ChangeNationalityOutput = {  };\nexport async function ChangeNationality(_input: ChangeNationalityInput): Promise<ChangeNationalityOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts": {
+      "content": "export type ChangePassportExpirationDateInput = { \"value\": string; };\nexport type ChangePassportExpirationDateOutput = {  };\nexport async function ChangePassportExpirationDate(_input: ChangePassportExpirationDateInput): Promise<ChangePassportExpirationDateOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts": {
+      "content": "export type ChangePassportNumberInput = { \"value\": string; };\nexport type ChangePassportNumberOutput = {  };\nexport async function ChangePassportNumber(_input: ChangePassportNumberInput): Promise<ChangePassportNumberOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts": {
+      "content": "export type ChangePasswordInput = { \"value\": string; };\nexport type ChangePasswordOutput = {  };\nexport async function ChangePassword(_input: ChangePasswordInput): Promise<ChangePasswordOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts": {
+      "content": "export type ChangeTermsAgreementInput = { \"value\": boolean; };\nexport type ChangeTermsAgreementOutput = {  };\nexport async function ChangeTermsAgreement(_input: ChangeTermsAgreementInput): Promise<ChangeTermsAgreementOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts": {
+      "content": "export type ChangeUsernameInput = { \"value\": string; };\nexport type ChangeUsernameOutput = {  };\nexport async function ChangeUsername(_input: ChangeUsernameInput): Promise<ChangeUsernameOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts": {
+      "content": "export type NavigateToHomeInput = {  };\nexport type NavigateToHomeOutput = {  };\n\nexport async function NavigateToHome(_input: NavigateToHomeInput): Promise<NavigateToHomeOutput> {\n  window.location.assign(\"/\");\n  return {};\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts": {
+      "content": "export type NavigateToRegisterInput = {  };\nexport type NavigateToRegisterOutput = {  };\n\nexport async function NavigateToRegister(_input: NavigateToRegisterInput): Promise<NavigateToRegisterOutput> {\n  window.location.assign(\"/register\");\n  return {};\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts": {
+      "content": "export type SubmitRegistrationInput = {  };\nexport type SubmitRegistrationOutput = {  };\nexport async function SubmitRegistration(_input: SubmitRegistrationInput): Promise<SubmitRegistrationOutput> {\n  throw new Error(\"Not implemented\");\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    },
+    "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx": {
+      "content": "import { RegistrationHeader } from \"../components/RegistrationHeader\";\nimport { RegistrationPrimaryNavigation } from \"../components/RegistrationPrimaryNavigation\";\nimport { BreadcrumbRegion } from \"../components/BreadcrumbRegion\";\nimport { RegistrationCard } from \"../components/RegistrationCard\";\nimport { RegistrationFooter } from \"../components/RegistrationFooter\";\nexport type RegistrationState = { \"nationality\": string; \"name\": string; \"passport_number\": string; \"passport_expiration_date\": string; \"date_of_birth\": string; \"gender\": string; \"username\": string; \"password\": string; \"confirm_password\": string; \"email\": string; \"agreed_to_terms\": boolean; \"registration_error_message\": (string | null); \"registration_submitting\": boolean; };\nexport type RegistrationProps = {};\nexport function Registration(_props: RegistrationProps) {\n  return <section data-ui-id=\"UI_000047\">\n    <RegistrationHeader />\n    <RegistrationPrimaryNavigation />\n    <BreadcrumbRegion />\n    <RegistrationCard />\n    <RegistrationFooter />\n  </section>;\n}\n",
+      "exists": true,
+      "context_location": "read_only_files"
+    }
+  }
+}
+```
+--- user ---
+## All shared module summaries
+
+```json
+{
+  "shared_catalog": [
+    {
+      "file_path": "frontend/src/App.tsx",
+      "symbol_ids": [
+        "SYSTEM.APP",
+        "UI_APP"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Application: Application root.",
+        "React app/page composition"
+      ],
+      "symbol_count": 2
+    },
+    {
+      "file_path": "backend/src/db/client.ts",
+      "symbol_ids": [
+        "SYSTEM.DB_CLIENT"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Database connection",
+        "Database connection and repository binding"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/db/initialize.ts",
+      "symbol_ids": [
+        "SYSTEM.DB_SCHEMA",
+        "TABLE.session",
+        "TABLE.user_account"
+      ],
+      "reqs": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Database table initialization",
+        "Table creation statements and initializeDatabase",
+        "session",
+        "user_account"
+      ],
+      "symbol_count": 3
+    },
+    {
+      "file_path": "backend/src/db/seed.ts",
+      "symbol_ids": [
+        "SYSTEM.SEED"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Startup reset and cumulative seed",
+        "Single cumulative startup reset and fixture insertion module"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/app.ts",
+      "symbol_ids": [
+        "SYSTEM.SERVER_ROUTES"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Express app and route registration"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/server.ts",
+      "symbol_ids": [
+        "SYSTEM.SERVER_START"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Startup reset/seed and HTTP server lifecycle"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/config/server.ts",
+      "symbol_ids": [
+        "SYSTEM.SERVER_CONFIG"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Configured default port and PORT environment override"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/types/contracts.ts",
+      "symbol_ids": [
+        "SYSTEM.BACKEND_TYPES"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Backend exported DTO types"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/main.tsx",
+      "symbol_ids": [
+        "SYSTEM.FRONTEND_ENTRY"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "React mount entrypoint"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/types/contracts.ts",
+      "symbol_ids": [
+        "SYSTEM.FRONTEND_TYPES"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Frontend exported DTO types"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/index.css",
+      "symbol_ids": [
+        "SYSTEM.STYLES"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "source",
+      "summaries": [
+        "Shared application styles"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "tests/tdd/setup.ts",
+      "symbol_ids": [
+        "SYSTEM.TEST.setup.ts"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "configuration",
+      "summaries": [
+        "setup.ts: fixed TDD runner support"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "tests/tdd/vitest.config.ts",
+      "symbol_ids": [
+        "SYSTEM.TEST.vitest.config.ts"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "configuration",
+      "summaries": [
+        "vitest.config.ts: fixed TDD runner support"
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "tests/tdd/playwright.config.ts",
+      "symbol_ids": [
+        "SYSTEM.TEST.playwright.config.ts"
+      ],
+      "reqs": [],
+      "shared": true,
+      "kind": "configuration",
+      "summaries": [
+        "playwright.config.ts: fixed TDD runner support"
+      ],
+      "symbol_count": 1
+    }
+  ]
+}
+```
+--- user ---
+## Related module discovery
+
+```json
+{
+  "related_catalog": [
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts",
+      "symbol_ids": [
+        "API_000001"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{no authentication precondition; session_id may be absent, unknown or expired} reads the session identifier supplied via the Cookie header and passes it to the session/account lookup {when the session exists and resolves to a user_account, responds authenticated=true with that account's username so the page header can display the saved username and offer Sign out; when session_id is absent, unk..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts",
+      "symbol_ids": [
+        "API_000002"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{invoked by an authenticated visitor clicking Sign out; session_id is read from the Cookie request header and may be absent or already unknown} deletes the persisted session identified by session_id and clears the session cookie carrier on the response by setting that cookie to an empty value with an expiry in the past, so the visitor returns to the unauthenticated state where the header again ..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts",
+      "symbol_ids": [
+        "DB_000002"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{session_id is supplied by RevokeSession.input.session_id after that module has already established that the value is present and not null; the row may or may not exist} delete the persisted session row whose primary key equals input.session_id {returns an empty result and succeeds whether the row was removed or no row matched input.session_id, so RevokeSession always completes successfully and..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts",
+      "symbol_ids": [
+        "DB_000001"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{session_id is supplied by ResolveActiveSession.input.session_id after that module has already established that the value is present and not null; no other precondition} look up the persisted session row whose primary key equals input.session_id and, when such a row exists, resolve the owning user_account and read that account's stored username {when a session row matches input.session_id, retu..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts",
+      "symbol_ids": [
+        "FUNC_000001"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{no authentication precondition; input.session_id may be absent, null, unknown or expired} if input.session_id is absent or null, return authenticated=false and username=null without performing any lookup; otherwise read the persisted session row identified by input.session_id together with the user_account it belongs to, obtaining that account's stored username and the session's validity {when..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts",
+      "symbol_ids": [
+        "FUNC_000002"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "{invoked for a visitor clicking Sign out; input.session_id may be absent, null, unknown or already revoked} if input.session_id is present and not null, delete the persisted session row identified by input.session_id; if it is absent, null or matches no row, perform no deletion and continue {always succeeds and returns an empty result, carrying no data; SignOut then clears the session cookie on..."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "symbol_ids": [
+        "UI_000024",
+        "UI_000025",
+        "UI_000026",
+        "UI_000027"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "BannerIndicators: Row of three carousel indicator dot buttons; the first is filled/active and the other two are dimmed. The controls are icon-only.",
+        "Banner1Button: Carousel indicator button with no visible text and accessible name Show banner 1.",
+        "Banner2Button: Carousel indicator button with no visible text and accessible name Show banner 2.",
+        "Banner3Button: Carousel indicator button with no visible text and accessible name Show banner 3."
+      ],
+      "symbol_count": 4
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "symbol_ids": [
+        "UI_000042",
+        "UI_000043",
+        "UI_000044",
+        "UI_000045",
+        "UI_000046"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "Footer: Pale gray full-width footer band with three centered lines: copyright, registration and policy text.",
+        "FooterCopyrightText: Centered copyright line: COPYRIGHT©2008-2025 CHINA ACADEMY OF RAILWAY SCIENCES CORPORATION LIMITED, ALL RIGHTS RESERVED.",
+        "FooterRegistrationText: Centered registration line: 京公网安备 11010802038392号 | 京ICP备05020493号-4 | ICP证：京B2-20202537.",
+        "PrivacyPolicyLink: Ancestor constraint: footer provides Privacy Policy link with matching visible text and accessible name."
+      ],
+      "symbol_count": 5
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+      "symbol_ids": [
+        "UI_000002"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "Header: Home page header containing the account entries and navigation that the visitor views on the public home page."
+      ],
+      "symbol_count": 1
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "symbol_ids": [
+        "EVENT_000002",
+        "EVENT_000003",
+        "EVENT_000004",
+        "UI_000011",
+        "UI_000012",
+        "UI_000013",
+        "UI_000014",
+        "UI_000015",
+        "UI_000016",
+        "UI_000017"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "HeaderAccountArea: Account entry area at the right of the header. It takes exactly one of two states: guest (Register and Login links) or signed in (saved username text plus Sign out link).",
+        "GuestAccountLinks: Unauthenticated visitor viewing the home header account area: Register and Login links are shown; the signed-in username and Sign out are hidden.",
+        "RegisterLink: User registration entry: Register link, role=link, with exact visible text and accessible name Register, opening /register.",
+        "LoginLink: User login entry: Login link, role=link, with exact visible text and accessible name Login, opening /login."
+      ],
+      "symbol_count": 10
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "symbol_ids": [
+        "UI_000038",
+        "UI_000039",
+        "UI_000040",
+        "UI_000041"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "QuickGuideLinkList: Quick Guide link with exact visible text and accessible name What services does 12306.cn English website provide?, matching the second FAQ item.",
+        "QuickGuideFaqItem: Representative FAQ link row: blue square bullet followed by a dark gray link. Used repeatedly for the four Quick Guide link texts.",
+        "QuickGuideFaqLink: Quick Guide link with exact visible text and accessible name What ID documents are accepted by 12306.cn English website?.",
+        "MoreLink: Quick Guide link with exact visible text and accessible name More>."
+      ],
+      "symbol_count": 4
+    },
+    {
+      "file_path": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "symbol_ids": [
+        "UI_000028",
+        "UI_000029",
+        "UI_000030",
+        "UI_000031",
+        "UI_000032",
+        "UI_000033",
+        "UI_000034",
+        "UI_000035"
+      ],
+      "reqs": [
+        "REQ-1"
+      ],
+      "shared": false,
+      "kind": "source",
+      "summaries": [
+        "SearchPanel: White rounded search card overlapping the banner's lower edge: information notice across the top, then a horizontal From/To/Date/Search row, with the High-speed trains only checkbox below the fields at the left.",
+        "SearchNotice: Small gray notice with information icon: The 12306.cn website provides information query and ticket refund services 24 hours a day, and the ticket sales and endorsement services from 5:00 to 1:00 the next day (5:00 to 23:30 on Tuesday).",
+        "FromInput: Editable From textbox with visible label and accessible name From holding the station value Beijing(北京).",
+        "SwapStationsButton: Swap stations icon-only button with accessible name Swap stations and no visible text, between From and To."
+      ],
+      "symbol_count": 8
+    }
+  ]
+}
+```
+--- user ---
+## Discoverable file index
+
+```json
+{
+  "file_index": [
+    {
+      "file": "backend/package.json",
+      "symbols": [
+        "CONFIG.package.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "backend/src/app.ts",
+      "symbols": [
+        "SYSTEM.SERVER_ROUTES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/config/server.ts",
+      "symbols": [
+        "SYSTEM.SERVER_CONFIG"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/db/client.ts",
+      "symbols": [
+        "SYSTEM.DB_CLIENT"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/db/initialize.ts",
+      "symbols": [
+        "SYSTEM.DB_SCHEMA",
+        "TABLE.session",
+        "TABLE.user_account"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/db/seed.ts",
+      "symbols": [
+        "SYSTEM.SEED"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts",
+      "symbols": [
+        "API_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts",
+      "symbols": [
+        "API_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts",
+      "symbols": [
+        "API_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts",
+      "symbols": [
+        "DB_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts",
+      "symbols": [
+        "DB_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts",
+      "symbols": [
+        "DB_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts",
+      "symbols": [
+        "DB_000005"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts",
+      "symbols": [
+        "DB_000004"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts",
+      "symbols": [
+        "FUNC_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts",
+      "symbols": [
+        "FUNC_000005"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts",
+      "symbols": [
+        "FUNC_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts",
+      "symbols": [
+        "FUNC_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts",
+      "symbols": [
+        "FUNC_000004"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/server.ts",
+      "symbols": [
+        "SYSTEM.SERVER_START"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/src/types/contracts.ts",
+      "symbols": [
+        "SYSTEM.BACKEND_TYPES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "backend/tsconfig.json",
+      "symbols": [
+        "CONFIG.tsconfig.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/package.json",
+      "symbols": [
+        "CONFIG.package.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/src/App.tsx",
+      "symbols": [
+        "SYSTEM.APP",
+        "UI_APP"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BannerIndicators.tsx",
+      "symbols": [
+        "UI_000024",
+        "UI_000025",
+        "UI_000026",
+        "UI_000027"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BrandBlock.tsx",
+      "symbols": [
+        "UI_000003",
+        "UI_000004",
+        "UI_000005",
+        "UI_000006"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/BreadcrumbRegion.tsx",
+      "symbols": [
+        "EVENT_000006",
+        "UI_000059",
+        "UI_000060",
+        "UI_000061",
+        "UI_000062",
+        "UI_000063"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/Footer.tsx",
+      "symbols": [
+        "UI_000042",
+        "UI_000043",
+        "UI_000044",
+        "UI_000045",
+        "UI_000046"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/Header.tsx",
+      "symbols": [
+        "UI_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeaderAccountArea.tsx",
+      "symbols": [
+        "EVENT_000002",
+        "EVENT_000003",
+        "EVENT_000004",
+        "UI_000011",
+        "UI_000012",
+        "UI_000013",
+        "UI_000014",
+        "UI_000015",
+        "UI_000016",
+        "UI_000017"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeaderUtilityNav.tsx",
+      "symbols": [
+        "UI_000007",
+        "UI_000008",
+        "UI_000009",
+        "UI_000010"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/HeroBanner.tsx",
+      "symbols": [
+        "UI_000022",
+        "UI_000023"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/PrimaryNavigation.tsx",
+      "symbols": [
+        "UI_000018",
+        "UI_000019",
+        "UI_000020",
+        "UI_000021"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideLinkList.tsx",
+      "symbols": [
+        "UI_000038",
+        "UI_000039",
+        "UI_000040",
+        "UI_000041"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/QuickGuideSection.tsx",
+      "symbols": [
+        "UI_000036",
+        "UI_000037"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationCard.tsx",
+      "symbols": [
+        "UI_000064"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationFooter.tsx",
+      "symbols": [
+        "UI_000111",
+        "UI_000112",
+        "UI_000113",
+        "UI_000114",
+        "UI_000115",
+        "UI_000116"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationForm.tsx",
+      "symbols": [
+        "EVENT_000007",
+        "EVENT_000008",
+        "EVENT_000009",
+        "EVENT_000010",
+        "EVENT_000011",
+        "EVENT_000012",
+        "EVENT_000013",
+        "EVENT_000014",
+        "EVENT_000015",
+        "EVENT_000016",
+        "EVENT_000017",
+        "EVENT_000018",
+        "UI_000065",
+        "UI_000066",
+        "UI_000067",
+        "UI_000068",
+        "UI_000069",
+        "UI_000070",
+        "UI_000071",
+        "UI_000072",
+        "UI_000073",
+        "UI_000074",
+        "UI_000075",
+        "UI_000076",
+        "UI_000077",
+        "UI_000078",
+        "UI_000079",
+        "UI_000080",
+        "UI_000081",
+        "UI_000082",
+        "UI_000083",
+        "UI_000084",
+        "UI_000085",
+        "UI_000086",
+        "UI_000087",
+        "UI_000088",
+        "UI_000089",
+        "UI_000090",
+        "UI_000091",
+        "UI_000092",
+        "UI_000093",
+        "UI_000094",
+        "UI_000095",
+        "UI_000096",
+        "UI_000097",
+        "UI_000098",
+        "UI_000099",
+        "UI_000100",
+        "UI_000101",
+        "UI_000102",
+        "UI_000103",
+        "UI_000104",
+        "UI_000105",
+        "UI_000106",
+        "UI_000107",
+        "UI_000108",
+        "UI_000109",
+        "UI_000110"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationHeader.tsx",
+      "symbols": [
+        "EVENT_000005",
+        "UI_000048",
+        "UI_000049",
+        "UI_000050",
+        "UI_000051",
+        "UI_000052",
+        "UI_000053",
+        "UI_000054"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/RegistrationPrimaryNavigation.tsx",
+      "symbols": [
+        "UI_000055",
+        "UI_000056",
+        "UI_000057",
+        "UI_000058"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/components/SearchPanel.tsx",
+      "symbols": [
+        "UI_000028",
+        "UI_000029",
+        "UI_000030",
+        "UI_000031",
+        "UI_000032",
+        "UI_000033",
+        "UI_000034",
+        "UI_000035"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeConfirmPassword.ts",
+      "symbols": [
+        "EVENT_000015",
+        "HANDLER_000014"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeDateOfBirth.ts",
+      "symbols": [
+        "EVENT_000011",
+        "HANDLER_000010"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeEmailAddress.ts",
+      "symbols": [
+        "EVENT_000016",
+        "HANDLER_000015"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeGender.ts",
+      "symbols": [
+        "EVENT_000012",
+        "HANDLER_000011"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeName.ts",
+      "symbols": [
+        "EVENT_000008",
+        "HANDLER_000007"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeNationality.ts",
+      "symbols": [
+        "EVENT_000007",
+        "HANDLER_000006"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportExpirationDate.ts",
+      "symbols": [
+        "EVENT_000010",
+        "HANDLER_000009"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassportNumber.ts",
+      "symbols": [
+        "EVENT_000009",
+        "HANDLER_000008"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangePassword.ts",
+      "symbols": [
+        "EVENT_000014",
+        "HANDLER_000013"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeTermsAgreement.ts",
+      "symbols": [
+        "EVENT_000017",
+        "HANDLER_000016"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/ChangeUsername.ts",
+      "symbols": [
+        "EVENT_000013",
+        "HANDLER_000012"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/LoadSessionState.ts",
+      "symbols": [
+        "EVENT_000001",
+        "HANDLER_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToHome.ts",
+      "symbols": [
+        "EVENT_000006",
+        "HANDLER_000005"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToLogin.ts",
+      "symbols": [
+        "EVENT_000004",
+        "HANDLER_000004"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/NavigateToRegister.ts",
+      "symbols": [
+        "EVENT_000003",
+        "EVENT_000005",
+        "HANDLER_000003"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/SignOutAccount.ts",
+      "symbols": [
+        "EVENT_000002",
+        "HANDLER_000002"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/handlers/SubmitRegistration.ts",
+      "symbols": [
+        "EVENT_000018",
+        "HANDLER_000017"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/pages/Home.tsx",
+      "symbols": [
+        "DATA_000001",
+        "EVENT_000001",
+        "UI_000001"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/features/train-ticket-booking-demo/pages/Registration.tsx",
+      "symbols": [
+        "DATA_000002",
+        "DATA_000003",
+        "DATA_000004",
+        "DATA_000005",
+        "DATA_000006",
+        "DATA_000007",
+        "DATA_000008",
+        "DATA_000009",
+        "DATA_000010",
+        "DATA_000011",
+        "DATA_000012",
+        "DATA_000013",
+        "DATA_000014",
+        "UI_000047"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/index.css",
+      "symbols": [
+        "SYSTEM.STYLES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/main.tsx",
+      "symbols": [
+        "SYSTEM.FRONTEND_ENTRY"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/src/types/contracts.ts",
+      "symbols": [
+        "SYSTEM.FRONTEND_TYPES"
+      ],
+      "kind": "source"
+    },
+    {
+      "file": "frontend/tsconfig.app.json",
+      "symbols": [
+        "CONFIG.tsconfig.app.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/tsconfig.json",
+      "symbols": [
+        "CONFIG.tsconfig.json"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "frontend/vite.config.ts",
+      "symbols": [
+        "CONFIG.vite.config.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "package.json",
+      "symbols": [
+        "CONFIG.WORKSPACE"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/e2e/req-1-6aa2db3c.spec.ts",
+      "symbols": [
+        "TEST.tests/e2e/req-1-6aa2db3c.spec.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/e2e/req-2-381ffd4c.spec.ts",
+      "symbols": [
+        "TEST.tests/e2e/req-2-381ffd4c.spec.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/integration/req-1-6aa2db3c.test.ts",
+      "symbols": [
+        "TEST.tests/integration/req-1-6aa2db3c.test.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/integration/req-2-381ffd4c.test.ts",
+      "symbols": [
+        "TEST.tests/integration/req-2-381ffd4c.test.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/tdd/playwright.config.ts",
+      "symbols": [
+        "SYSTEM.TEST.playwright.config.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/tdd/setup.ts",
+      "symbols": [
+        "SYSTEM.TEST.setup.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/tdd/vitest.config.ts",
+      "symbols": [
+        "SYSTEM.TEST.vitest.config.ts"
+      ],
+      "kind": "configuration"
+    },
+    {
+      "file": "tests/unit/req-1-6aa2db3c.test.ts",
+      "symbols": [
+        "TEST.tests/unit/req-1-6aa2db3c.test.ts"
+      ],
+      "kind": "acceptance_test"
+    },
+    {
+      "file": "tests/unit/req-2-381ffd4c.test.ts",
+      "symbols": [
+        "TEST.tests/unit/req-2-381ffd4c.test.ts"
+      ],
+      "kind": "acceptance_test"
+    }
+  ]
+}
+```
+--- user ---
+## Acceptance test targets
+
+```json
+{
+  "test_targets": [
+    "tests/unit/req-2-381ffd4c.test.ts",
+    "tests/integration/req-2-381ffd4c.test.ts",
+    "tests/e2e/req-2-381ffd4c.spec.ts"
+  ]
+}
+```
+--- user ---
+## Observed gates, failing test context and correction feedback
+
+```json
+{
+  "gate_results": [],
+  "failure_context": {
+    "test_files": [],
+    "regression_requirements": []
+  }
+}
+```
+
+[2026-10-22T07:36:26.535953+00:00] [tdd_test_generation] MODEL_OUTPUT
+{"request_files": ["tests/tdd/vitest.config.ts", "tests/tdd/playwright.config.ts", "tests/tdd/setup.ts", "tests/unit/req-1-6aa2db3c.test.ts", "tests/integration/req-1-6aa2db3c.test.ts", "tests/e2e/req-1-6aa2db3c.spec.ts"], "blocked_reason": "", "release_files": [], "edits": []}
+
+[2026-10-22T07:36:26.535953+00:00] [tdd_test_generation] MODEL_USAGE {"completion_tokens": 316, "prompt_tokens": 33333, "total_tokens": 33649, "completion_tokens_details": {"accepted_prediction_tokens": null, "audio_tokens": null, "reasoning_tokens": 204, "rejected_prediction_tokens": null, "text_tokens": null}, "prompt_tokens_details": {"audio_tokens": null, "cache_write_tokens": null, "cached_tokens": 3200, "image_tokens": null, "text_tokens": null}}
+
+[2026-10-22T07:36:26.535953+00:00] [tdd_test_generation] MODEL_REASONING
+Let me look at the test config to understand the runner setup. I need to see tests/tdd/vitest.config.ts, playwright.config.ts, setup.ts, and the existing REQ-1 tests to understand conventions. Let me request those files.
+
+Also I'd want backend/src/app.ts, backend/src/db/client.ts to understand DB access in integration tests. And frontend App.tsx.
+
+Let me request: tests/tdd/vitest.config.ts, tests/tdd/playwright.config.ts, tests/tdd/setup.ts, tests/unit/req-1-6aa2db3c.test.ts, tests/integration/req-1-6aa2db3c.test.ts, tests/e2e/req-1-6aa2db3c.spec.ts, backend/src/app.ts, backend/src/db/client.ts, frontend/src/App.tsx, backend/src/db/initialize.ts.
+
+That's a lot but reasonable.
+
+[2026-10-22T07:36:39.659370+00:00] [tdd_test_generation] MODEL_FINISHED duration_ms=13123

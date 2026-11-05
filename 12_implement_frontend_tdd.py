@@ -6,7 +6,9 @@ from pathlib import Path
 from infrastructure.utils.cli import create_parser, resolve_directories
 from infrastructure.stages.frontend.triggers.context import load_e2e_context
 from infrastructure.stages.frontend.triggers.implementation import run_trigger_tdd, verify_frontend
-from infrastructure.stages.frontend.triggers.acceptance import run_independent_acceptance
+from infrastructure.stages.frontend.triggers.acceptance import (
+    run_independent_acceptance, original_requirements, prepare_acceptance_suite,
+    review_acceptance_suite, acceptance_path)
 from infrastructure.shared.models.text import TextModel
 from infrastructure.utils.presentation.console import DemoConsole
 from infrastructure.utils.presentation.logging import console_log
@@ -14,8 +16,8 @@ from infrastructure.utils.files import save_json
 
 
 def implement_frontend_triggers(input_dir: Path, arc_dir: Path, pause: bool = False,
-        max_turns: int = 10, max_tests: int = 2) -> dict:
-    if min(max_turns, max_tests) < 1:
+        max_turns: int | None = None, max_tests: int = 2) -> dict:
+    if (max_turns is not None and max_turns < 1) or max_tests < 1:
         raise ValueError("--max-turns and --max-tests must be positive")
     tree, schema, backend, ui, interactions, images, contexts = load_e2e_context(arc_dir, input_dir)
     report = {"status": "PREPARING", "requirements": {rid: {"status": "NO_DIRECT_TRIGGERS", "triggers": []}
@@ -27,8 +29,25 @@ def implement_frontend_triggers(input_dir: Path, arc_dir: Path, pause: bool = Fa
             save_json(arc_dir / "frontend_e2e.json", report)
             return report
         model = TextModel()
+        console = DemoConsole(pause)
+        original_tree = original_requirements(input_dir)
+        reviewed = set()
+        test_owners = {acceptance_path(rid): rid for rid in original_tree.leaves}
+
+        def acceptance_prepare(rid):
+            return prepare_acceptance_suite(original_tree, arc_dir.parent.resolve(), schema,
+                backend, ui, interactions, rid, model, console, max_turns)
+
+        def acceptance_review(path, feedback):
+            rid = test_owners.get(path)
+            if rid is None:
+                return False
+            return review_acceptance_suite(original_tree, arc_dir.parent.resolve(), schema,
+                backend, ui, interactions, rid, model, console, max_turns, feedback, reviewed)
+
         result = run_trigger_tdd(arc_dir, tree, schema, backend, ui, interactions, images,
-            contexts, model, DemoConsole(pause), report, max_turns, max_tests)
+            contexts, model, console, report, max_turns, max_tests,
+            acceptance_prepare=acceptance_prepare, acceptance_review=acceptance_review)
         acceptance = run_independent_acceptance(input_dir, arc_dir, schema, backend, ui, interactions,
             model, DemoConsole(pause), max_turns, process_report=result)
         if any(entry.get("repair_checks") for entry in acceptance["requirements"].values()):
@@ -51,7 +70,7 @@ def implement_frontend_triggers(input_dir: Path, arc_dir: Path, pause: bool = Fa
 
 def main() -> None:
     parser = create_parser("Step 12: Frontend/Backend Integration with Playwright Functional Smoke Tests")
-    parser.add_argument("--max-turns", type=int, default=10, help="Maximum edit rounds per requirement's test/implementation agent")
+    parser.add_argument("--max-turns", type=int, default=None, help="Optional limit (default: unlimited). Maximum edit rounds per requirement's test/implementation agent")
     parser.add_argument("--max-tests", type=int, default=2, help="Maximum functional smoke cases per requirement (default: 2)")
     args = parser.parse_args()
     with ExitStack() as stack:

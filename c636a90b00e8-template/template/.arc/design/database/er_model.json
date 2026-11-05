@@ -1,0 +1,510 @@
+{
+  "ir_kind": "er_model",
+  "status": "RESOLVED",
+  "contributions": {
+    "fields": {
+      "user_account.username": {
+        "REQ-1": {
+          "nullable": true,
+          "name": "username",
+          "description": "Saved account username displayed in the header after registration or login.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": null,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": null
+          }
+        },
+        "REQ-2": {
+          "nullable": true,
+          "name": "username",
+          "description": "Saved account username displayed in the header after registration or login.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": 3,
+            "unique": true,
+            "maximum": null,
+            "minimum": null,
+            "max_length": 32
+          }
+        }
+      },
+      "user_account.nationality": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "nationality",
+          "description": "The traveler's nationality country selected when registering the account.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": null,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": null
+          }
+        }
+      },
+      "user_account.name": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "name",
+          "description": "The traveler's full name as recorded for the account and passport.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": 2,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": 100
+          }
+        }
+      },
+      "user_account.passport_number": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "passport_number",
+          "description": "The traveler's passport number identifying the travel document.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": 6,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": 30
+          }
+        }
+      },
+      "user_account.passport_expiration_date": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "passport_expiration_date",
+          "description": "The expiry date of the traveler's passport.",
+          "type": "date",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": null,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": null
+          }
+        }
+      },
+      "user_account.date_of_birth": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "date_of_birth",
+          "description": "The traveler's date of birth.",
+          "type": "date",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": null,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": null
+          }
+        }
+      },
+      "user_account.gender": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "gender",
+          "description": "The traveler's gender as declared in the account profile.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": null,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": null
+          }
+        }
+      },
+      "user_account.email": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "email",
+          "description": "The account's contact email address, identified regardless of letter case.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": "case_insensitive",
+            "min_length": null,
+            "unique": true,
+            "maximum": null,
+            "minimum": null,
+            "max_length": 254
+          }
+        }
+      },
+      "user_account.password": {
+        "REQ-2": {
+          "nullable": true,
+          "name": "password",
+          "description": "The account's password credential used to authenticate the traveler.",
+          "type": "string",
+          "properties": {
+            "default": null,
+            "comparison": null,
+            "min_length": 12,
+            "unique": null,
+            "maximum": null,
+            "minimum": null,
+            "max_length": 128
+          }
+        }
+      }
+    },
+    "relationships": {
+      "relationship_session_account": {
+        "REQ-1": [
+          {
+            "parent_max": "many",
+            "parent": "user_account",
+            "parent_min": 0,
+            "child_min": 1,
+            "child_max": "one",
+            "description": "A user account may be associated with many persisted sessions over time (each login re-establishes a session, and sign out clears it); every session belongs to exactly one user account.",
+            "type": "ONE_TO_MANY",
+            "key": "session_account",
+            "child": "session",
+            "evidence_requirement_ids": [
+              "REQ-1",
+              "REQ-2"
+            ]
+          }
+        ],
+        "REQ-2": [
+          {
+            "parent_max": "many",
+            "parent": "user_account",
+            "parent_min": 0,
+            "child_min": 1,
+            "child_max": "one",
+            "description": "A user account may be associated with many persisted sessions over time (each login re-establishes a session, and sign out clears it); every session belongs to exactly one user account.",
+            "type": "ONE_TO_MANY",
+            "key": "session_account",
+            "child": "session",
+            "evidence_requirement_ids": [
+              "REQ-1",
+              "REQ-2"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "conflicts": [],
+  "access": {
+    "REQ-1": {
+      "read": [
+        "session",
+        "user_account",
+        "user_account.username"
+      ],
+      "write": [
+        "session",
+        "user_account"
+      ]
+    },
+    "REQ-2": {
+      "read": [
+        "user_account"
+      ],
+      "write": [
+        "session",
+        "user_account",
+        "user_account.date_of_birth",
+        "user_account.email",
+        "user_account.gender",
+        "user_account.name",
+        "user_account.nationality",
+        "user_account.passport_expiration_date",
+        "user_account.passport_number",
+        "user_account.password",
+        "user_account.username"
+      ]
+    }
+  },
+  "entities": [
+    {
+      "key": "session",
+      "description": "A persisted authentication session that keeps a visitor logged in until sign out clears it.",
+      "requirement_ids": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Compiler-provided stable primary key.",
+          "properties": {},
+          "origin": "SYSTEM",
+          "references": null,
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "read": [],
+          "write": []
+        }
+      ],
+      "read": [
+        "REQ-1"
+      ],
+      "write": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    },
+    {
+      "key": "user_account",
+      "description": "A registered visitor account whose saved username is shown in the header after registration or login.",
+      "requirement_ids": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "fields": [
+        {
+          "name": "date_of_birth",
+          "type": "date",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The traveler's date of birth.",
+          "properties": {},
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The account's contact email address, identified regardless of letter case.",
+          "properties": {
+            "max_length": 254,
+            "unique": true,
+            "comparison": "case_insensitive"
+          },
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The traveler's gender as declared in the account profile.",
+          "properties": {},
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "primary_key": true,
+          "description": "Compiler-provided stable primary key.",
+          "properties": {},
+          "origin": "SYSTEM",
+          "references": null,
+          "requirement_ids": [
+            "REQ-1"
+          ],
+          "read": [],
+          "write": []
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The traveler's full name as recorded for the account and passport.",
+          "properties": {
+            "min_length": 2,
+            "max_length": 100
+          },
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "nationality",
+          "type": "string",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The traveler's nationality country selected when registering the account.",
+          "properties": {},
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "passport_expiration_date",
+          "type": "date",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The expiry date of the traveler's passport.",
+          "properties": {},
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "passport_number",
+          "type": "string",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The traveler's passport number identifying the travel document.",
+          "properties": {
+            "min_length": 6,
+            "max_length": 30
+          },
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "nullable": true,
+          "primary_key": false,
+          "description": "The account's password credential used to authenticate the traveler.",
+          "properties": {
+            "min_length": 12,
+            "max_length": 128
+          },
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "nullable": true,
+          "primary_key": false,
+          "description": "Saved account username displayed in the header after registration or login.",
+          "properties": {
+            "min_length": 3,
+            "max_length": 32,
+            "unique": true,
+            "comparison": "exact"
+          },
+          "origin": "REQUIREMENT",
+          "references": null,
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "read": [
+            "REQ-1"
+          ],
+          "write": [
+            "REQ-2"
+          ]
+        }
+      ],
+      "read": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "write": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "relationship_session_account",
+      "key": "session_account",
+      "parent": "user_account",
+      "child": "session",
+      "type": "ONE_TO_MANY",
+      "parent_min": 0,
+      "parent_max": "many",
+      "child_min": 1,
+      "child_max": "one",
+      "description": "A user account may be associated with many persisted sessions over time (each login re-establishes a session, and sign out clears it); every session belongs to exactly one user account.",
+      "requirement_ids": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "evidence_requirement_ids": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    }
+  ]
+}

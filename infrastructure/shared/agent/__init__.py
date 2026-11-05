@@ -1,1 +1,1 @@
-"""Task-local source context, shared file tools and bounded repair loops."""
+"""Task-local source context, shared file tools and acceptance-driven repair loops."""

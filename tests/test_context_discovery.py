@@ -69,7 +69,7 @@ class ContextDiscovery(unittest.TestCase):
         self.assertEqual(accepted, {'entities': {}})
         self.assertEqual(model.generate_json.call_count, 9)
 
-    def test_repeated_search_returns_guidance_then_can_repair_with_a_proposal(self):
+    def test_repeated_search_returns_guidance_without_stopping_the_proposal(self):
         model = Mock(generate_json=Mock(side_effect=[
             *[{'context_request': {'kind': 'schema', 'query': 'account'}} for _ in range(3)],
             {'entities': {}}]))
@@ -77,7 +77,7 @@ class ContextDiscovery(unittest.TestCase):
             ContextIndex({'schema': {'Account': {'description': 'account', 'fields': {}}}}))
         self.assertEqual(result, {})
         payload = model.generate_json.call_args.args[1]
-        self.assertIn('same evidence', payload['correction']['error'])
+        self.assertIn('already supplied', payload['context_result']['next_action'])
 
     def test_malformed_query_returns_feedback_then_can_finish(self):
         model = Mock(generate_json=Mock(side_effect=[{'context_request': {'kind': 'absent'}}, {'entities': {}}]))

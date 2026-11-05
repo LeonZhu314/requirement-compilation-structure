@@ -23,6 +23,10 @@ from infrastructure.shared.agent.conventions import CONVENTION_RULES, load_conve
 
 
 INSTRUCTIONS = """Design complete backend APIs for the supplied leaf requirement and scenarios.
+The description and inherited shared constraints are authoritative too; scenarios are
+examples, not the entire specification. Account for each required operation, validation
+rule and persistence outcome even when it has no separate scenario. Keep required fields,
+types, bounds, comparison rules and rejection-without-writes explicit in I/O and P/Q.
 Design each operation's signature, input, output, DB reads, DB writes, preconditions
 and postconditions together. Return {"apis": {"API-ID": {...}}, "requirement_apis": []}.
 apis contains COMPLETE new or changed definitions; reuse unchanged APIs by ID only.
@@ -131,7 +135,7 @@ Return only API definitions and requirement associations.
 """
 
 
-def design_backend_apis(arc_dir: Path, pause: bool = False, top_k: int = 6, max_attempts: int = 10) -> dict:
+def design_backend_apis(arc_dir: Path, pause: bool = False, top_k: int = 6, max_attempts: int | None = None) -> dict:
     tree, schema, obligations = load_context(arc_dir)
     if top_k < 1:
         raise ValueError("--top-k must be positive")
@@ -211,7 +215,7 @@ def design_backend_apis(arc_dir: Path, pause: bool = False, top_k: int = 6, max_
 def main() -> None:
     parser = create_parser("Step 06: Complete Backend API Design / Obligation Propagation")
     parser.add_argument("--top-k", type=int, default=6, help="Number of API retrieval hits")
-    parser.add_argument("--max-attempts", type=int, default=10, help="Maximum proposals per requirement; including the first proposal (default: 10)")
+    parser.add_argument("--max-attempts", type=int, default=None, help="Optional limit (default: unlimited). Maximum proposals per requirement; including the first proposal")
     args = parser.parse_args()
     with ExitStack() as stack:
         try:

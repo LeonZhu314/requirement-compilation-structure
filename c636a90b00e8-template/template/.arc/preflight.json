@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-10-22T15:20:00.576426+08:00",
+  "free_disk_bytes": 246109020160,
+  "node_version": "v22.12.0",
+  "runner_playwright_version": "1.57.0",
+  "browser_check": "chromium-ready",
+  "passed": true
+}

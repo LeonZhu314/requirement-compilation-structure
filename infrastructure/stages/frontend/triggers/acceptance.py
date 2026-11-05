@@ -1,6 +1,8 @@
 """Independent requirement acceptance, separate from implementation-owned tests."""
 
 from hashlib import sha256
+import json
+import re
 import yaml
 
 from infrastructure.shared.agent.tools import FileTools
@@ -20,11 +22,17 @@ from infrastructure.stages.frontend.triggers.scope import TriggerCheckFailure
 from infrastructure.stages.frontend.triggers.design import api_ids
 from infrastructure.stages.frontend.ui.runtime import APPLICATION_ENTRYPOINTS
 from infrastructure.stages.frontend.ui.testing import FrontendChecks, require_green, test_path as ui_test_path
+from infrastructure.stages.frontend.ui.contracts import explicit_controls
+from infrastructure.utils.files import read_source
 from infrastructure.utils.files import save_json
 from infrastructure.shared.project.git import checkpoint
 
 INSTRUCTIONS = '''Write independent final acceptance tests for ONE original requirement.
 Derive expected results from original_requirement and its Given/When/Then scenarios.
+Apply ancestor_requirements as shared constraints on the involved pages, without
+implementing siblings' workflows. Cover explicit required control names and semantic
+roles as well as business outcomes. Use exact accessible-name/role locators when the
+original text specifies them; test IDs alone cannot validate that public UI contract.
 Interface details are supplied only to locate UI elements/routes and prepare valid Given
 fixtures; they are not authority to weaken an original business requirement. Neither
 application source nor implementation-owned tests are supplied. Do not infer expected
@@ -84,8 +92,141 @@ def original_requirements(input_dir):
     return RequirementTree(yaml.safe_load(path.read_text(encoding='utf-8-sig')))
 
 
+def acceptance_task(tree, schema, backend, ui, design, rid):
+    """Keep the original requirement as oracle, exposing interfaces only for test setup."""
+    context = scenario_context(ui, design, rid)
+    aids = set(backend['requirements'].get(rid, []))
+    for trigger in context['triggers'].values():
+        aids.update(api_ids(trigger))
+    apis = {aid: backend['apis'][aid] for aid in aids}
+    return {'original_requirement': requirement_context(tree, rid), 'test_path': acceptance_path(rid),
+        'ui_interfaces': {pid: {'route': page['route'], 'root': page['root'],
+            'elements': {uid: {key: node[key] for key in ('type', 'parent', 'prop') if key in node}
+                for uid, node in page['elements'].items()}}
+            for pid, page in context['page_subtrees'].items()},
+        'api_interfaces': {aid: {key: value for key, value in api.items()
+            if key in ('signature', 'request', 'response')} for aid, api in apis.items()},
+        'schema': related_schema(schema, apis.values())}
+
+
+def acceptance_workspace(output, rid):
+    path = acceptance_path(rid)
+    return FileTools.for_target(output, 'acceptance_test', rid, fixed_path=path,
+        references=[FIXTURE, 'backend/tests/support/context.ts'],
+        readable=[path, FIXTURE, 'backend/tests/support/context.ts'])
+
+
+def locator_contracts(task):
+    original = task['original_requirement']
+    roles = sorted(explicit_controls(original))
+    quoted = set()
+
+    def visit(value):
+        if isinstance(value, str):
+            quoted.update(re.findall(r'["“]([^"”\n]+)["”]', value))
+        elif isinstance(value, dict):
+            for item in value.values():
+                visit(item)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    visit(original)
+    labels = {name for name, _ in roles}
+    for page in task['ui_interfaces'].values():
+        for element in page['elements'].values():
+            label = element.get('prop', {}).get('label')
+            if isinstance(label, str) and label in quoted:
+                labels.add(label)
+    return {'roles': roles, 'labels': sorted(labels)}
+
+
+def compile_acceptance(checks, output, path, task=None):
+    if not (output / path).is_file():
+        raise ValueError('Create the supplied acceptance test_path')
+    contracts = locator_contracts(task) if task is not None else None
+    if contracts and (contracts['roles'] or contracts['labels']):
+        before = read_source(output / path)
+        normalized = checks.exact_locators(path, contracts)
+        if normalized['returncode']:
+            raise ValueError(normalized['output'])
+        after = read_source(output / path)
+        if before != after:
+            audit = output / '.arc/test_repairs.jsonl'
+            audit.parent.mkdir(parents=True, exist_ok=True)
+            with audit.open('a', encoding='utf-8') as stream:
+                stream.write(json.dumps({'task': 'Original UI locator contracts',
+                    'diagnosis': {'cause': 'test_overconstraint', 'reason': 'Use exact original accessible names'},
+                    'changes': [{'path': path, 'before': before, 'after': after}]}, ensure_ascii=False) + '\n')
+    result = checks.typecheck([path], full_source=False)
+    if result['returncode']:
+        raise ValueError(result['output'])
+    return result
+
+
+def review_acceptance_suite(tree, output, schema, backend, ui, design, rid, model, console,
+        max_turns, feedback, reviewed=None):
+    """Route test defects to their original-requirement owner during TDD, not after it."""
+    task = acceptance_task(tree, schema, backend, ui, design, rid)
+    path = task['test_path']
+    if not (output / path).is_file():
+        return False
+    checks = E2EChecks(output)
+    before = read_source(output / path)
+    compile_acceptance(checks, output, path, task)
+    if read_source(output / path) != before:
+        return True
+    # Reuse a review only for the same suite and same failure evidence. A new
+    # failure or changed test is new evidence; this is not an attempt limit.
+    messages = []
+
+    def failures(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key in ('failures', 'errors') and isinstance(item, list):
+                    messages.extend(str(message) for message in item)
+                elif key in ('error', 'message') and isinstance(item, str):
+                    messages.append(item)
+                elif key not in ('output', 'stdout', 'stderr', 'previous_response'):
+                    failures(item)
+        elif isinstance(value, list):
+            for item in value:
+                failures(item)
+
+    failures(feedback)
+    fingerprint = (path, sha256(before.encode()).hexdigest(), tuple(sorted(set(messages))))
+    if reviewed is not None and fingerprint in reviewed:
+        return False
+    run_file_agent(model, REVIEW_INSTRUCTIONS, task, acceptance_workspace(output, rid),
+        lambda: compile_acceptance(checks, output, path, task), max_turns, console,
+        'Independent acceptance / ' + rid + ' / Early test review', feedback=feedback)
+    if reviewed is not None:
+        reviewed.add(fingerprint)
+    return read_source(output / path) != before
+
+
+def prepare_acceptance_suite(tree, output, schema, backend, ui, design, rid, model, console, max_turns):
+    """Generate the final oracle before implementation, without inspecting application code.
+
+    The same file is reused in final acceptance. Business RED is expected here;
+    only test compilation is required before handing it to implementation.
+    """
+    task = acceptance_task(tree, schema, backend, ui, design, rid)
+    if not task['ui_interfaces']:
+        raise ValueError('No UI interface available for independent requirement acceptance')
+    path = task['test_path']
+    if not (output / path).is_file():
+        checks = E2EChecks(output)
+        run_file_agent(model, INSTRUCTIONS, task, acceptance_workspace(output, rid),
+            lambda: compile_acceptance(checks, output, path, task), max_turns, console,
+            'Independent acceptance / ' + rid + ' / Generation')
+    else:
+        compile_acceptance(E2EChecks(output), output, path, task)
+    return path
+
+
 def run_independent_acceptance(input_dir, arc_dir, schema, backend, ui, design, model, console,
-        max_turns=10, *, process_report):
+        max_turns=None, *, process_report):
     output = arc_dir.parent.resolve()
     tree = original_requirements(input_dir)
     checks = E2EChecks(output)
@@ -114,27 +255,15 @@ def run_independent_acceptance(input_dir, arc_dir, schema, backend, ui, design, 
             for trigger in context['triggers'].values():
                 aids.update(api_ids(trigger))
             apis = {aid: backend['apis'][aid] for aid in aids}
-            task = {'original_requirement': requirement_context(tree, rid), 'test_path': path,
-                'ui_interfaces': {pid: {key: page[key] for key in ('route', 'root', 'elements')}
-                    for pid, page in context['page_subtrees'].items()},
-                'api_interfaces': {aid: {key: value for key, value in api.items()
-                    if key in ('signature', 'request', 'response')} for aid, api in apis.items()},
-                'schema': related_schema(schema, apis.values())}
+            task = acceptance_task(tree, schema, backend, ui, design, rid)
             if not task['ui_interfaces']:
                 entry.update(status='FAILED', error='No UI interface available for independent requirement acceptance; not verified')
                 continue
             task['shared_conventions'] = task_conventions(output, {'requirement': task['original_requirement']})
-            workspace = FileTools.for_target(output, 'acceptance_test', rid, fixed_path=path,
-                references=[FIXTURE, 'backend/tests/support/context.ts'],
-                readable=[path, FIXTURE, 'backend/tests/support/context.ts'])
+            workspace = acceptance_workspace(output, rid)
 
             def compile_suite():
-                if not (output / path).is_file():
-                    raise ValueError('Create the supplied acceptance test_path')
-                result = checks.typecheck([path], full_source=False)
-                if result['returncode']:
-                    raise ValueError(result['output'])
-                return result
+                return compile_acceptance(checks, output, path, task)
 
             if not (output / path).is_file():
                 agent = run_file_agent(model, INSTRUCTIONS, task, workspace, compile_suite,
@@ -163,6 +292,7 @@ def run_independent_acceptance(input_dir, arc_dir, schema, backend, ui, design, 
                 process_files = [test_path(key, output) for key in process_ids
                     if (output / test_path(key, output)).is_file()]
                 acceptance_files = [acceptance_path(key) for key in [*accepted, rid]]
+                process_files = [path for path in process_files if path not in acceptance_files]
                 ui_files = [ui_test_path(pid) for pid in ui['pages']
                     if (output / ui_test_path(pid)).is_file()]
                 repair_task = {**task, **context, 'requirement': task['original_requirement'],
@@ -229,7 +359,8 @@ def run_independent_acceptance(input_dir, arc_dir, schema, backend, ui, design, 
                 if entry['status'] == 'FAILED':
                     continue
                 result = entry['result']
-                verified_process.update(key for key in process_ids if test_path(key, output) in process_files)
+                verified_process.update(key for key in process_ids
+                    if test_path(key, output) in [*process_files, *acceptance_files])
                 pending_verification = False
             require_acceptance(result)
             process_entry = process_report['requirements'].get(rid)

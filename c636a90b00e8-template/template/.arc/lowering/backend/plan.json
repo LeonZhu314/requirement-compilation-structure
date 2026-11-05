@@ -1,0 +1,247 @@
+{
+  "ir_kind": "backend_lowering",
+  "strategy": "deterministic_parent_groups",
+  "entrypoint": "backend/src/server.ts",
+  "modules": [
+    {
+      "id": "API_000001",
+      "name": "GetCurrentSession",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts",
+      "export": "GetCurrentSession",
+      "input_type": "GetCurrentSessionInput",
+      "output_type": "GetCurrentSessionOutput",
+      "callees": [
+        "FUNC_000001"
+      ]
+    },
+    {
+      "id": "API_000002",
+      "name": "SignOut",
+      "kind": "API",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts",
+      "export": "SignOut",
+      "input_type": "SignOutInput",
+      "output_type": "SignOutOutput",
+      "callees": [
+        "FUNC_000002"
+      ]
+    },
+    {
+      "id": "FUNC_000001",
+      "name": "ResolveActiveSession",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts",
+      "export": "ResolveActiveSession",
+      "input_type": "ResolveActiveSessionInput",
+      "output_type": "ResolveActiveSessionOutput",
+      "callees": [
+        "DB_000001"
+      ]
+    },
+    {
+      "id": "FUNC_000002",
+      "name": "RevokeSession",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts",
+      "export": "RevokeSession",
+      "input_type": "RevokeSessionInput",
+      "output_type": "RevokeSessionOutput",
+      "callees": [
+        "DB_000002"
+      ]
+    },
+    {
+      "id": "DB_000001",
+      "name": "FindSessionAccountById",
+      "kind": "DB",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts",
+      "export": "FindSessionAccountById",
+      "input_type": "FindSessionAccountByIdInput",
+      "output_type": "FindSessionAccountByIdOutput",
+      "callees": []
+    },
+    {
+      "id": "DB_000002",
+      "name": "DeleteSessionById",
+      "kind": "DB",
+      "reqs": [
+        "REQ-1"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts",
+      "export": "DeleteSessionById",
+      "input_type": "DeleteSessionByIdInput",
+      "output_type": "DeleteSessionByIdOutput",
+      "callees": []
+    },
+    {
+      "id": "API_000003",
+      "name": "RegisterAccount",
+      "kind": "API",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts",
+      "export": "RegisterAccount",
+      "input_type": "RegisterAccountInput",
+      "output_type": "RegisterAccountOutput",
+      "callees": [
+        "FUNC_000005"
+      ]
+    },
+    {
+      "id": "FUNC_000003",
+      "name": "CheckAccountUniqueness",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts",
+      "export": "CheckAccountUniqueness",
+      "input_type": "CheckAccountUniquenessInput",
+      "output_type": "CheckAccountUniquenessOutput",
+      "callees": [
+        "DB_000003"
+      ]
+    },
+    {
+      "id": "FUNC_000004",
+      "name": "ValidateRegistration",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts",
+      "export": "ValidateRegistration",
+      "input_type": "ValidateRegistrationInput",
+      "output_type": "ValidateRegistrationOutput",
+      "callees": [
+        "FUNC_000003"
+      ]
+    },
+    {
+      "id": "FUNC_000005",
+      "name": "CreateTravelerAccount",
+      "kind": "FUNC",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts",
+      "export": "CreateTravelerAccount",
+      "input_type": "CreateTravelerAccountInput",
+      "output_type": "CreateTravelerAccountOutput",
+      "callees": [
+        "FUNC_000004",
+        "DB_000004",
+        "DB_000005"
+      ]
+    },
+    {
+      "id": "DB_000003",
+      "name": "FindAccountByUsernameOrEmail",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts",
+      "export": "FindAccountByUsernameOrEmail",
+      "input_type": "FindAccountByUsernameOrEmailInput",
+      "output_type": "FindAccountByUsernameOrEmailOutput",
+      "callees": []
+    },
+    {
+      "id": "DB_000004",
+      "name": "InsertUserAccount",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts",
+      "export": "InsertUserAccount",
+      "input_type": "InsertUserAccountInput",
+      "output_type": "InsertUserAccountOutput",
+      "callees": []
+    },
+    {
+      "id": "DB_000005",
+      "name": "InsertSession",
+      "kind": "DB",
+      "reqs": [
+        "REQ-2"
+      ],
+      "group_requirement_id": "ROOT",
+      "file_path": "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts",
+      "export": "InsertSession",
+      "input_type": "InsertSessionInput",
+      "output_type": "InsertSessionOutput",
+      "callees": []
+    }
+  ],
+  "routes": [
+    {
+      "module_id": "API_000001",
+      "method": "GET",
+      "path": "/api/session",
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts"
+    },
+    {
+      "module_id": "API_000002",
+      "method": "DELETE",
+      "path": "/api/session",
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts"
+    },
+    {
+      "module_id": "API_000003",
+      "method": "POST",
+      "path": "/api/register",
+      "file_path": "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts"
+    }
+  ],
+  "types": [],
+  "retained_modified_files": [],
+  "files": [
+    "backend/src/app.ts",
+    "backend/src/features/train-ticket-booking-demo/controllers/GetCurrentSession.ts",
+    "backend/src/features/train-ticket-booking-demo/controllers/RegisterAccount.ts",
+    "backend/src/features/train-ticket-booking-demo/controllers/SignOut.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/DeleteSessionById.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/FindAccountByUsernameOrEmail.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/FindSessionAccountById.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertSession.ts",
+    "backend/src/features/train-ticket-booking-demo/repositories/InsertUserAccount.ts",
+    "backend/src/features/train-ticket-booking-demo/services/CheckAccountUniqueness.ts",
+    "backend/src/features/train-ticket-booking-demo/services/CreateTravelerAccount.ts",
+    "backend/src/features/train-ticket-booking-demo/services/ResolveActiveSession.ts",
+    "backend/src/features/train-ticket-booking-demo/services/RevokeSession.ts",
+    "backend/src/features/train-ticket-booking-demo/services/ValidateRegistration.ts",
+    "backend/src/server.ts",
+    "backend/src/types/contracts.ts"
+  ]
+}

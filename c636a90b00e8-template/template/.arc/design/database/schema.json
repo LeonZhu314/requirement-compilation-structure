@@ -1,0 +1,493 @@
+{
+  "ir_kind": "database_schema",
+  "status": "RESOLVED",
+  "tables": [
+    {
+      "name": "session",
+      "description": "A persisted authentication session that keeps a visitor logged in until sign out clears it.",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "generation": "application_uuid",
+          "description": "Compiler-provided stable primary key.",
+          "origin": "SYSTEM",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "constraints": [
+            {
+              "name": "session_primary_key_2929117aecd7",
+              "kind": "PRIMARY_KEY",
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [],
+          "write": []
+        },
+        {
+          "name": "user_account_id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "generation": "none",
+          "description": "Reference to user_account.",
+          "origin": "RELATIONSHIP",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "constraints": [
+            {
+              "name": "session_foreign_key_9d52369112e0",
+              "kind": "FOREIGN_KEY",
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "referenced_table": "user_account",
+              "referenced_columns": [
+                "id"
+              ],
+              "on_delete": "RESTRICT",
+              "on_update": "RESTRICT"
+            }
+          ],
+          "read": [],
+          "write": []
+        }
+      ],
+      "constraints": [],
+      "requirement_ids": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "read": [
+        "REQ-1"
+      ],
+      "write": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    },
+    {
+      "name": "user_account",
+      "description": "A registered visitor account whose saved username is shown in the header after registration or login.",
+      "columns": [
+        {
+          "name": "date_of_birth",
+          "type": "date",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The traveler's date of birth.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The account's contact email address, identified regardless of letter case.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [
+            {
+              "name": "user_account_check_f0432fc76e73",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "email",
+                "operator": "length_lte",
+                "value": 254
+              },
+              "requirement_ids": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "user_account_unique_611e351af19a",
+              "kind": "UNIQUE",
+              "requirement_ids": [
+                "REQ-2"
+              ],
+              "comparison": "case_insensitive"
+            }
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The traveler's gender as declared in the account profile.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "generation": "application_uuid",
+          "description": "Compiler-provided stable primary key.",
+          "origin": "SYSTEM",
+          "requirement_ids": [
+            "REQ-1"
+          ],
+          "constraints": [
+            {
+              "name": "user_account_primary_key_59210168e6ea",
+              "kind": "PRIMARY_KEY",
+              "requirement_ids": [
+                "REQ-1"
+              ]
+            }
+          ],
+          "read": [],
+          "write": []
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The traveler's full name as recorded for the account and passport.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [
+            {
+              "name": "user_account_check_b3f364af2411",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "name",
+                "operator": "length_gte",
+                "value": 2
+              },
+              "requirement_ids": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "user_account_check_fe0b9902e278",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "name",
+                "operator": "length_lte",
+                "value": 100
+              },
+              "requirement_ids": [
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "nationality",
+          "type": "string",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The traveler's nationality country selected when registering the account.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "passport_expiration_date",
+          "type": "date",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The expiry date of the traveler's passport.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "passport_number",
+          "type": "string",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The traveler's passport number identifying the travel document.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [
+            {
+              "name": "user_account_check_3bf6594401ca",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "passport_number",
+                "operator": "length_gte",
+                "value": 6
+              },
+              "requirement_ids": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "user_account_check_69cd0edda6e2",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "passport_number",
+                "operator": "length_lte",
+                "value": 30
+              },
+              "requirement_ids": [
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "The account's password credential used to authenticate the traveler.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-2"
+          ],
+          "constraints": [
+            {
+              "name": "user_account_check_37308131ab6d",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "password",
+                "operator": "length_gte",
+                "value": 12
+              },
+              "requirement_ids": [
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "user_account_check_e719eed46eda",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "password",
+                "operator": "length_lte",
+                "value": 128
+              },
+              "requirement_ids": [
+                "REQ-2"
+              ]
+            }
+          ],
+          "read": [],
+          "write": [
+            "REQ-2"
+          ]
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "nullable": true,
+          "default": null,
+          "generation": "none",
+          "description": "Saved account username displayed in the header after registration or login.",
+          "origin": "REQUIREMENT",
+          "requirement_ids": [
+            "REQ-1",
+            "REQ-2"
+          ],
+          "constraints": [
+            {
+              "name": "user_account_check_0ed1cd1e0713",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "username",
+                "operator": "length_gte",
+                "value": 3
+              },
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "user_account_check_17ca6792bda2",
+              "kind": "CHECK",
+              "predicate": {
+                "column": "username",
+                "operator": "length_lte",
+                "value": 32
+              },
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ]
+            },
+            {
+              "name": "user_account_unique_8d28a75f93bd",
+              "kind": "UNIQUE",
+              "requirement_ids": [
+                "REQ-1",
+                "REQ-2"
+              ],
+              "comparison": "exact"
+            }
+          ],
+          "read": [
+            "REQ-1"
+          ],
+          "write": [
+            "REQ-2"
+          ]
+        }
+      ],
+      "constraints": [],
+      "requirement_ids": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "read": [
+        "REQ-1",
+        "REQ-2"
+      ],
+      "write": [
+        "REQ-1",
+        "REQ-2"
+      ]
+    }
+  ],
+  "traceability": {
+    "requirements": {
+      "REQ-1": {
+        "read": [
+          "session",
+          "user_account",
+          "user_account.username"
+        ],
+        "write": [
+          "session",
+          "user_account"
+        ],
+        "tables": [
+          "session",
+          "user_account"
+        ],
+        "columns": [
+          "session.id",
+          "session.user_account_id",
+          "user_account.id",
+          "user_account.username"
+        ],
+        "constraints": [
+          "session_foreign_key_9d52369112e0",
+          "session_primary_key_2929117aecd7",
+          "user_account_check_0ed1cd1e0713",
+          "user_account_check_17ca6792bda2",
+          "user_account_primary_key_59210168e6ea",
+          "user_account_unique_8d28a75f93bd"
+        ]
+      },
+      "REQ-2": {
+        "read": [
+          "user_account"
+        ],
+        "write": [
+          "session",
+          "user_account",
+          "user_account.date_of_birth",
+          "user_account.email",
+          "user_account.gender",
+          "user_account.name",
+          "user_account.nationality",
+          "user_account.passport_expiration_date",
+          "user_account.passport_number",
+          "user_account.password",
+          "user_account.username"
+        ],
+        "tables": [
+          "session",
+          "user_account"
+        ],
+        "columns": [
+          "session.id",
+          "session.user_account_id",
+          "user_account.date_of_birth",
+          "user_account.email",
+          "user_account.gender",
+          "user_account.name",
+          "user_account.nationality",
+          "user_account.passport_expiration_date",
+          "user_account.passport_number",
+          "user_account.password",
+          "user_account.username"
+        ],
+        "constraints": [
+          "session_foreign_key_9d52369112e0",
+          "session_primary_key_2929117aecd7",
+          "user_account_check_0ed1cd1e0713",
+          "user_account_check_17ca6792bda2",
+          "user_account_check_37308131ab6d",
+          "user_account_check_3bf6594401ca",
+          "user_account_check_69cd0edda6e2",
+          "user_account_check_b3f364af2411",
+          "user_account_check_e719eed46eda",
+          "user_account_check_f0432fc76e73",
+          "user_account_check_fe0b9902e278",
+          "user_account_unique_611e351af19a",
+          "user_account_unique_8d28a75f93bd"
+        ]
+      }
+    }
+  }
+}
