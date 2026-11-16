@@ -52,6 +52,27 @@ reject duplicate submissions when the requirement expects one operation. Start o
 before the action, wait for its response and business completion, and exclude unrelated
 page-entry calls or explicitly required retries. Do not count all requests globally.
 There is no arbitrary test-count quota: cover the few important outcomes for this task.
+FIXTURE AWARENESS:
+
+Before inserting a Given record, query the isolated
+test database using its primary or unique key.
+
+If the required record already exists, reuse it
+after verifying that it matches the Given state.
+
+If it is missing, create only the minimum valid
+record required by the scenario.
+
+If an original requirement explicitly requires startup
+data, verify its presence rather than silently creating it.
+
+Never assume that the test database is empty.
+Never delete required startup data or change production
+database initialization to avoid duplicate fixture errors.
+
+Prepare test data only during the Given phase.
+Execute the When phase through the real browser.
+Preserve all original business assertions.
 
 The database fixture restores requirement-defined startup data before each test. Reuse
 those records when required; do not assume an empty database or insert duplicate identities.
@@ -106,6 +127,13 @@ def acceptance_task(tree, schema, backend, ui, design, rid):
             for pid, page in context['page_subtrees'].items()},
         'api_interfaces': {aid: {key: value for key, value in api.items()
             if key in ('signature', 'request', 'response')} for aid, api in apis.items()},
+        'fixture_policy': {
+            'startup_data_may_exist': True,
+            'check_unique_keys_before_insert': True,
+            'reuse_matching_given_records': True,
+            'preserve_required_startup_data': True,
+            'setup_scope': 'isolated_test_database',
+        },
         'schema': related_schema(schema, apis.values())}
 
 

@@ -2,14 +2,16 @@
 
 import json
 from itertools import count
+from urllib import request
 
 from infrastructure.shared.agent.discovery import DISCOVERY_RULES, DiscoverySession
 from infrastructure.shared.agent.conventions import task_conventions
 
-from infrastructure.shared.agent.tools import FileTools
+from infrastructure.shared.agent.tools import FileTools, files
 from infrastructure.shared.agent.tools.protocol import FILE_TOOL_RULES
 from infrastructure.shared.agent.proposals import RESPONSE_ERRORS, response_feedback
 from infrastructure.shared.project.git import checkpoint
+from infrastructure.stages.database.obligations import records
 from infrastructure.utils.files import read_source
 from infrastructure.shared.models.errors import ModelServiceError
 
@@ -37,6 +39,9 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
     allow_discovery = index is not None
     discovery, context_result = DiscoverySession(index), None
     read_files = {}
+    denied_reads = {}
+    repair_history = {}
+    repair_advice = None
     feedback = [] if feedback is None else [feedback_filter(feedback) if feedback_filter else feedback]
     check_feedback = list(feedback)
     for turn in count(1):
@@ -46,6 +51,7 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
         console.show(f"{label} | Edit round {progress}",
             "Generate file edits, then run the stage's compilation and test acceptance checks.")
         response, applied, checking = None, False, False
+        query_history = {}
         try:
             def request_model():
                 # Gates may regenerate wiring outside edit_file; discard stale excerpts too.
@@ -64,6 +70,15 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                     "context_kinds": list(index.records()) if index is not None else [], "tools": files.schemas()}
                 retained = {path: excerpts for path, excerpts in read_files.items()
                     if path not in request["files"] or request["files"][path]["content"] is None}
+                if files.readable is not None:
+                    request["read_scope"] = {
+                        "allowed_paths": sorted(files.readable),
+                        "denied_attempts": {
+                            path: attempts
+                            for path, attempts in denied_reads.items()
+                            if path not in files.readable
+                        },
+                    }                
                 if retained:
                     request["read_files"] = retained
                 if discovery.evidence:
@@ -74,12 +89,59 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                 if conventions:
                     request["task"]["shared_conventions"] = conventions
                 if context_result is not None:
-                    request["context_result"] = context_result
+                    compact_result = dict(context_result)
+                    kind = compact_result.get("kind")
+                    records = compact_result.get("records")
+                    retained_records = discovery.evidence.get(kind, {})
+                    if (
+                        isinstance(records, dict)
+                        and records
+                        and all(
+                            key in retained_records
+                            and retained_records[key] == value
+                            for key, value in records.items()
+                        )
+                    ):
+                        compact_result.pop("records")
+                        compact_result["retained_record_ids"] = list(records)
+                        compact_result["records_location"] = "context_records"
+                        console.show(
+                            f"{label} | Context deduplicated",
+                            f"{len(records)} duplicate records removed"
+                        )
+                    request["context_result"] = compact_result
                 rules = instructions + "\n\n" + FILE_TOOL_RULES
                 if allow_discovery:
                     rules += "\n\n" + DISCOVERY_RULES
                 else:
                     rules += "\nSemantic discovery is disabled for this task. Use supplied evidence and read_file only."
+                if files.readable is not None:
+                    rules += (
+                        "\n\nREAD ACCESS POLICY:"
+                        "\nOnly read paths listed in read_scope.allowed_paths."
+                        "\nNever retry paths listed in read_scope.denied_attempts."
+                        "\nUse the supplied task evidence and permitted files instead."
+                        "\nDo not bypass access restrictions."
+                        "\nWhen enough evidence is available, produce the required edits."
+                    )
+                if (
+                    context_result is not None
+                    and context_result.get("repeated_query_count", 0) >= 2
+                    ):
+                        rules += (
+                            "\n\nREPEATED QUERY DETECTED:"
+                            "\nThe last context query provided no new evidence."
+                            "\nChoose a different useful action."
+                            "\nUse existing evidence whenever sufficient."
+                    )
+                if repair_advice is not None:
+                    request["repair_advice"] = repair_advice
+                    rules += (
+                        "\n\nADAPTIVE REPAIR:"
+                        "\nUse repair_advice to select a valid next action."
+                        "\nAvoid repeating previously rejected approaches."
+                        "\nPreserve all requirements and acceptance checks."
+                    )
                 return model.generate_json(rules, request)
             response = request_model()
             while isinstance(response, dict):
@@ -94,6 +156,42 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                             'context_request discovers semantic records or file candidates.')
                     else:
                         context_result = discovery.resolve(query)
+                        query_key = json.dumps(
+                            query, sort_keys=True, ensure_ascii=False
+                        )
+                        result_key = json.dumps(
+                            {
+                                key: value
+                                for key, value in context_result.items()
+                                if key != "next_action"
+                            },
+                            sort_keys=True,
+                             ensure_ascii=False,
+                        )
+                        previous_result, previous_count = query_history.get(
+                            query_key, (None, 0)
+                        )
+                        if previous_result == result_key:
+                            repeat_count = previous_count + 1
+                        else:
+                            repeat_count = 1
+                        query_history[query_key] = (result_key, repeat_count)
+                        if repeat_count >= 2:
+                            context_result = {
+                                **context_result,
+                                "repeated_query": query,
+                                "repeated_query_count": repeat_count,
+                                "next_action": (
+                                    "This exact query returned unchanged evidence. "
+                                    "Do not repeat it. Read a relevant candidate "
+                                    "using the permitted tool, search a different "
+                                    "missing fact, or produce the required edits."
+                                ),
+                            }
+                            console.show(
+                                f"{label} | Redundant context query",
+                                f"{query_key} | attempts: {repeat_count}"
+                            )
                 elif "tool_calls" in response and files.effect(response["tool_calls"]) == "read":
                     calls = response["tool_calls"]
                     console.show(label + " | Read files", str([call["path"] for call in calls]))
@@ -149,6 +247,19 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
                 # cannot repair an unavailable endpoint or exhausted provider quota.
                 raise
             details = getattr(error, 'feedback', {})
+            if (
+                isinstance(details, dict)
+                and details.get("code") == "READ_NOT_ALLOWED"
+            ):
+                path = details.get("path")
+
+                if isinstance(path, str):
+                    denied_reads[path] = denied_reads.get(path, 0) + 1
+
+                console.show(
+                    f"{label} | Forbidden read detected",
+                    f"{path} | attempts: {denied_reads[path]}"
+                )
             protected_test = details.get('path', '') if isinstance(details, dict) else ''
             if (isinstance(details, dict) and details.get('code') == 'WRITE_NOT_ALLOWED'
                     and protected_test.startswith('frontend/tests/e2e/acceptance/') and test_review is not None):
@@ -175,6 +286,51 @@ def run_file_agent(model, instructions: str, task: dict, files: FileTools, gate,
             if isinstance(response, dict) and response.get("diagnosis") and isinstance(rejected, dict):
                 rejected = {**rejected, "previous_diagnosis": response["diagnosis"]}
             rejected = feedback_filter(rejected) if feedback_filter else rejected
+            repair_advice = None
+            if isinstance(rejected, dict):
+                error_details = rejected.get("details", {})
+
+                if isinstance(error_details, dict):
+                    code = error_details.get("code")
+                    path = error_details.get("path", "")
+
+                    recommendations = {
+                        "FILE_NOT_FOUND": (
+                            "Verify the existing file path or discover "
+                            "the correct file before retrying."
+                        ),
+                        "WRITE_NOT_ALLOWED": (
+                            "Do not modify protected files. "
+                            "Find a permitted correction or use "
+                            "the independent test review mechanism."
+                        ),
+                        "WHOLE_FILE_REPLACEMENT_NOT_ALLOWED": (
+                            "Use a smaller unique replacement span "
+                            "and preserve all existing functionality."
+                        ),
+                    }
+                    if code in recommendations:
+                        signature = (code, path)
+                        attempts = repair_history.get(signature, 0) + 1
+                        repair_history[signature] = attempts
+
+                        repair_advice = {
+                            "error_code": code,
+                            "path": path,
+                            "occurrences": attempts,
+                            "recommended_action": recommendations[code],
+                        }
+
+                        if attempts >= 2:
+                            repair_advice["instruction"] = (
+                                "This error has occurred before. "
+                                "Reassess the previous approach and "
+                                "choose a different valid action."
+                            )
+                        console.show(
+                            f"{label} | Adaptive repair",
+                            str(repair_advice)
+                        )
             if checking:
                 check_feedback = [rejected]
                 feedback = list(check_feedback)
