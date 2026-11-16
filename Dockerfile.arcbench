@@ -1,0 +1,11 @@
+ARG ARCBENCH_RUNNER_IMAGE=regt3h8hc.arc-bench.com/arcbench-runner:latest
+FROM ${ARCBENCH_RUNNER_IMAGE}
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bubblewrap \
+    && rm -rf /var/lib/apt/lists/*
+
+# Keep the runner's original user and entrypoint.
+USER 1000:1000

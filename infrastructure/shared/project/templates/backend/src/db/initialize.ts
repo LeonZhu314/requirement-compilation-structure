@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { readFileSync } from "node:fs";
 import { seedDatabase } from "./seed.js";
 
-// Step 05 replaces this ordered list with the published SQL filenames.
+// Maintain SQL filenames in dependency order as application tables are added.
 export const tableFiles: readonly string[] = [];
 
 export function initializeDatabase(connection: Database.Database): void {

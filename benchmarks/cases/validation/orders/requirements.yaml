@@ -1,0 +1,28 @@
+id: ORDERS
+name: Reserved order totals and ownership
+description: Build a React, Express and SQLite application. Use visible accessible
+  controls and actual persisted behavior.
+children:
+- id: ORDERS-1
+  name: Order
+  description: Authenticated customers have separate carts. Show quantities and total
+    computed from product prices. Confirm once to create an order and clear only that
+    cart; order details survive refresh.
+  scenarios:
+  - id: ORDERS-1-SCN
+    steps:
+    - id: ORDERS-1-STEP
+      Given: Two customers have separate carts
+      When: First customer confirms an order and opens its details after refresh
+      Then: Total and items match; second cart is unchanged
+- id: ORDERS-2
+  name: Validation
+  description: Quantity must be a positive integer. Failed submission must preserve
+    the cart.
+  scenarios:
+  - id: ORDERS-2-SCN
+    steps:
+    - id: ORDERS-2-STEP
+      Given: A cart with one product
+      When: Enter quantity zero and submit
+      Then: Show validation error and keep the existing cart

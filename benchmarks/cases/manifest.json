@@ -1,0 +1,38 @@
+[
+  {
+    "id": "accounts",
+    "split": "development",
+    "requirements": "cases/development/accounts/requirements.yaml",
+    "sha256": "5a77cbc351019f16c45c442bd79d91b81fcf95071687721127f5f69e366d38ed"
+  },
+  {
+    "id": "inventory",
+    "split": "development",
+    "requirements": "cases/development/inventory/requirements.yaml",
+    "sha256": "60edaf950c351fc396ef751240316d6d25eb58c4addc6dc2ff42df52d7b06800"
+  },
+  {
+    "id": "booking",
+    "split": "development",
+    "requirements": "cases/development/booking/requirements.yaml",
+    "sha256": "e168cdeeeffcabb5a7b94acc774d7fde05fa575d7eac0c1e225e3a359c04f0a6"
+  },
+  {
+    "id": "presentation",
+    "split": "development",
+    "requirements": "cases/development/presentation/requirements.yaml",
+    "sha256": "c1e32e31e88dcab327c4ed1ff449aaedf49b7e4f7d3710175ff15939b529d3cd"
+  },
+  {
+    "id": "library",
+    "split": "validation",
+    "requirements": "cases/validation/library/requirements.yaml",
+    "sha256": "9e8b3b369fb69aca4428428d419e1a289b536d58fb1a7f15eb321ea5c6754e35"
+  },
+  {
+    "id": "orders",
+    "split": "validation",
+    "requirements": "cases/validation/orders/requirements.yaml",
+    "sha256": "2668c538f1ac5820624c2d05223001927fe47baea3d7ea14ae206f280d1c1115"
+  }
+]

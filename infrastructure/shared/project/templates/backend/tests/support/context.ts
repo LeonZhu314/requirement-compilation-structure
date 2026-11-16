@@ -9,7 +9,7 @@ export function createApiTest(context: TestContext) {
   const path = process.env.ARC_API_DB_FILE;
   const baseURL = process.env.ARC_API_BASE_URL;
   if (!path || !baseURL || basename(path) !== "app.db" || !basename(dirname(path)).startsWith("arc-api-"))
-    throw new Error("Use npm run test:backend or the step 08 HTTP test runner");
+    throw new Error("Run HTTP tests with npm run test:backend (backend/scripts/test-api.mjs)");
   const database = createDatabaseClient(path);
   try {
     database.pragma("foreign_keys = OFF");

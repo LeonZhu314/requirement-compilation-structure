@@ -1,5 +1,5 @@
 // Each invocation owns its backend process, port and temporary database.
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,9 +47,14 @@ process.on("SIGINT", interrupt);
 process.on("SIGTERM", interrupt);
 try {
   const requested = process.argv.slice(2);
+  // Protected original tests and development checks are both discovered.
   const files = requested.length ? requested.map(path => resolve(root, path))
-    : discover(join(root, "backend/tests")).sort();
-  if (!files.length) throw new Error("No API tests found; run step 08 first.");
+    : ["backend/tests", "backend/checks"].map(path => join(root, path))
+      .filter(path => existsSync(path)).flatMap(discover).sort();
+  if (!files.length) {
+    phase = "missing";
+    throw new Error("No API tests found in backend/tests or backend/checks; this check is missing, not passing.");
+  }
   directory = mkdtempSync(join(tmpdir(), "arc-api-"));
   const port = await freePort();
   const baseURL = `http://127.0.0.1:${port}`;
@@ -92,10 +97,15 @@ try {
   process.exitCode = code;
   if (code && backendOutput) console.error("BACKEND_LOG:\n" + backendOutput);
 } catch (error) {
+  if (phase === "missing") {
+    console.error(`NO_API_TESTS: ${error.message}`);
+    process.exitCode = 3;
+  } else {
   const tag = phase === "startup" ? "BACKEND_STARTUP_ERROR"
     : phase === "tests" ? "BACKEND_RUNTIME_ERROR" : "BACKEND_RUNNER_ERROR";
   console.error(`${tag}: ${error.stack ?? String(error)}\n${backendOutput}`);
   process.exitCode = 1;
+  }
 } finally {
   await stop(tests);
   await stop(backend);

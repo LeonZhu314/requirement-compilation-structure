@@ -1,0 +1,26 @@
+id: BOOKING
+name: Relations and unavailable seats
+description: Build a React, Express and SQLite application. Use visible accessible
+  controls and actual persisted behavior.
+children:
+- id: BOOKING-1
+  name: Booking
+  description: Show trips and seats. Book an available seat for the signed-in passenger.
+    Show booking details on a separate route.
+  scenarios:
+  - id: BOOKING-1-SCN
+    steps:
+    - id: BOOKING-1-STEP
+      Given: A trip has one available seat and a second trip is full
+      When: Book the available seat then open its details and refresh
+      Then: The booking belongs to the passenger and remains visible
+- id: BOOKING-2
+  name: Unavailable seat
+  description: Reject booking a full trip without creating a booking.
+  scenarios:
+  - id: BOOKING-2-SCN
+    steps:
+    - id: BOOKING-2-STEP
+      Given: A full trip
+      When: Attempt to book
+      Then: Explain unavailability and leave bookings unchanged

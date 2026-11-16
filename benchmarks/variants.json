@@ -1,0 +1,10 @@
+[
+  {"id": "baseline", "root": "REPLACE_WITH_EXTRACTED_baseline/compiler.zip",
+   "description": "Frozen 13-pass pipeline (benchmarks/baseline/compiler.zip, commit 8da0858), extracted and installed separately."},
+  {"id": "agent", "profile": "profiles/arcbench-app/config.yaml",
+   "description": "Application agent, default profile."},
+  {"id": "agent-skills", "profile": "profiles/arcbench-app/variant-skills.yaml",
+   "description": "Step 24 ablation: agent plus on-demand practice guides."},
+  {"id": "agent-symbols", "profile": "profiles/arcbench-app/variant-symbols.yaml",
+   "description": "Step 24 ablation: agent plus symbol lookup."}
+]

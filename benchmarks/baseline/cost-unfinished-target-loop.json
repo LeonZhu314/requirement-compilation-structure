@@ -1,0 +1,130 @@
+{
+  "totals": {
+    "calls": 290,
+    "input_tokens": 3985707,
+    "cached_input_tokens": 3172352,
+    "output_tokens": 248230,
+    "reasoning_tokens": 172272,
+    "model_seconds": 2506.86,
+    "wall_seconds": 2622.0
+  },
+  "stages": {
+    "00": {
+      "calls": 0,
+      "input_tokens": 0,
+      "cached_input_tokens": 0,
+      "output_tokens": 0,
+      "reasoning_tokens": 0,
+      "model_seconds": 0,
+      "start": "2026-11-04 20:45:09",
+      "observed_until": "2026-11-04 20:45:09",
+      "done": "2026-11-04 20:45:09",
+      "complete": true,
+      "wall_seconds": 0.0
+    },
+    "01": {
+      "calls": 2,
+      "input_tokens": 2645,
+      "cached_input_tokens": 2560,
+      "output_tokens": 3641,
+      "reasoning_tokens": 2173,
+      "model_seconds": 35.160000000000004,
+      "start": "2026-11-04 20:45:09",
+      "observed_until": "2026-11-04 20:45:45",
+      "done": "2026-11-04 20:45:45",
+      "complete": true,
+      "wall_seconds": 36.0
+    },
+    "02": {
+      "calls": 2,
+      "input_tokens": 5283,
+      "cached_input_tokens": 4224,
+      "output_tokens": 1712,
+      "reasoning_tokens": 765,
+      "model_seconds": 13.7,
+      "start": "2026-11-04 20:45:45",
+      "observed_until": "2026-11-04 20:45:59",
+      "done": "2026-11-04 20:45:59",
+      "complete": true,
+      "wall_seconds": 14.0
+    },
+    "03": {
+      "calls": 2,
+      "input_tokens": 5657,
+      "cached_input_tokens": 2048,
+      "output_tokens": 1242,
+      "reasoning_tokens": 986,
+      "model_seconds": 14.62,
+      "start": "2026-11-04 20:45:59",
+      "observed_until": "2026-11-04 20:46:14",
+      "done": "2026-11-04 20:46:14",
+      "complete": true,
+      "wall_seconds": 15.0
+    },
+    "04": {
+      "calls": 0,
+      "input_tokens": 0,
+      "cached_input_tokens": 0,
+      "output_tokens": 0,
+      "reasoning_tokens": 0,
+      "model_seconds": 0,
+      "start": "2026-11-04 20:46:14",
+      "observed_until": "2026-11-04 20:46:14",
+      "done": "2026-11-04 20:46:14",
+      "complete": true,
+      "wall_seconds": 0.0
+    },
+    "05": {
+      "calls": 4,
+      "input_tokens": 18788,
+      "cached_input_tokens": 2048,
+      "output_tokens": 1894,
+      "reasoning_tokens": 1290,
+      "model_seconds": 22.74,
+      "start": "2026-11-04 20:46:14",
+      "observed_until": "2026-11-04 20:47:40",
+      "done": "2026-11-04 20:47:40",
+      "complete": true,
+      "wall_seconds": 86.0
+    },
+    "06": {
+      "calls": 3,
+      "input_tokens": 19988,
+      "cached_input_tokens": 4096,
+      "output_tokens": 17012,
+      "reasoning_tokens": 10649,
+      "model_seconds": 157.09,
+      "start": "2026-11-04 20:47:40",
+      "observed_until": "2026-11-04 20:50:17",
+      "done": "2026-11-04 20:50:17",
+      "complete": true,
+      "wall_seconds": 157.0
+    },
+    "07": {
+      "calls": 0,
+      "input_tokens": 0,
+      "cached_input_tokens": 0,
+      "output_tokens": 0,
+      "reasoning_tokens": 0,
+      "model_seconds": 0,
+      "start": "2026-11-04 20:50:17",
+      "observed_until": "2026-11-04 20:50:17",
+      "done": "2026-11-04 20:50:17",
+      "complete": true,
+      "wall_seconds": 0.0
+    },
+    "08": {
+      "calls": 277,
+      "input_tokens": 3933346,
+      "cached_input_tokens": 3157376,
+      "output_tokens": 222729,
+      "reasoning_tokens": 156409,
+      "model_seconds": 2263.5499999999993,
+      "start": "2026-11-04 20:50:17",
+      "observed_until": "2026-11-04 21:28:51",
+      "complete": false,
+      "wall_seconds": 2314.0
+    }
+  },
+  "note": "Cached input is part of input; reasoning is part of output. No model prices assumed."
+}

@@ -16,10 +16,11 @@ class SubmissionPackage(unittest.TestCase):
         dependencies = ['PyYAML', 'playwright>=1.64.1']
         root.joinpath('pyproject.toml').write_text('[project]\ndependencies = ["PyYAML", "playwright>=1.64.1"]\n')
         root.joinpath('requirements.txt').write_text('\n'.join(dependencies) + '\n')
-        for relative in ('main.py', '01_explore_requirement.py', '12_implement_frontend_tdd.py',
-                'infrastructure/stages/requirements/visuals.py',
-                'infrastructure/stages/frontend/triggers/exact_locators.mjs',
-                'infrastructure/shared/project/templates/frontend/src/App.tsx', 'uv.lock'):
+        for relative in ('main.py', 'infrastructure/application_agent.py', 'infrastructure/runtime/loop.py',
+                'infrastructure/runtime/config.py', 'infrastructure/verification/driver.py',
+                'infrastructure/shared/project/templates/frontend/src/App.tsx', 'uv.lock',
+                'profiles/arcbench-app/config.yaml', 'profiles/arcbench-app/role.md',
+                'profiles/arcbench-app/workflow.md'):
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('' if path.suffix == '.py' else 'fixture')
@@ -66,3 +67,43 @@ class SubmissionPackage(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'missing from pip manifest'):
                 package_arcbench(root, archive)
             self.assertFalse(archive.exists())
+
+    def test_engine_profile_is_required_and_no_pipeline_lingcore_or_key_is_shipped(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.fixture(root)
+            profile = root / 'profiles/arcbench-app'
+            (profile / 'workflow.md').unlink()
+            with self.assertRaisesRegex(ValueError, 'profiles/arcbench-app/workflow.md'):
+                package_arcbench(root, root / 'out.zip')
+            (profile / 'workflow.md').write_text('profile fixture')
+            (profile / '.env').write_text('OPENAI_API_KEY=secret-profile-key')
+            package_arcbench(root, root / 'out.zip')
+            with zipfile.ZipFile(root / 'out.zip') as archive:
+                names = archive.namelist()
+                self.assertIn('profiles/arcbench-app/workflow.md', names)
+                self.assertNotIn('profiles/arcbench-app/.env', names)
+            numbered = root / '01_explore_requirement.py'
+            numbered.write_text('')
+            package_arcbench(root, root / 'out.zip')                 # Not collected any more.
+            with zipfile.ZipFile(root / 'out.zip') as archive:
+                self.assertNotIn('01_explore_requirement.py', archive.namelist())
+            numbered.unlink()
+            (root / 'infrastructure/bridge.py').write_text('from lingcore.agent import Agent\n')
+            with self.assertRaisesRegex(ValueError, 'imports LingCore'):
+                package_arcbench(root, root / 'out.zip')
+            (root / 'infrastructure/bridge.py').write_text('KEY = "private-main-key"\n')
+            with self.assertRaisesRegex(ValueError, 'contains an API key'):
+                package_arcbench(root, root / 'out.zip')
+
+    def test_the_real_tree_ships_the_engine_only(self):
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            package_arcbench(root, Path(directory) / 'out.zip')
+            with zipfile.ZipFile(Path(directory) / 'out.zip') as archive:
+                names = set(archive.namelist())
+        self.assertFalse([name for name in names if name[:2].isdigit() or '/stages/' in name
+            or name.startswith(('.comparison', 'outputs', 'benchmarks')) or 'lingcore' in name.lower()])
+        self.assertLessEqual({'main.py', 'uv.lock', 'infrastructure/runtime/persistence.py',
+            'infrastructure/verification/acceptance.py', 'infrastructure/requirements/normalize.py',
+            'profiles/arcbench-app/linux.yaml', 'infrastructure/shared/project/templates/deploy.sh'}, names)

@@ -19,6 +19,7 @@ import subprocess
 import tempfile
 import zipfile
 import json
+import re
 import tomllib
 
 
@@ -91,8 +92,7 @@ def package_arcbench(root: Path, output: Path) -> int:
 
     paths = {root / name for name in ('main.py', 'README.md', 'pyproject.toml', 'requirements.txt',
         'uv.lock', '.env.example', '.gitignore', '.gitattributes', 'principle.md')}
-    paths.update(path for path in root.glob('*.py') if path.name[:2].isdigit())
-    for directory in ('infrastructure', 'scripts', 'tests', 'assets', 'input'):
+    for directory in ('infrastructure', 'scripts', 'tests', 'assets', 'input', 'profiles'):
         paths.update((root / directory).rglob('*'))
     excluded = {'.git', '__pycache__', '.venv', 'node_modules', 'outputs', 'output', '.vscode'}
     files = {}
@@ -106,26 +106,42 @@ def package_arcbench(root: Path, output: Path) -> int:
             continue
         if path.suffix in {'.pyc', '.pyo', '.zip', '.log', '.db'}:
             continue
+        if relative.as_posix() == 'scripts/evaluate.py':
+            continue  # Development tool; needs benchmarks/, which is not shipped.
         files[relative.as_posix()] = path.read_bytes()
 
     settings = {**dotenv_values(root / '.env.example'), **dotenv_values(root / '.env')}
     allowed = ('MODEL', 'OPENAI_BASE_URL', 'MODEL_REASONING', 'VISUAL_MODEL', 'VISUAL_BASE_URL',
         'VISUAL_REASONING', 'MAX_OUTPUT_TOKENS')
-    environment = ['# Credentials must be supplied through the benchmark environment.', 'OPENAI_API_KEY=']
+    # The benchmark runner is a disposable container without a nested sandbox, and it
+    # discards the application when the generator exits non-zero.
+    environment = ['# Credentials must be supplied through the benchmark environment.', 'OPENAI_API_KEY=',
+        'AGENT_SANDBOX=host', 'AGENT_DELIVERY_EXIT=0']
     environment.extend(key + '=' + json.dumps(str(settings[key]), ensure_ascii=False)
         for key in allowed if settings.get(key) is not None)
     files['.env'] = ('\n'.join(environment) + '\n').encode('utf-8')
 
+    # The engine, its profile and the application template: nothing of the removed pipeline.
     required = {'main.py', 'requirements.txt', 'pyproject.toml', 'uv.lock',
-        '01_explore_requirement.py', '12_implement_frontend_tdd.py',
-        'infrastructure/stages/requirements/visuals.py',
-        'infrastructure/stages/frontend/triggers/exact_locators.mjs',
-        'infrastructure/shared/project/templates/frontend/src/App.tsx'}
+        'infrastructure/application_agent.py', 'infrastructure/runtime/loop.py',
+        'infrastructure/runtime/config.py', 'infrastructure/verification/driver.py',
+        'infrastructure/shared/project/templates/frontend/src/App.tsx',
+        'profiles/arcbench-app/config.yaml', 'profiles/arcbench-app/role.md',
+        'profiles/arcbench-app/workflow.md'}
     if not required <= files.keys():
         raise ValueError(f'Missing submission sources: {sorted(required - files.keys())}')
+    keys = [value.encode() for name, value in dotenv_values(root / '.env').items()
+        if name.endswith('API_KEY') and value and len(value) >= 8]
     for name, content in files.items():
         if name.endswith('.py'):
             compile(content, name, 'exec')
+            # The engine is ours: the studied reference is never imported or shipped.
+            if re.search(rb'^\s*(from|import)\s+lingcore\b', content, re.MULTILINE):
+                raise ValueError(f'{name} imports LingCore; the delivered engine must not depend on it')
+        if re.fullmatch(r'\d\d_\w+\.py', name):
+            raise ValueError(f'{name} belongs to the removed numbered pipeline')
+        if any(key in content for key in keys):
+            raise ValueError(f'{name} contains an API key from .env; secrets are supplied by the runner')
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(prefix='.' + output.name, suffix='.tmp', dir=output.parent,

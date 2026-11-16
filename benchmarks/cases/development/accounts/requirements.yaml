@@ -1,0 +1,17 @@
+id: ACCOUNTS
+name: Accounts and identity isolation
+description: Build a React, Express and SQLite application. Use visible accessible
+  controls and actual persisted behavior.
+children:
+- id: ACCOUNTS-1
+  name: Sign up and sign in
+  description: Visitors may register with a unique email and password, sign in, and
+    sign out. Use accessible labels Email and Password. Reject duplicate email without
+    creating another account.
+  scenarios:
+  - id: ACCOUNTS-1-SCN
+    steps:
+    - id: ACCOUNTS-1-STEP
+      Given: Two distinct registered accounts
+      When: Sign in as the second account and refresh
+      Then: Show the second account identity; signing out removes access to its profile

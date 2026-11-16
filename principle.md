@@ -1,3 +1,10 @@
+> **Historical document.** This text describes the *Requirement Compilation* method (progressive passes
+> and intermediate representations) on which the former 13-pass compiler was based. That pipeline was removed:
+> the delivered engine is a single development-agent session verified by the host, described in
+> [README.md](README.md) and [PLAN_MIGRATION_AGENT_LINGCORE.md](PLAN_MIGRATION_AGENT_LINGCORE.md). No schema,
+> obligation, API, UI or trigger representation is produced any more. The frozen pipeline remains available
+> in `benchmarks/baseline/compiler.zip` for comparison.
+
 # Requirement Compilation：需求编译的核心思想、形式化定义与完整流程
 
 与传统的 Agentic Software Development 有一个根本区别：

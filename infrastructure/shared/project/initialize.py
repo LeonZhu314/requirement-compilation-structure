@@ -10,7 +10,7 @@ DEFAULT_STACK = "react-express-sqlite"
 
 # --- Extension point: technology stacks --------------------------------------
 # Register another template directory and its empty directories here. New
-# database/backend stacks also need matching lowering adapters in steps 05/08.
+# database/backend stacks also need compatible runtime initialization and runners.
 STACKS = {
     DEFAULT_STACK: {
         "templates": Path(__file__).with_name("templates"),
@@ -33,7 +33,7 @@ def enable_import_case_checks(output_dir: Path, workspace: str) -> str:
 
 def initialize_project(output_dir: Path, stack: str = DEFAULT_STACK, port: int = 3000) -> list[str]:
     # Templates contain infrastructure only. Existing application sources and
-    # data are preserved; dependencies are installed separately by the TDD step.
+    # data are preserved; dependencies are installed separately when needed.
     """Copy missing files from the chosen stack template and return their workspace-relative paths; preserve existing files."""
     if stack not in STACKS:
         raise ValueError(f"Unknown technology stack: {stack}. Available: {', '.join(STACKS)}")

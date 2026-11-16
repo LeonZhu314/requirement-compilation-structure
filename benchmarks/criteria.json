@@ -1,0 +1,11 @@
+{
+  "confirmed": false,
+  "note": "Proposed thresholds. Review them and set confirmed to true BEFORE the first comparison run; do not edit them after seeing results.",
+  "min_evaluated_pairs": 5,
+  "min_cases": 5,
+  "min_repeats": 2,
+  "max_external_success_loss": 0.0,
+  "min_external_success_gain": 0.1,
+  "min_token_gain": 0.2,
+  "min_time_gain": 0.2
+}

@@ -1,158 +1,296 @@
-# Requirement Compiler
+# Application Agent
 
-Compile `requirements.yaml` and reference images into a React + Express + SQLite application through 13 passes: requirements, database schema and obligations, backend APIs and tests, UI, and frontend triggers with end-to-end tests. Intermediate artifacts are saved under the output directory's `.arc/` folder.
+Builds a React + Express + SQLite application from a requirement tree
+(`requirements.yaml`, reference images, optional tests) with **one development-agent
+session per application**. The agent reads the requirements, explores and edits every
+layer, runs commands in a sandbox and checks the result in a browser. When it says it
+is done, the **host verifies the application independently** and returns failures to
+the same session for repair. Only a host-verified application counts as a success.
+
+The conversation loop, tools, sessions and budgets are this project's own code,
+inspired by LingCore without importing or shipping it. The former 13-pass compiler and
+its intermediate representations were removed; the
+[migration plan](PLAN_MIGRATION_AGENT_LINGCORE.md) records each step and its validation,
+and `benchmarks/baseline/compiler.zip` keeps the frozen pipeline for comparisons.
+
+No Arcbench score is claimed for this engine yet: see [Evaluation](#evaluation).
 
 ## Environment
 
-Install [Python 3.11+](https://www.python.org/downloads/), [Node.js 22.12+ with npm](https://nodejs.org/en/download), and [uv](https://docs.astral.sh/uv/getting-started/installation/). Ensure `node`, `npm`, and `uv` are available in your terminal; reopen it after installation.
-
-Run from the repository root using your platform's shell.
-
-**Windows (PowerShell)**
-
-```powershell
-uv sync
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-uv run playwright install chromium
-```
-
-**macOS / Linux (bash or zsh)**
+Install [Python 3.11+](https://www.python.org/downloads/), [Node.js 22.12+ with npm](https://nodejs.org/en/download),
+[uv](https://docs.astral.sh/uv/getting-started/installation/) and Git, then from the repository root:
 
 ```bash
 uv sync
-if [ ! -f .env ]; then cp .env.example .env; fi
-uv run playwright install chromium
+uv run playwright install chromium     # Linux: add --with-deps to install system libraries
 ```
 
-On supported Debian/Ubuntu Linux systems, use `uv run playwright install --with-deps chromium` instead to also install browser system dependencies; this may require sudo.
+Copy `.env.example` to `.env` and set `OPENAI_API_KEY`, `OPENAI_BASE_URL` and `MODEL`.
+The endpoint must support native function calls (`uv run main.py --probe` checks it with
+two paid requests). Never put keys in a profile.
 
-If npm needs to compile native dependencies such as `better-sqlite3`, install the platform's build tools:
+Commands written by the agent never run directly on your machine by default:
 
-| Platform | Build tools |
-| --- | --- |
-| Windows | Visual Studio Build Tools with **Desktop development with C++**, plus Python available to npm. |
-| macOS | Xcode Command Line Tools: `xcode-select --install`. |
-| Linux | Python, make, and a C++ compiler; on Debian/Ubuntu: `sudo apt-get install python3 build-essential`. |
+| Platform | Sandbox | Preparation |
+| --- | --- | --- |
+| Windows | Docker | Docker Desktop running, `docker pull node:22-bookworm` |
+| Linux | Bubblewrap | `bwrap` installed and user namespaces allowed |
+| Disposable machine or CI container | none (`--sandbox host`) | Node.js and npm on the host |
 
-Set `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `MODEL` in `.env`. Use a model that accepts image input.
+There is no automatic fallback: if the sandbox is unavailable the run stops before any
+model request with `environment_error`. `--sandbox host` is an explicit choice for a
+machine that is itself disposable; commands then run in the session's mirror directory
+with a clean environment but **without isolation**.
+
+The default `arcbench-app` profile uses `host` because the ArcBench runner does not
+allow this project to install `bwrap` or change the launch command. This assumes the
+ArcBench runner itself is already isolated. The dedicated `linux.yaml` profile still
+requires Bubblewrap.
+
+The default profile keeps visual comparison in `report` mode and uses the optional
+vision-model fallback to explain visual differences when available.
+
+### ArcBench runner image with Bubblewrap
+
+The ArcBench runner image must contain `bwrap`; installing it in the application
+workspace is too late because the sandbox check runs before the agent starts. Build the
+provided image and configure ArcBench to use the resulting image:
+
+```bash
+docker build -f Dockerfile.arcbench \
+  -t arcbench-runner-bwrap:latest .
+```
+
+If the private registry image is not available in the build environment, set the base
+image explicitly to the runner image supplied by ArcBench:
+
+```bash
+docker build -f Dockerfile.arcbench \
+  --build-arg ARCBENCH_RUNNER_IMAGE=regt3h8hc.arc-bench.com/arcbench-runner:latest \
+  -t arcbench-runner-bwrap:latest .
+```
+
+Select `arcbench-runner-bwrap:latest` as the ArcBench runner image, then verify inside
+the runner:
+
+```bash
+which bwrap
+bwrap --version
+uv run main.py --check-environment --sandbox bubblewrap
+```
+
+The runner must also permit unprivileged user namespaces. If the image can be changed
+but the ArcBench runtime cannot, installing the package alone will not be sufficient.
+
+Check the setup without any model call:
+
+```bash
+uv run main.py --check-config
+uv run main.py --check-environment
+```
 
 ## Run
-
-The input directory must contain `requirements.yaml` and its referenced images. The examples use `input/` and write the generated application to `outputs/demo/`. The commands below work in PowerShell, bash, and zsh.
-
-### Full pipeline
 
 ```bash
 uv run main.py input --output-dir outputs/demo
 ```
 
-Add `--model-log` to display and save detailed model input/output, or `--port 33000` to change the backend port (default: 3000). Token usage and model latency are always shown.
+The input directory contains `requirements.yaml`, its referenced images and optionally
+`tests/*.spec.ts` (Playwright tests used for acceptance). Input and output must be
+disjoint directories.
 
-Agent tasks have no default limit on model calls, proposals or repair rounds. They continue
-until their acceptance checks pass. Optional `--max-attempts` and `--max-turns` flags can
-set explicit limits for individual steps. Independent reads should be batched to reduce
-round trips; acceptance checks and failure reporting remain enforced.
+| Option | Meaning |
+| --- | --- |
+| `--port 3000` | Default port of the generated application |
+| `--profile FILE` | Generation profile (default `profiles/arcbench-app/config.yaml`) |
+| `--max-requests N`, `--max-seconds N` | Override the run-wide limits of the profile |
+| `--sandbox auto\|docker\|bubblewrap\|host` | Execution backend |
+| `--resume SESSION_ID` | Continue a saved session (same input and profile) |
+| `--state-dir DIR` | Where session state is kept (default `.agent-state` beside the output) |
+| `--model-log` | Print every session event while running |
 
-Step 12 generates requirement-grounded acceptance tests before implementing each workflow.
-These tests also serve as its TDD suite, avoiding a second overlapping test-generation call.
-Implementation agents cannot edit these suites; final acceptance retains a separate,
-requirement-grounded test review and real browser regression checks. Locator ambiguities
-are corrected by the independent test owner during TDD, so the application agent does
-not loop on denied test edits. Literal role/name contracts are made exact using the
-TypeScript parser before implementation; dynamic names and regex locators are preserved.
-Implementation context keeps relevant controls and actual sources rather than resending
-every decorative UI declaration. Shared backend runtime/seed definitions are supplied
-up front, and already supplied source content is not duplicated in read excerpts. Navigation context
-includes entry/loading triggers on directly involved pages without pulling in other workflows.
-Shared ancestor descriptions remain in leaf-task context. Both structured Given/When/Then
-steps and keyword/content scenarios with page references are normalized locally. UI
-presence checks also validate explicit original role/name pairs for matching controls.
+The last line of standard output is a JSON report, also saved as
+`OUTPUT/.arc/run.json`. Exit codes: `0` application accepted, `130` interrupted, `1` any
+other outcome, `2` invalid command line or configuration.
 
-Visual analysis is optional evidence: an image-provider failure is recorded under
-`.arc/visual_analysis_report.json` with status `DEGRADED`. Functional UI generation
-continues from the original text, roles and routes; unavailable image observations are
-never treated as verified. Real compilation or acceptance failures return a nonzero
-CLI exit code. `DEGRADED` remains visible when only optional visual evidence is missing.
+| Outcome | Meaning |
+| --- | --- |
+| `accepted` | Verified by the host from a clean delivery state |
+| `failed` | Functional failure remains, repairs stagnated, or protected files were modified |
+| `provider_error` | The model provider failed and the application is not accepted |
+| `environment_error` | Sandbox, Node or browser unavailable; not a verdict on the application |
+| `budget_exceeded` | A run-wide limit was reached before acceptance |
+| `verification_missing` | Nothing independent could judge the behavior |
+| `interrupted` | Stopped by the user; completed writes are retained |
 
-For an Arcbench source submission, run `python scripts/package.py --arcbench --output
-outputs/compiler-arcbench.zip`. The archive includes working-tree sources and dependency
-manifests, excludes local outputs and API keys, and checks dependency consistency.
+A truncated model reply is continued, never counted as done.
 
-The lean candidate uses the confirmed fast-review baseline, compact JSON request
-serialization (all values/source strings preserved) and `context_request: null` handling
-that consumes valid edits/design records directly. Models, reasoning settings, business
-prompts, tools, checks and application templates match that baseline.
+## How a run works
 
-If a model request still returns 503 after standard SDK retries, the client waits five
-seconds and probes the exact request once with nested SDK retries disabled. Provider
-no-retry/Retry-After headers are respected; timeout and authentication retry policies
-are unchanged. A terminal provider error stops compilation with its status/task recorded
-in `.arc/compilation.json`, rather than skipping a requirement and generating an unusable
-downstream application. Proposal validation failures keep their existing repair/task flow.
-No workflow-round cap is added. Baseline fingerprints and request-fidelity tests are in
-`tests/test_fast_review_lean.py`; HTTP fault tests are in `tests/test_model_service_recovery.py`.
-Only a new Arcbench run can confirm the score and total cost.
-
-### Step by step
-
-Run these commands in order. They call the same 13 passes with the same default settings as `main.py`. Step 01 uses `--no-browse` to match the non-interactive pipeline.
-
-```bash
-uv run 00_project_initialization.py --input input --output outputs/demo
-uv run 01_explore_requirement.py --input input --output outputs/demo --no-browse
-uv run 02_build_db_schema.py --input input --output outputs/demo
-uv run 03_infer_db_obligations.py --input input --output outputs/demo
-uv run 04_check_db_obligations.py --input input --output outputs/demo
-uv run 05_implement_db.py --input input --output outputs/demo
-uv run 06_design_backend_apis.py --input input --output outputs/demo
-uv run 07_check_backend_apis.py --input input --output outputs/demo
-uv run 08_implement_backend_tdd.py --input input --output outputs/demo
-uv run 09_design_ui.py --input input --output outputs/demo
-uv run 10_implement_ui.py --input input --output outputs/demo
-uv run 11_design_frontend_triggers.py --input input --output outputs/demo
-uv run 12_implement_frontend_tdd.py --input input --output outputs/demo
+```text
+main.py INPUT --output-dir OUTPUT
+   prepare: load requirements locally, create the application skeleton if missing
+   one agent session ──► read / search / plan / edit / run / observe ◄── observations
+        │ final reply = completion proposal
+        ▼
+   host verification: integrity → dependencies → build → start → acceptance tests → visual
+        ├─ failed, repairable ──► compact feedback into the same session
+        ├─ candidate            ──► confirmed from a clean delivery state
+        └─ accepted / explicit non-success outcome
 ```
 
-For individual steps, add `--pause` for teaching pauses or `--debug-model-io` for detailed model I/O. Set a custom backend port with `--port` in step 00.
+- **Requirements** are loaded without a model call into a lossless catalogue. Small
+  documents are given whole; large ones are read by id with their parent constraints.
+  Reference images are inspected on demand.
+- **Tools**: file read/edit/patch/search, requirement and coverage lookup, todo list and
+  notes, sandboxed commands, dependency installation, reusable services, targeted checks
+  (`verify_application`: typecheck, build, backend tests), `http_request`,
+  `database_query`, a loopback-only browser and read-only Git.
+- **Parallel sub-agents**: `delegate_tasks` writes up to four independent parts at the same time,
+  each in its own session that may write only its own paths and runs no command; the lead
+  agent writes the shared contract first, then integrates and verifies.
+- **Fewer round trips**: every request resends the conversation, so the instructions ask
+  for grouped work. `read_files` and `write_files` handle several files per call,
+  `verify_application` installs changed dependencies itself and `kind: all` chains
+  typecheck, build and backend tests, and `process_start` with `probe_path` returns the
+  first HTTP response. Consecutive read-only calls of one response run concurrently;
+  calls with an effect keep the order the model gave.
+- **Acceptance** is isolated from the workspace. It uses the supplied external tests
+  unchanged and generates Playwright tests only for scenarios they do not cover, from the
+  original requirement. The agent receives symptoms and requirement ids, never test source.
+- **Coverage** keeps the agent's declarations apart from host verification and marks every
+  proof stale once sources change. Visual conformance is judged separately from behavior.
+- **Lighter context**: obsolete observations (a read of a file rewritten or read again
+  later, a repeated check, command or search, older page snapshots) are replaced by one
+  line once `loop.prune_min_bytes` can be reclaimed at once, and stay retrievable as
+  artifacts. Build, compiler and package-manager logs are reduced to their error lines.
+  The report gives input, output and provider-cached tokens.
+- **Budget** is one for the whole run: wall time with a reserve for the final verification,
+  model requests by category, tool calls and reported tokens. Identical calls with
+  identical results are redirected, then stopped.
+- **Verification cost**: fast stages first, previously failing tests first, dependencies
+  and builds reused only while every input is unchanged; success always comes from a
+  clean round.
 
-### Start the generated application
+## State, resume and checkpoints
 
-```bash
-cd outputs/demo
-npm run db:init
-npm run build
-npm start
+Each run has its own directory `STATE/SESSION_ID/` with `session.json` (conversation,
+counters, fingerprints; atomic writes with a recoverable previous version),
+`events.jsonl`, `run-summary.json`, artifacts, process logs and the execution mirror.
+Known secret values and credential-shaped strings are masked before writing.
+
+`--resume SESSION_ID` continues the conversation with the same budget counters. It is
+refused when the input files or the profile's instructions changed. Resuming restores
+**no file**: the workspace is whatever the previous run left, including the effects of
+an interrupted command, and the agent is told to inspect it. File states are recorded
+separately as Git commits in the output directory after each verification
+(`checkpoints` in the report); restore one with ordinary Git commands.
+
+Two runs never share working state: a new run starts a new session, workspace mirror
+and databases.
+
+## Profiles
+
+`profiles/arcbench-app/config.yaml` defines the model, tools, loop limits, `budget:`,
+`acceptance:` and `execution:`. A profile may `extends:` another file of its directory
+and state only its differences (`linux.yaml`, `windows.yaml`, the `variant-*.yaml`
+experiments). `role.md` and `workflow.md` are the stable instructions.
+
+Setting priority: process environment, then the settings file (`--env-file`, default
+`.env` beside `main.py`), then the profile. `MODEL`, `OPENAI_BASE_URL`, `OPENAI_API_KEY`,
+`MODEL_REASONING`, `MAX_OUTPUT_TOKENS` and the `VISUAL_*` equivalents are supported.
+`image_mode: fallback` sends images to the visual model; `native` attaches them to the
+main conversation.
+
+The limits shipped in the profile (250 requests, 5 400 s including 900 s reserved,
+12 M reported tokens) are initial values derived from the frozen baseline runs, not
+calibrated on runs of this engine.
+
+## Code map
+
+![Code map](assets/code-map.svg)
+
+```text
+main.py                         public CLI, report and exit codes
+profiles/arcbench-app/          profiles, instructions, optional skills
+infrastructure/
+  application_agent.py          one persistent session per application
+  runtime/                      loop, model client, tools, sandbox, browser, context,
+                                budget, persistence, profile loader
+  verification/                 targeted checks, acceptance suite, host verifier,
+                                coverage registry, visual comparison, repair driver
+  requirements/                 deterministic normalization of the requirement tree
+  shared/project/               application skeleton and templates
+scripts/package.py              submission archive
+scripts/evaluate.py             paired comparison runs and reports
+benchmarks/                     frozen baseline, cases, protocol, variants, criteria
 ```
 
-Open `http://localhost:3000` (or the port you selected).
+## Tests
 
-## Code map and extension points
+```bash
+uv run --with pytest python -m pytest tests
+```
 
-![Compiler code map](assets/compiler-code-map.svg)
+The suite is offline (scripted model, simulated runtime). Three integration tests are
+opt-in: `AGENTASE_TEST_SANDBOX=docker|bubblewrap` (real isolation),
+`AGENTASE_TEST_ACCEPTANCE=1` (real Playwright acceptance; installs `@playwright/test`
+from npm on first use).
 
-Numbered scripts orchestrate each pass. Domain logic lives in `infrastructure/stages/`; shared agent and project services live in `infrastructure/shared/`.
+## Packaging
 
-### Module guide
+```bash
+uv run python scripts/package.py --arcbench --output outputs/agent-arcbench.zip
+```
 
-| Module | Entry | Purpose |
-| --- | --- | --- |
-| Pipeline | [main.py](main.py), [compiler.py](infrastructure/compiler.py) | Configuration, pass order, and reports. |
-| Requirements · 00–01 | [requirements/](infrastructure/stages/requirements/), [project/](infrastructure/shared/project/) | Requirement tree and project initialization. |
-| Database · 02–05 | [database/](infrastructure/stages/database/) | Schema, obligations, DDL, and seed data. |
-| Backend · 06–08 | [backend/](infrastructure/stages/backend/) | API contracts, HTTP tests, and implementation. |
-| Frontend · 09–12 | [ui/](infrastructure/stages/frontend/ui/), [triggers/](infrastructure/stages/frontend/triggers/) | UI design, interactions, and browser acceptance. |
-| Agent loops | [proposals.py](infrastructure/shared/agent/proposals.py), [loop.py](infrastructure/shared/agent/loop.py) | Model requests, file edits, checks, and repair. |
-| Runtime services | [project/](infrastructure/shared/project/), [presentation/](infrastructure/utils/presentation/) | Templates, Git checkpoints, logs, and execution evidence. |
+The archive holds the engine, profiles, templates, tests and dependency manifests. It
+refuses numbered pipeline scripts, any LingCore import and any file containing an API
+key from `.env`; the shipped `.env` keeps model settings with an empty key, which the
+runner must supply through `OPENAI_API_KEY`.
 
-### Extension points
+## Evaluation
 
-| Area | Current entry | Possible extension |
-| --- | --- | --- |
-| Memory | [conventions.py](infrastructure/shared/agent/conventions.py) stores shared decisions; task loops retain retrieved evidence. | Store validated repair lessons and retrieve only those relevant to the current task. |
-| RAG | [rag/](infrastructure/shared/rag/) provides BM25; [discovery.py](infrastructure/shared/agent/discovery.py) provides lexical search and exact reads. | Add embeddings, hybrid retrieval, or reranking to the relevant retrieval path. |
-| Tools | [tools/](infrastructure/shared/agent/tools/) registers and executes `read_file` and `edit_file`. | Add tool schemas, executors, permissions, and observation handling in `loop.py`, including external service adapters. |
-| Skills | No loader is implemented. | Select task-relevant `SKILL.md` guidance when assembling prompts, using the existing tools and permissions. |
-| Models | [text.py](infrastructure/shared/models/text.py), [vision.py](infrastructure/shared/models/vision.py). | Add providers or select models by task. |
-| Acceptance | Domain `testing.py` and runtime modules. | Support other application stacks or execution environments. |
+`scripts/evaluate.py` runs paired comparisons (same cases, alternating order, new
+workspace per run) and records every run, including failures and timeouts, as described
+in [benchmarks/PROTOCOL.md](benchmarks/PROTOCOL.md):
 
-Keep each task focused on one requirement. Retrieve shared knowledge on demand, preserve canonical contracts, and use executable checks to accept changes.
+```bash
+uv run python scripts/evaluate.py plan --variants benchmarks/variants.json --cases input --repeats 2
+uv run python scripts/evaluate.py run  --variants benchmarks/variants.json --cases input --repeats 2 \
+    --records outputs/eval/runs.jsonl --work outputs/eval --yes        # paid model requests
+uv run python scripts/evaluate.py external --records outputs/eval/runs.jsonl --run-id ID --passed true --score 0.8
+uv run python scripts/evaluate.py report --records outputs/eval/runs.jsonl \
+    --criteria benchmarks/criteria.json --baseline baseline --candidate agent
+```
+
+To see where one run spent its requests, tokens and time (model wait, each tool, each
+verification stage, verification rounds), or to compare several runs:
+
+```bash
+uv run python scripts/analyze_run.py outputs/demo
+uv run python scripts/analyze_run.py outputs/run-a/.arc/run.json outputs/run-b/.arc/run.json
+```
+
+`main.py` prints the same facts on one `Run breakdown:` line at the end of a run.
+`--cases benchmarks/cases input` selects the seven local cases; two repeats per case is
+the default and the minimum the report accepts.
+
+A local acceptance is not an external success: `external_passed` stays empty until an
+Arcbench result is attached. `benchmarks/criteria.json` holds the maximum acceptable
+quality loss and the minimum useful gain; confirm it **before** the first run. Until
+confirmed criteria and enough externally evaluated pairs exist, the report answers
+`insufficient_evidence`.
+
+Two optional mechanisms are available as ablation variants and are off by default until
+measured: on-demand practice guides (`variant-skills.yaml`) and symbol lookup
+(`variant-symbols.yaml`).
+
+## Known limits
+
+- Acceptance tests and the Playwright runner execute on the host (Node required), outside
+  the sandbox, with a cleaned environment; the application stays sandboxed.
+- The clean verification round keeps `node_modules` unless `acceptance.clean_install: true`.
+- Without an intermediate representation, any source change invalidates every proof.
+- The deterministic visual threshold is an uncalibrated heuristic.
+- A passing test is known to have executed, not to contain meaningful assertions.
+- Streaming and explicit prompt-cache keys are not implemented.

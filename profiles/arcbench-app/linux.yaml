@@ -1,0 +1,5 @@
+# Linux: Bubblewrap sandbox. Everything else comes from config.yaml.
+extends: config.yaml
+name: arcbench-app-linux
+execution:
+  backend: bubblewrap

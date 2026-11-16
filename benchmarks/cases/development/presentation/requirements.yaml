@@ -1,0 +1,19 @@
+id: PRESENTATION
+name: Responsive navigation and state
+description: Build a React, Express and SQLite application. Use visible accessible
+  controls and actual persisted behavior.
+children:
+- id: PRESENTATION-1
+  name: Directory
+  description: Provide Home and Directory routes with links. Directory shows a heading,
+    search labelled Search, a table of people, loading/error/empty states and a details
+    route. At 390px width controls remain usable without horizontal page overflow.
+  scenarios:
+  - id: PRESENTATION-1-SCN
+    steps:
+    - id: PRESENTATION-1-STEP
+      Given: A directory with two people
+      When: Search for a missing person, clear search, open a person then navigate
+        back
+      Then: Empty state appears then the list returns; details and back navigation
+        work

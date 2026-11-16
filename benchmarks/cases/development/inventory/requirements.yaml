@@ -1,0 +1,27 @@
+id: INVENTORY
+name: Inventory CRUD and filters
+description: Build a React, Express and SQLite application. Use visible accessible
+  controls and actual persisted behavior.
+children:
+- id: INVENTORY-1
+  name: Products
+  description: Create, list, edit and delete products with a unique code, name and
+    nonnegative quantity. Filter by code and show a clear empty result. Changes survive
+    refresh.
+  scenarios:
+  - id: INVENTORY-1-SCN
+    steps:
+    - id: INVENTORY-1-STEP
+      Given: Products A (quantity 2) and B (quantity 5)
+      When: Edit A to quantity 3, filter for A and refresh
+      Then: Only A is shown with quantity 3; B remains 5
+- id: INVENTORY-2
+  name: Invalid quantity
+  description: Reject negative quantities without modifying persisted products.
+  scenarios:
+  - id: INVENTORY-2-SCN
+    steps:
+    - id: INVENTORY-2-STEP
+      Given: Product A with quantity 3
+      When: Submit quantity -1
+      Then: Show an error; A remains at 3

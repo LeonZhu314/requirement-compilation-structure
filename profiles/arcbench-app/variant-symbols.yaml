@@ -1,0 +1,4 @@
+# Step 24 experiment: symbol and dependency lookup. Compare against config.yaml (ablation).
+extends: config.yaml
+name: arcbench-app-symbols
+tools_add: [find_symbol]

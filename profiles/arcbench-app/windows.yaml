@@ -1,0 +1,5 @@
+# Windows: Docker sandbox (docker pull node:22-bookworm). Everything else comes from config.yaml.
+extends: config.yaml
+name: arcbench-app-windows
+execution:
+  backend: docker

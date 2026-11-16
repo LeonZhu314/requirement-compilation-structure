@@ -1,0 +1,17 @@
+id: LIBRARY
+name: Reserved library lending
+description: Build a React, Express and SQLite application. Use visible accessible
+  controls and actual persisted behavior.
+children:
+- id: LIBRARY-1
+  name: Lending
+  description: Manage members, books and loans. A member can borrow an available book
+    and return it. Reject a second active loan of the same copy. Persist loans and
+    availability.
+  scenarios:
+  - id: LIBRARY-1-SCN
+    steps:
+    - id: LIBRARY-1-STEP
+      Given: Two members and one available copy
+      When: Member one borrows; member two attempts to borrow; member one returns
+      Then: Second loan is rejected and returning makes the copy available

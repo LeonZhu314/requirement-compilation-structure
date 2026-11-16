@@ -7,15 +7,19 @@ A full-stack TypeScript application using React, Vite, Express, and SQLite
 
 ```text
 frontend/                 React UI; builds into frontend/dist/
+  src/lib/                API client, router, form controls, layout
 backend/
   src/
     server.ts             Server entry point and database initialization
     app.ts                Express app, API routes, and frontend serving
     api/                  Business API registration
+    lib/                  HTTP errors and validation, password hashing, sessions
     db/                   SQLite connection, initialization, and SQL tables
   scripts/                Build and backend test helpers
   dist/                   Compiled backend (generated)
 package.json              npm workspace configuration and shared commands
+package-lock.json         Resolved dependency versions (installed with npm ci)
+BUILDING_BLOCKS.md        How to use the generic code in backend/src/lib and frontend/src/lib
 deploy.sh                 Dependency installation, build, and server startup
 ```
 

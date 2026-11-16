@@ -11,6 +11,7 @@
     "dev:backend": "npm run dev -w @arc/backend",
     "dev:frontend": "npm run dev -w @arc/frontend",
     "db:init": "npm run db:init -w @arc/backend",
-    "test:backend": "npm run test -w @arc/backend"
+    "test:backend": "npm run test -w @arc/backend",
+    "test": "npm run test:backend"
   }
 }

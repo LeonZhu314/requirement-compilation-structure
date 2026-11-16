@@ -1,0 +1,5 @@
+# Step 24 experiment: on-demand practice guides. Compare against config.yaml (ablation).
+extends: config.yaml
+name: arcbench-app-skills
+tools_add: [read_skill]
+skills: [sql, http, react, playwright]

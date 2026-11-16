@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { randomBytes, scryptSync } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-// Step 05 fills this dependency-ordered list; row definitions live in seeds/*.sql.
+// Maintain startup SQL filenames in dependency order; row definitions live in seeds/*.sql.
 export const seedFiles: readonly string[] = [];
 
 export function seedDatabase(connection: Database.Database): void {

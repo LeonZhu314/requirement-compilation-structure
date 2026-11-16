@@ -1,0 +1,76 @@
+name: arcbench-app
+llm:
+  model: deepseek-flash
+  base_url: https://api.arc-bench.com/v1
+  reasoning: low
+  max_output_tokens: 16384
+  timeout_seconds: 120
+  max_retries: 2
+tools: [read_file, read_files, edit_file, write_file, write_files, apply_patch, delegate_tasks, run_acceptance_tests, list_files, search_text, read_artifact,
+  requirement_catalog, read_requirement, coverage, todo_write, note_write, view_image,
+  install_dependencies, run_command, verify_application, process_start, process_status,
+  process_logs, process_stop, browser, git_read, http_request, database_query, interface_write]
+instructions:
+  role: role.md
+  workflow: workflow.md
+loop:
+  # Limits that grow with the size of the application are 0 (none): requests, tool calls,
+  # tokens, verification rounds, time. A repair loop still stops when it stagnates.
+  max_requests: 0
+  max_context_bytes: 240000
+  max_tools_per_response: 16
+  compact_ratio: 0.8
+  observation_chars: 12000
+  # Obsolete observations are replaced by one line once this much can be reclaimed at
+  # once: rare, large edits keep the provider's prefix cache useful. 0 disables.
+  prune_min_bytes: 24000
+  # Observation masking: tool results and written file text older than the latest
+  # 10 tool batches become a short placeholder (still retrievable as an artifact).
+  observation_window: 10
+image_mode: fallback
+execution:
+  # ArcBench does not expose bwrap or allow changing the runner command.
+  # Commands therefore run in the runner's already-isolated environment.
+  backend: host
+  network: true
+  docker_image: node:22-bookworm
+  docker_user: "1000:1000"
+  timeout_seconds: 600
+  memory_mb: 2048
+  cpus: 2
+  pids: 256
+  tmp_mb: 512
+  max_output_bytes: 4000000
+  verification_port: 3100
+  allowed_ports: [3000, 5173]
+capabilities:
+  native_tools: true
+  streaming: false
+  images: true
+  prompt_cache: false
+# Initial limits derived from the frozen baseline runs (75 calls / 2 966 s for a
+# 5-of-5 run, 277 calls in an unfinished loop); revise them from step 23 results.
+budget:
+  # No time limit (0): later applications are much larger. Speed comes from the context
+  # masking, the short command timeout and the completion instructions; requests and
+  # tokens stay bounded. Set a number of seconds to bound a run again (main.py --max-seconds).
+  wall_seconds: 0
+  verification_reserve_seconds: 720
+  max_tool_calls: 0
+  max_reported_tokens: 0
+  max_verification_rounds: 0
+  stagnation_repeats: 3
+acceptance:
+  external_tests: true
+  generate: true
+  max_generated_scenarios: 0   # 0: a test for every scenario no supplied test covers.
+  visual: report
+  visual_threshold: 0.6
+  test_timeout_seconds: 30
+  suite_timeout_seconds: 900
+  startup_timeout_seconds: 90
+  clean_install: false
+  # The benchmark runs its tests in parallel on one shared database ("test names append run,
+  # worker and case identity"): local acceptance does the same, so list, uniqueness and
+  # concurrency defects show up before delivery.
+  workers: 3
