@@ -11,6 +11,8 @@ import re
 from .results import FAILED, PASSED
 
 UNVERIFIED, STALE, MISSING, UNAVAILABLE = 'unverified', 'stale', 'missing', 'unavailable'
+# A generated test that still fails after its reviews judged it wrong: no verdict either way.
+DISPUTED = 'disputed'
 SIMILAR, DIVERGENT, MISSING_INTERFACE = 'similar', 'divergent', 'missing_interface'
 # Outcomes a scenario explicitly asks for; they must not be dropped by a happy-path check.
 ASPECTS = {
@@ -81,7 +83,8 @@ class CoverageRegistry:
         for identity, results in touched.items():
             entry = self.entries[identity]
             statuses = {test['status'] for test in results}
-            status = FAILED if FAILED in statuses else PASSED if statuses == {PASSED} else UNVERIFIED
+            status = FAILED if FAILED in statuses else PASSED if statuses == {PASSED} else \
+                DISPUTED if statuses <= {PASSED, DISPUTED} else UNVERIFIED
             entry.update(functional=status, evidence=evidence, source_revision=revision,
                 tests=[{'title': test['title'], 'status': test['status'], 'origin': test.get('origin')} for test in results],
                 last_result={'status': status, 'source_revision': revision})
@@ -99,7 +102,7 @@ class CoverageRegistry:
         conservatively invalidates every host proof obtained on another revision."""
         stale = []
         for entry in self.entries.values():
-            if entry['functional'] in {PASSED, FAILED} and entry['source_revision'] != revision:
+            if entry['functional'] in {PASSED, FAILED, DISPUTED} and entry['source_revision'] != revision:
                 entry['functional'] = STALE
                 stale.append(entry['id'])
         for entry in self.visual.values():
@@ -115,7 +118,7 @@ class CoverageRegistry:
 
     def omissions(self):
         return sorted(identity for identity, entry in self.entries.items()
-            if entry['kind'] != 'requirement_level' and entry['functional'] != PASSED)
+            if entry['kind'] != 'requirement_level' and entry['functional'] not in {PASSED, DISPUTED})
 
     def summary(self):
         counts, visual = {}, {}

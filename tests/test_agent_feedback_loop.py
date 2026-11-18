@@ -45,6 +45,49 @@ class FeedbackLoopTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(outcome.status, 'accepted')
         self.assertTrue(agent.state.verifications[-1]['clean_state'])
 
+    async def test_a_complete_passing_acceptance_run_ends_the_work_turn(self):
+        # Every scenario has a supplied test: once they all pass, the agent gets no further request.
+        only_a = {**REQUIREMENTS, 'children': REQUIREMENTS['children'][:1]}
+        model = ScriptedModel([tools(call('write_file', 'w', path='behaviors.txt', content='SCN-A-1 SCN-A-2' + chr(10))),
+            tools(call('run_acceptance_tests', 'run'))])
+        agent, tooling, _ = make_agent(self.root, model, requirements=only_a, generate=False)
+        async with agent:
+            outcome = await agent.generate(tooling=tooling)
+            reply = [m for m in agent.state.messages if m.tool_call_id == 'run'][0].content
+        self.assertEqual(outcome.status, 'accepted')
+        self.assertEqual(len(model.requests), 2)                               # No polishing request afterwards.
+        self.assertIn('host now ends your work turn', reply)
+        self.assertTrue(agent.state.verifications[-1]['clean_state'])
+
+    async def test_an_incomplete_suite_does_not_end_the_turn(self):
+        # SCN-B-1 has no test (generation is off): passing tests do not prove completion.
+        model = ScriptedModel([tools(call('write_file', 'w', path='behaviors.txt', content='SCN-A-1 SCN-A-2' + chr(10))),
+            tools(call('run_acceptance_tests', 'run')), ModelResponse('Done.')])
+        agent, tooling, _ = make_agent(self.root, model, generate=False)
+        async with agent:
+            await agent.generate(tooling=tooling)
+        self.assertEqual(len(model.requests), 3)
+
+    async def test_the_same_failure_three_times_in_a_row_asks_the_agent_to_stop_bending_the_app(self):
+        runs = [call('run_acceptance_tests', f'run{index}') for index in range(3)]
+        model = ScriptedModel([tools(call('write_file', 'w', path='behaviors.txt', content='SCN-A-1' + chr(10))),
+            *(tools(run) for run in runs), ModelResponse('Done.')])
+        agent, tooling, _ = make_agent(self.root, model, generate=False)
+        async with agent:
+            await agent.generate(tooling=tooling)
+            reports = [json.loads(m.content)['result']['report'] for m in agent.state.messages
+                if m.tool_call_id in {'run0', 'run1', 'run2'}]
+        self.assertNotIn('come back', reports[0])
+        self.assertNotIn('come back', reports[1])
+        self.assertIn('come back 3 times in a row', reports[2])
+        self.assertIn('password field must stay hidden', reports[2])
+
+    def test_generated_tests_use_controls_as_browsers_expose_them(self):
+        # Playwright gives <input type=password> the textbox role (checked on a real application):
+        # a "Password"(role=textbox) is located like any textbox, not by label only.
+        self.assertIn('Playwright gives a password input the textbox role', AUTHOR)
+        self.assertNotIn('has no textbox role', AUTHOR)
+
     async def test_manual_checks_after_a_passing_build_earn_one_reminder(self):
         agent, _, _ = make_agent(self.root, ScriptedModel([]))
         async with agent:

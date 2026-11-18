@@ -277,3 +277,100 @@ montrent, et les corrections génériques qui en découlent :
 
 Ces règles ne visent pas ce site : elles s’appliquent à toute exigence rédigée de cette
 façon. Effet non mesuré.
+
+
+# Partie 4 — état de la recherche fin 2026, appliqué à nos runs (après la v1.16)
+
+Les quatre derniers runs montrent trois problèmes :
+- sur les gros sites, l'agent relit sans écrire (0/28 et 0/35) ;
+- sur BookStack, les tests locaux passent alors que les tests cachés plafonnent à 6/12 ;
+- la vérification boucle sans fin sur un test généré défectueux.
+
+Les travaux ci-dessous sont classés par gain attendu sur ces problèmes. Les chiffres viennent des résumés des papiers, pas d'une lecture intégrale, et sont ceux qu'annoncent leurs auteurs.
+
+## 1. Taux de réussite : nos tests locaux ne sont qu'un juge parmi d'autres
+
+- **Vibe Code Bench** (Tran et al., 2026 ; 100 applications, 964 parcours) : le meilleur modèle atteint 58 à 62 %.
+  - Le meilleur prédicteur de réussite est l'auto-test dans le navigateur pendant la génération : corrélation de 0,72, qui tient même en contrôlant le temps passé. Le volume d'édition prédit moins bien.
+  - Surtout, **le choix de l'évaluateur change le résultat** : les évaluateurs ne s'accordent qu'entre 31,8 et 93,6 % sur chaque étape.
+- **All Smoke, No Alarm** (2026) : sur 86 156 fichiers de tests écrits par des agents, 80,2 % ont des assertions faibles ou absentes. D'autres études montrent que des assertions générées encodent souvent le comportement observé au lieu du comportement attendu.
+- **Audit des boucles de génération de tests** (2026) : comparés à un panel de trois implémentations acceptées, les résultats attendus générés ne concordent que dans 28 à 50 % des cas. Les « fautes » détectées contre une seule implémentation sont souvent fausses.
+- **IWC-Bench** (Tencent, 2026) : un explorateur parcourt l'application sans voir les critères d'acceptation, et la notation se fait séparément. La couverture indique ce qui n'a pas été exploré.
+
+**Pour nous.** Notre unique générateur de tests est un juge avec ses propres biais, et l'agent plie l'application pour lui plaire. Pistes :
+
+1. **Deux générateurs indépendants** (deux prompts ou deux températures). Ne renvoyer à l'agent comme « échec » qu'un défaut constaté par les deux ; un désaccord devient « test douteux », signalé sans exiger de changement.
+2. **Assertions limitées aux résultats décrits par l'exigence** (le texte du `Then`). C'est déjà dans les consignes ; on peut le vérifier statiquement en exigeant que chaque test contienne au moins une assertion citant un texte du `Then`.
+3. **Exploration libre avant les tests** : une passe clique chaque lien et chaque bouton de chaque page déclarée, et signale les erreurs (404, exception, bouton sans effet). Elle ne dépend d'aucun test généré, donc ne pousse à aucun contournement.
+
+## 2. Contexte : évincer d'abord ce qui est déjà inscrit dans l'environnement
+
+- **Beyond Compaction, méthode CWL** (Semenov et Dorofeev, 2026) : au lieu de résumer, l'agent annote son travail en épisodes typés et liés entre eux.
+  - Quand le budget est dépassé, une règle déterministe, sans appel au modèle, évince d'abord **les épisodes dont l'effet est déjà persisté dans l'environnement** (un fichier écrit, par exemple).
+  - Elle garde les tours de l'utilisateur et le contexte sur lequel l'agent raisonne encore.
+  - Résultat annoncé : 89 tâches de suite et 80 M de tokens, sans perte de précision.
+- **Context-Folding** (Sun et al., 2025) : `branch` ouvre un sous-contexte pour une sous-tâche, et `return(message)` le replie en un court résumé. Réussite égale à celle de ReAct avec un contexte actif **10 fois plus petit**, et meilleure que la compaction par résumé.
+- **ACE** (Zhang et al., ICLR 2026) : le contexte s'enrichit par petites entrées (« deltas ») plutôt que par réécriture complète, car les réécritures successives le dégradent en résumés pauvres. Gain annoncé : +10,6 % sur des tâches d'agent.
+- **Self-Compacting Agents et AutoCompact** (2026) : compacter quand le budget est presque plein ignore l'état de la trajectoire ; il vaut mieux compacter aux **frontières de tâche**.
+
+**Pour nous.**
+
+1. **Un journal d'implémentation tenu par l'hôte.** À chaque écriture, l'hôte note quel fichier touche quelles routes, tables et exigences (déduit des chemins, des déclarations `interface_write` et de la todo). Ce journal survit à la compaction : on y ajoute des entrées sans jamais le réécrire, comme dans ACE. L'agent sait ainsi ce qui est fait sans relire.
+2. **Une éviction à la manière de CWL.** À la compaction, retirer d'abord les lectures de fichiers que l'agent a réécrits depuis, puis les écritures elles-mêmes (le fichier fait foi), avant de toucher aux exigences et au raisonnement récent.
+3. **Compacter aux frontières de section** (une tâche de la todo passée à « done », une vérification réussie) plutôt qu'à un seuil d'octets. On perd moins en cours de tâche et on casse moins souvent le cache du fournisseur.
+4. **Une section par sous-contexte replié** (Context-Folding avec nos sous-agents). Pour un gros site, chaque section est traitée dans un sous-contexte qui revient avec un résumé de quelques lignes. `delegate_tasks` existe déjà ; il faut que le premier message le rende évident.
+
+## 3. Planifier avant d'écrire
+
+- **Spec Kit Agents** (2026) : le cycle Specify → Plan → Tasks → Implement produit SPEC.md, PLAN.md (avec les fichiers touchés) et TASKS.md avant la première ligne de code.
+- **CodeTeam** (2026) : une planification d'architecture ancrée dans le contexte fait passer la validité structurelle de 0,78 à 0,90.
+- **ViBench** (Replit, 2026) : étendre une base stable est plus facile que partir de zéro, et les erreurs s'accumulent quand le modèle étend son propre code.
+
+**Pour nous.** Une première requête courte produit le **plan de l'application** : pages et routes, tables, API, et quelle exigence va où. Il reste dans le contexte permanent pendant tout le run. Il remplace la relecture des exigences pendant l'écriture, sert de contrat commun aux sous-agents et donne un squelette stable que l'agent étend ensuite section par section.
+
+## 4. Visuel : utile, mais secondaire pour des tests fonctionnels
+
+- **UI2App** (2026) : la fidélité visuelle prédit mal la justesse des interactions. Le modèle le plus fidèle visuellement est environ 4,5 fois moins bon en interactions que le meilleur sur ce critère.
+- **RILA** (2026) : une boucle exécuter → critiquer → éditer dans un vrai navigateur. Avec une bonne critique, un modèle de 9 milliards de paramètres bat de bien plus gros modèles qui génèrent en un seul coup.
+- **VisRefiner** (2026) : le modèle apprend des différences visuelles entre son rendu et la maquette.
+
+**Pour nous.** Garder le retour visuel de la v1.15 limité à un seul tour, puisque les tests cachés sont fonctionnels. La boucle exécuter → critiquer de RILA sert davantage aux interactions (l'exploration du § 1, piste 3) qu'aux pixels.
+
+## 5. Coût : le bon modèle au bon endroit
+
+- **Routage par sous-agent** (retours d'expérience 2026) : donner un modèle moins cher aux sous-agents, à la génération et à la relecture de tests est le gain le plus simple. Un mauvais routage coûte en reprises. Il faut mesurer le **coût par résultat accepté**, pas le coût par requête.
+- **Sélection parmi plusieurs candidats** (SWE-World, tournois récursifs, 2026) : +7 à +13 points sur SWE-bench, mais le coût est multiplié d'autant. Hors de propos tant qu'un seul run dure 30 à 60 minutes.
+
+**Pour nous.** `deepseek-flash` est déjà un modèle économique ; le principal levier reste de ne plus brûler de requêtes en boucle (v1.16). À tester ensuite : un raisonnement `none` réservé à la génération et à la relecture des tests de l'hôte (des tâches courtes et cadrées), en gardant `low` pour l'agent.
+
+## Ordre proposé
+
+| # | Changement | Problème visé | Source principale |
+|---|---|---|---|
+| 1 | Deux générateurs de tests ; échec seulement s'ils concordent | plafond à 6/12, contournements | Vibe Code Bench, audits d'oracles |
+| 2 | Plan de l'application en début de run, permanent | relectures, cohérence des gros sites | Spec Kit, CodeTeam |
+| 3 | Journal d'implémentation tenu par l'hôte + éviction à la CWL | boucles de relecture, tokens | CWL, ACE |
+| 4 | Exploration automatique des liens et boutons | pannes visibles sans test | IWC-Bench, RILA |
+| 5 | Compaction aux frontières de section | pertes en cours de tâche, cache cassé | AutoCompact, Self-Compacting |
+| 6 | Raisonnement `none` pour les requêtes de test de l'hôte | coût, temps | retours d'expérience sur le routage |
+
+## Sources (partie 4)
+
+- Tran et al., *Vibe Code Bench: Evaluating AI Models on End-to-End Web Application Development*, 2026. https://arxiv.org/abs/2603.04601
+- *All Smoke, No Alarm: Oracle Signals in Agent-Authored Test Code*, 2026. https://arxiv.org/html/2606.18168v1
+- *Auditing and Decomposing Feedback-Driven Evolution in LLM Test Generation under the Oracle Problem*, 2026. https://arxiv.org/abs/2608.19626
+- *IWC-Bench: Evaluating Web Application Generation from a Software Testing Perspective*, 2026. https://arxiv.org/abs/2609.15387
+- Semenov et Dorofeev, *Beyond Compaction: Structured Context Eviction for Long-Horizon Agents*, 2026. https://arxiv.org/abs/2606.11213
+- Sun et al., *Scaling Long-Horizon LLM Agent via Context-Folding*, 2025. https://arxiv.org/abs/2510.11967
+- Zhang et al., *Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models*, ICLR 2026. https://arxiv.org/abs/2510.04618
+- *Self-Compacting Language Model Agents*, 2026. https://arxiv.org/pdf/2606.23525
+- *AutoCompact: Learning When to Compact Context in Long-Horizon Coding Agents*, 2026. https://arxiv.org/abs/2610.02163
+- *CliffCompaction: Cost-Efficient Compaction for Long-Horizon Coding Agents*, 2026. https://arxiv.org/pdf/2609.26779
+- *Spec Kit Agents: Context-Grounded Agentic Workflows*, 2026. https://arxiv.org/abs/2604.05278
+- *CodeTeam: An LLM-Powered Multi-Agent Framework for Repository-Level Code Generation*, 2026. https://arxiv.org/pdf/2606.22082
+- *UI2App: Benchmarking Visual Interaction Inference in Executable Web Application Generation*, 2026. https://arxiv.org/pdf/2607.06306
+- *Rendering-in-the-Loop: An Execution-Driven Agent for Interactive Web Development* (RILA), 2026. https://arxiv.org/pdf/2609.02088
+- *VisRefiner: Learning from Visual Differences for Screenshot-to-Code Generation*, 2026. https://arxiv.org/abs/2602.05998
+- *SWE-World: Building Software Engineering Agents in Docker-Free Environments*, 2026. https://arxiv.org/pdf/2602.03419
+- *Scaling Test-Time Compute for Agentic Coding*, 2026. https://arxiv.org/abs/2604.16529
+- Retours d'expérience sur le routage de modèles : https://getunblocked.com/blog/model-routing-coding-agents et https://jfrog.com/blog/why-model-routing-backfires

@@ -75,7 +75,7 @@ class DriverTests(unittest.IsolatedAsyncioTestCase):
         responses = [write('SCN-A-1'), ModelResponse('Done.'), ModelResponse('It should already work.')]
         agent, tooling, log, outcome = await self.run_agent(responses, generate=False)
         self.assertEqual((outcome.status, outcome.cause), ('failed', 'stagnation: no source change after feedback'))
-        self.assertEqual(outcome.rounds, 2)
+        self.assertEqual(outcome.rounds, 1)                         # Unchanged sources are not verified twice.
 
     async def test_same_failures_after_real_changes_are_redirected_then_stopped(self):
         responses = [write('SCN-A-1'), ModelResponse('Done.')]

@@ -127,7 +127,7 @@ def progress(agent, detailed):
             print(f'[{kind}] ' + json.dumps(data, ensure_ascii=False, default=str)[:4000], file=sys.stderr, flush=True)
         elif kind == 'tool_started':
             print(f'  tool {data["name"]}', file=sys.stderr, flush=True)
-        elif kind in {'error', 'compacted', 'pruned', 'stagnation', 'final', 'resumed'}:
+        elif kind in {'error', 'compacted', 'pruned', 'stagnation', 'looking', 'final', 'resumed'}:
             print(f'[{kind}] ' + json.dumps(data, ensure_ascii=False, default=str)[:300], file=sys.stderr, flush=True)
     agent.loop.on_event = show
     persist_sub = agent.tools.event_sink

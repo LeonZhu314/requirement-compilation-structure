@@ -27,7 +27,54 @@ CONTINUE = {
         'State a different hypothesis, gather different evidence, then continue.',
     'context_limit': 'The conversation reached its context limit. Rely on your notes and todo list, read only what '
         'is needed with paging, and continue.',
+    # A provider timeout on one long response ended a run at minute 6 with an empty application.
+    'provider_error': 'Your previous request failed at the model provider (a very long response timed out) and none '
+        'of its tool calls ran. Continue in smaller steps: write a few files per call, shorter messages.',
 }
+
+
+def disputed_review(report):
+    """The set-aside tests, once, before the end: a review can be wrong in either direction."""
+    lines = [f'Every counted acceptance test passed. The host set aside {len(report["disputed"])} generated tests '
+        'that their reviews judged wrong, but a review can be mistaken. For each one, compare what it checks with the '
+        'requirement text: if the requirement states it (an element, a text, an attribution, a single control with '
+        'that name), fix the application; if not, leave it. Then call run_acceptance_tests again or reply with your '
+        'completion summary.']
+    for item in report['disputed'][:10]:
+        error = next((line.strip() for text in item.get('errors') or [] for line in str(text).splitlines()
+            if line.strip() and not line.strip().startswith('Error:')), '')
+        first = next((line.strip() for text in item.get('errors') or [] for line in str(text).splitlines() if line.strip()), '')
+        page = '; '.join(item.get('page_alerts') or [])
+        lines.append(f'- [{", ".join(item.get("covers") or [])}] {item.get("title", "")}: {first[:200]} {error[:300]}'
+            + (f' The page showed: {page[:200]}.' if page else ''))
+    return '\n'.join(lines)
+
+
+# Model requests after the last new best before the repair stops. Rounds alone did not stop a
+# run whose agent read for an hour between rounds (real run: 8 hours on one site).
+NO_PROGRESS_REQUESTS = 150
+
+
+def requests_without_progress(reports, requests):
+    """Model requests since the round that last reached a new maximum of passing tests."""
+    best, mark = -1, None
+    for report in reports:
+        passed = report.get('passed', 0) or 0
+        if passed > best:
+            best, mark = passed, report.get('requests')
+    return 0 if mark is None else max(0, requests - mark)
+
+
+def rounds_without_progress(reports):
+    """Verification rounds since the number of passing tests last reached a new maximum."""
+    best, since = -1, 0
+    for report in reports:
+        passed = report.get('passed', 0) or 0
+        if passed > best:
+            best, since = passed, 0
+        else:
+            since += 1
+    return since
 
 
 @dataclass
@@ -72,16 +119,25 @@ def feedback(report, *, repeated, remaining):
         covers = ', '.join(failure.get('covers') or []) or 'no requirement id'
         title = failure.get('title') or failure.get('key') or failure['stage']
         errors = ' | '.join(error for error in (failure.get('errors') or failure.get('problems') or []) if error)
-        lines.append(f'- [{covers}] {title}: {errors[:700]}')
+        shown = failure.get('page_alerts') or []
+        page = f' The page showed: {"; ".join(shown)[:300]}.' if shown else ''
+        lines.append(f'- [{covers}] {title}: {errors[:700]}{page}')
     if len(failures) > 8:
         lines.append(f'- and {len(failures) - 8} more failures in the evidence artifact.')
+    disputed = report.get('disputed') or []
+    if disputed:
+        lines.append('Set aside, not counted against the application (their reviews judged these generated tests '
+            'wrong): ' + ', '.join(','.join(item['covers']) or item['title'] for item in disputed[:12]) + '.')
     visual = report.get('visual') or {}
     for image, item in visual.items():
         if item['status'] != 'similar':
             detail = '; '.join(item.get('differences', [])) or item.get('reason') or str(item.get('metrics', ''))
             lines.append(f'- Visual reference {image}: {item["status"]}. {detail[:400]}')
-    lines.append('Expectations: the original requirements are the authority. Re-read the listed ids with '
-        'read_requirement; the independent tests are host-owned and are not available to you.')
+    lines.append('Expectations: the original requirements are the authority. Re-read the listed ids (in the '
+        'requirements you were given, or with read_requirement); the independent tests are host-owned and are not '
+        'available to you. A generated test can be wrong: when the page shows your application rightly rejecting '
+        'what the test entered, or the test demands something no requirement states, do not bend the application; '
+        'call run_acceptance_tests with disputes (scenario and the requirement text it contradicts).')
     lines.append(f'Evidence: read_artifact {report["evidence"]} holds the full report'
         + ''.join(f'; {stage["stage"]} log {stage["artifact"]}' for stage in report['stages']
             if stage.get('artifact') and stage['status'] != PASSED) + '.')
@@ -115,8 +171,14 @@ class FinalizationDriver:
         return outcome
 
     async def verify(self):
-        """Incremental first; a candidate success must be confirmed from a clean state."""
-        report = await self.verifier.verify(clean_state=False)
+        """Incremental first; a candidate success must be confirmed from a clean state. When the
+        agent's own last round already passed on these very sources, the clean round comes at once
+        (real run: an identical incremental round repeated right after the agent's passing one)."""
+        last = self.verifier.last_report
+        if last and last['status'] == CANDIDATE and last['source_revision'] == self.agent.tools.processes.mirror.revision():
+            report = last
+        else:
+            report = await self.verifier.verify(clean_state=False)
         if report['status'] == CANDIDATE:
             report = await self.verifier.verify(clean_state=True)
         # Restore point of the files this result was obtained on, then the session.
@@ -128,21 +190,46 @@ class FinalizationDriver:
         self.budget.start()
         result = None
         try:
+            initial = self.agent.tools.processes.mirror.revision()
             result = await self.agent.run(task)
             previous, same, continuations = None, 0, 0
             while True:
-                if result.status in CONTINUE and continuations < 2 and self.can_continue():
+                # A failing provider is retried once only: each failed request already waited
+                # through its own timeout and retries.
+                limit = 1 if result.status == 'provider_error' else 2
+                if result.status in CONTINUE and continuations < limit and self.can_continue():
                     continuations += 1
                     result = await self.agent.loop.run(CONTINUE[result.status])
                     continue
                 if result.status == 'proposed':
                     continuations = 0
-                # Whatever ended the turn, the delivered state is verified by the host.
-                try:
-                    report = await self.verify()
-                except BudgetExceeded as error:
-                    return self.outcome(BUDGET_EXCEEDED, result, cause=f'{error.limit}; verification could not run')
+                last = self.verifier.last_report
+                revision = self.agent.tools.processes.mirror.revision()
+                if revision == initial and not self.verifier.rounds and result.status != 'proposed':
+                    # Nothing was written: generating and reviewing tests against the bare template
+                    # cost 7 minutes and 34 requests, and reviews then rewrote correct tests.
+                    status = PROVIDER_ERROR if result.status == 'provider_error' else FUNCTIONAL_FAILURE
+                    return self.outcome(status, result, cause=f'no application file was written (agent turn ended as '
+                        f'{result.status}); verification skipped')
+                if last and last['status'] == FAILED and last['source_revision'] == revision:
+                    # Nothing changed since the last round, the driver's or the agent's own: running
+                    # it again costs minutes and returns the same failures.
+                    if previous or getattr(self.agent, 'stuck', False):
+                        return self.outcome(FUNCTIONAL_FAILURE, result, last, 'stagnation: no source change after feedback')
+                    report = last
+                elif last and last.get('accepted') and last['source_revision'] == revision:
+                    report = last  # Accepted and unchanged since (e.g. after looking at set-aside tests).
+                else:
+                    # Whatever ended the turn, the delivered state is verified by the host.
+                    try:
+                        report = await self.verify()
+                    except BudgetExceeded as error:
+                        return self.outcome(BUDGET_EXCEEDED, result, cause=f'{error.limit}; verification could not run')
                 if report['status'] == PASSED and report['accepted']:
+                    if report.get('disputed') and not getattr(self.agent, '_disputed_shown', True) and self.can_continue():
+                        self.agent._disputed_shown = True
+                        result = await self.agent.loop.run(disputed_review(report))
+                        continue
                     return self.outcome(ACCEPTED, result, report)
                 if report['status'] == ENVIRONMENT:
                     return self.outcome(ENVIRONMENT_ERROR, result, report, report.get('diagnostic') or report['stage'])
@@ -158,6 +245,14 @@ class FinalizationDriver:
                     return self.outcome(VERIFICATION_MISSING, result, report, report['failures'][0]['errors'][0])
                 if result.status not in {'proposed', *CONTINUE}:
                     return self.outcome(FUNCTIONAL_FAILURE, result, report, f'agent turn ended as {result.status}')
+                # Every round counts, also those the agent started with run_acceptance_tests.
+                trailing = 0
+                for past in reversed(self.verifier.reports):
+                    if past.get('fingerprint') != report['fingerprint']:
+                        break
+                    trailing += 1
+                if trailing >= 2 * self.profile.budget.stagnation_repeats:
+                    return self.outcome(FUNCTIONAL_FAILURE, result, report, 'stagnation: same failures after repeated repairs')
                 if previous and previous['fingerprint'] == report['fingerprint']:
                     if previous['source_revision'] == report['source_revision']:
                         return self.outcome(FUNCTIONAL_FAILURE, result, report, 'stagnation: no source change after feedback')
@@ -166,6 +261,15 @@ class FinalizationDriver:
                         return self.outcome(FUNCTIONAL_FAILURE, result, report, 'stagnation: same failures after repeated repairs')
                 else:
                     same = 0
+                # Failures that change a little each round never repeat exactly (real run: 16, 17,
+                # 16, 17, 18 passing over 9 rounds, 99 minutes): rounds that add no passing test count.
+                idle = rounds_without_progress(self.verifier.reports)
+                if idle and requests_without_progress(self.verifier.reports, self.state.requests) >= NO_PROGRESS_REQUESTS:
+                    return self.outcome(FUNCTIONAL_FAILURE, result, report,
+                        f'stagnation: no new passing test in the last {NO_PROGRESS_REQUESTS} model requests')
+                if idle >= self.profile.budget.stagnation_repeats:
+                    return self.outcome(FUNCTIONAL_FAILURE, result, report,
+                        f'stagnation: no new passing test in the last {idle} verification rounds')
                 # 0: no fixed number of rounds; the stagnation checks above still stop a repair
                 # loop that no longer changes the failures.
                 if reached(self.verifier.rounds, self.profile.budget.max_verification_rounds):

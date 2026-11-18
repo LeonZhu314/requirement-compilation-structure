@@ -295,10 +295,19 @@ class AcceptanceSuiteTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(await suite.review(model, budget, relative, other, self.no_compile_error))
             self.assertNotEqual(suite.files[relative]['sha256'], before)
             kept = suite.files[relative]['sha256']
-            third = [{'title': failure[0]['title'], 'errors': ['another failure']}]
+            third = [{'title': failure[0]['title'], 'errors': ['another failure after 1200ms']}]
+            # Two reviews per file: the oracle is not rewritten round after round.
+            self.assertFalse(await suite.review(model, budget, relative, third, self.no_compile_error))
+            self.assertEqual(budget.requests['test_review'], 2)
+            suite.review_attempts.clear()
             self.assertFalse(await suite.review(model, budget, relative, third, self.no_compile_error))  # Drops the test: rejected.
             self.assertEqual(suite.files[relative]['sha256'], kept)
             self.assertEqual([r['decision'] for r in suite.reviews], ['kept', 'corrected', 'rejected_correction'])
+            # The same failure with other durations and identifiers is the same evidence.
+            suite.review_attempts.clear()
+            timed = [{'title': failure[0]['title'], 'errors': ['another failure after 3405ms']}]
+            self.assertFalse(await suite.review(model, budget, relative, timed, self.no_compile_error))
+            self.assertEqual(budget.requests['test_review'], 3)
         finally:
             await agent.aclose()
 

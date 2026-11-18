@@ -15,7 +15,7 @@ from tests.verification_support import make_agent
 
 SPEC = {'id': 'ROOT', 'name': 'Library', 'description': 'Organize items.', 'children': [
     {'id': 'REQ-1', 'name': 'Browse', 'description': {'text': 'Clicking "Items"(role=link) displays '
-        '"Item list"(role=region). Each item is a keyboard-accessible "{item name}"(role=button).'},
+        '"Item list"(role=region). Each item is a keyboard-accessible "{item name}"(role=button), a link is also allowed.'},
      'scenarios': [{'id': 'SCN-1', 'steps': [{'id': 'S1', 'Given': 'Items exist', 'When': 'Open Items',
          'Then': 'Exactly one entry per item in Item list.'}]}],
      'children': [{'id': 'REQ-1.1', 'name': 'Delete', 'description': {'text': 'Clicking "Delete"(role=button) '
@@ -26,7 +26,12 @@ SPEC = {'id': 'ROOT', 'name': 'Library', 'description': 'Organize items.', 'chil
 class ContractTests(unittest.TestCase):
     def test_roles_and_names_are_extracted_exactly_and_nothing_else(self):
         self.assertEqual(extract('Clicking "Books"(role=link) shows “Book list” (role = region) and Page list (region).'),
-            [('link', 'Books'), ('region', 'Book list'), ('region', 'Page list')])
+            [('link', 'Books', ()), ('region', 'Book list', ()), ('region', 'Page list', ())])
+        # An alternative stated in the same sentence is kept; other sentences do not leak into it.
+        self.assertEqual(extract('Each item is a "{item name}"(role=button), with an equivalent link also allowed. '
+            '"Delete"(role=button) removes it.'), [('button', '{item name}', ('button', 'link')), ('button', 'Delete', ())])
+        self.assertEqual(locator({'role': 'button', 'name': 'Open', 'alternatives': ['button', 'link']}),
+            "getByRole('button', { name: 'Open', exact: true }).or(getByRole('link', { name: 'Open', exact: true }))")
         self.assertEqual(extract('Display Register links (see REQ-2) and items (sorted).'), [])
         self.assertEqual(locator({'role': 'region', 'name': 'Book list'}),
             "getByRole('region', { name: 'Book list', exact: true })")
@@ -40,7 +45,8 @@ class ContractTests(unittest.TestCase):
             context = catalog.initial_context()['interface_contract']
             self.assertEqual(context['locators']['REQ-1'], ["getByRole('link', { name: 'Items', exact: true })",
                 "getByRole('region', { name: 'Item list', exact: true })",
-                "getByRole('button', { name: <the item's own name>, exact: true })"])
+                "getByRole('button', { name: <the item's own name>, exact: true })"
+                ".or(getByRole('link', { name: <the item's own name>, exact: true }))"])
             self.assertIn("getByRole('region', { name: 'Entry list', exact: true })", context['locators']['REQ-1.1'])
             inherited = catalog.contract_for('REQ-1.1')
             self.assertEqual([entry['requirement'] for entry in inherited], ['REQ-1'] * 3 + ['REQ-1.1'] * 2)
@@ -69,7 +75,7 @@ class ContractSessionTests(unittest.IsolatedAsyncioTestCase):
         from infrastructure.runtime.config import load_profile
         self.assertEqual(load_profile(environment={}).acceptance.workers, 3)
         workflow = load_profile(environment={}).workflow
-        for rule in ('interface_contract', 'Never paginate', 'whatever page', 'never add special cases'):
+        for rule in ('interface_contract', 'Never paginate', 'whatever page', 'never add special cases', 'Never nest'):
             self.assertIn(rule, workflow)
 
 

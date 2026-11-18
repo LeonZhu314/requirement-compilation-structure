@@ -8,7 +8,7 @@ import re
 
 import yaml
 
-from infrastructure.requirements.contract import contract, locator
+from infrastructure.requirements.contract import area_locator, contained_controls, contract, locator, named_areas
 from infrastructure.requirements.normalize import normalize_requirements
 from infrastructure.utils.paths import relative_path
 
@@ -180,22 +180,45 @@ class RequirementCatalog:
             'next_offset': offset + limit if offset + limit < len(rows) else None,
             'source_sha256': self.source_sha256}
 
-    def read(self, identity, record=True):
+    def _node(self, rid):
+        node = deepcopy(self.nodes[rid])
+        node.pop('children', None)
+        return node
+
+    def read(self, identity, record=True, shown=None, descendants=False):
+        """`shown`: requirement ids whose text the reader already holds; an ancestor in it is
+        named, not repeated (reading 17 leaves of one section repeated its parents 17 times).
+        `descendants`: the whole section below the requirement, in one answer."""
         rid = identity if identity in self.nodes else (self.scenarios.get(identity) or self.steps.get(identity) or (None,))[0]
         if rid is None:
             raise ValueError(f'Unknown requirement/scenario/step: {identity}')
         chain, current = [], rid
         while current is not None:
-            record = deepcopy(self.nodes[current])
-            record.pop('children', None)
-            chain.insert(0, record)
+            chain.insert(0, current)
             current = self.parents[current]
         if record:  # Host reads for acceptance are not agent consultations.
             self.consulted.add(identity)
+        held = shown if shown is not None else set()
         # Own parent scenarios are deliberately retained, not just leaf descriptions.
-        return {'requested': identity, 'ancestor_requirements': chain[:-1], 'requirement': chain[-1],
+        ancestors = [{'id': item, 'name': self.nodes[item].get('name', ''), 'already_shown': True} if item in held
+            else self._node(item) for item in chain[:-1]]
+        result = {'requested': identity, 'ancestor_requirements': ancestors, 'requirement': self._node(rid),
             'children': [c['id'] for c in self.nodes[rid].get('children', []) or []],
             'source': 'requirements.yaml', 'source_sha256': self.source_sha256}
+        seen = set(chain)
+        if descendants:
+            below, stack = [], [c['id'] for c in reversed(self.nodes[rid].get('children', []) or [])]
+            while stack:
+                item = stack.pop()
+                below.append(self._node(item))
+                stack.extend(c['id'] for c in reversed(self.nodes[item].get('children', []) or []))
+            result['descendant_requirements'] = below
+            seen.update(node['id'] for node in below)
+            if record:
+                self.consulted.update(node['id'] for node in below)
+        if shown is not None:
+            shown.update(seen)
+        return result
 
     def interface_contract(self):
         if not hasattr(self, '_contract'):
@@ -210,6 +233,76 @@ class RequirementCatalog:
             current = self.parents.get(current)
         return result
 
+    def _direct(self, requirement, scenarios):
+        found = list(self.nodes.get(requirement, {}).get('dependencies', []) or [])
+        for sid in scenarios:
+            for step in (self.scenarios.get(sid, (None, {}))[1].get('steps', []) or []):
+                for value in [*(step.get('references', []) or []), *(v for v in step.values() if isinstance(v, str))]:
+                    found += [identity for kind, identity in REFERENCE.findall(value) if kind == 'requirement']
+        return [rid for rid in dict.fromkeys(found) if rid in self.nodes]
+
+    def referenced(self, requirement, scenarios=(), limit=10):
+        """Requirements a requirement or its scenarios rely on (`dependencies`, `\\ref[requirement]`
+        in steps), transitively and nearest first, outside its own ancestor chain. A test of
+        "vote on an answer" first logs in, publishes a question and answers it: it must follow the
+        rules of those requirements too (real run: 8 generated tests posted bodies shorter than
+        the publishing requirement's minimum and failed for that reason, 87 minutes of repair on
+        a correct application)."""
+        chain, current = set(), requirement
+        while current is not None:
+            chain.add(current)
+            current = self.parents.get(current)
+        result, queue = [], self._direct(requirement, scenarios)
+        while queue and len(result) < limit:
+            rid = queue.pop(0)
+            if rid in chain or rid in result:
+                continue
+            result.append(rid)
+            own = [s['id'] for s in self.nodes[rid].get('scenarios', []) or []]
+            queue += [item for item in self._direct(rid, own) if item not in result]
+        return result
+
+    def referenced_context(self, requirement, scenarios=()):
+        """Description and exact locators of each referenced requirement (no scenarios: their
+        own Given data belongs to their own tests)."""
+        result = []
+        for rid in self.referenced(requirement, scenarios):
+            description = self.nodes[rid].get('description', '')
+            text = description.get('text', '') if isinstance(description, dict) else description
+            result.append({'id': rid, 'name': self.nodes[rid].get('name', ''), 'description': text,
+                'required_locators': [locator(entry) for entry in self.interface_contract().get(rid, [])]})
+        return result
+
+    def areas_for(self, requirement, scenarios=()):
+        """Named areas a requirement's own texts and its scenarios mention, as locators."""
+        texts = []
+        node = self.nodes.get(requirement, {})
+        description = node.get('description', '')
+        texts.append(description.get('text', '') if isinstance(description, dict) else description)
+        for sid in scenarios:
+            for step in (self.scenarios.get(sid, (None, {}))[1].get('steps', []) or []):
+                texts += [v for k, v in step.items() if k in {'Given', 'When', 'Then'} and isinstance(v, str)]
+        joined = ' '.join(texts)
+        joined = ' '.join(joined.split())
+        return [area_locator(name) for name in named_areas(self, self.interface_contract()) if name in joined]
+
+    def controls_inside_for(self, requirement, scenarios=()):
+        """Controls the requirement's texts place inside an area, as 'control inside locator' notes."""
+        texts = []
+        node = self.nodes.get(requirement, {})
+        description = node.get('description', '')
+        texts.append(description.get('text', '') if isinstance(description, dict) else description)
+        for sid in scenarios:
+            for step in (self.scenarios.get(sid, (None, {}))[1].get('steps', []) or []):
+                texts += [v for k, v in step.items() if k in {'Given', 'When', 'Then'} and isinstance(v, str)]
+        joined = ' '.join(' '.join(texts).split())
+        found = self.interface_contract()
+        roles = {entry['name']: entry for entries in found.values() for entry in entries}
+        return [f'{control!r} inside ' + (locator(roles[area]) if area in roles else area_locator(area))
+            for control, area in contained_controls(self, found) if control in joined and area in joined]
+
+    inline = False  # True once the whole source was given in the task message.
+
     def initial_context(self, max_chars=24000):
         notices = {'input_notices': self.notices} if self.notices else {}
         found = self.interface_contract()
@@ -218,13 +311,38 @@ class RequirementCatalog:
                 'notice': 'The requirements name these elements explicitly. The acceptance tests locate them exactly '
                     'like this (role and full accessible name, case-sensitive). Give each one that role and that '
                     'accessible name, e.g. a <section aria-label="..."> for a region, a <button> or <a> whose text is '
-                    'the name. A {placeholder} name means the name of each item.',
+                    'the name. A {placeholder} name means the name of each item. Where a locator offers two roles '
+                    '(.or), either is correct: use one native element, never both, never nested. A control the '
+                    'requirements name without a role is a <button> (also when it opens another page), unless they '
+                    'call it a link or it is an entry of a navigation menu.',
                 'locators': {rid: [locator(entry) for entry in entries] for rid, entries in found.items()}}
-        if len(self.source) <= max_chars:
+        areas = named_areas(self, found)
+        inside = contained_controls(self, found)
+        if inside:
+            notices['controls_inside_areas'] = {
+                'notice': 'The scenarios act on these controls inside these areas ("Click Checkout in Order summary", '
+                    '"Order summary exposes Checkout"). Tests look for the control only inside the element of the area: put '
+                    'it inside that element on every page where the area appears, not beside it or above it.',
+                'pairs': [f'{control!r} inside {area!r}' for control, area in inside]}
+        if areas:
+            notices['named_areas'] = {
+                'notice': 'The scenarios also name these parts of a page ("Click Checkout in Order summary"). '
+                    'Tests look inside them by that exact accessible name. Give each one that is an area a wrapping '
+                    'element with exactly this name: <nav aria-label="..."> for a navigation, <section aria-label='
+                    '"..."> otherwise. A name that is a field keeps it as its label. Ignore a phrase that is not a '
+                    'part of the page.',
+                'names': areas}
+        self.inline = len(self.source) <= max_chars
+        if self.inline:
             self.consulted.update(self.nodes)
-            return {'source_sha256': self.source_sha256, 'original_yaml': self.source, **notices}
+            return {'source_sha256': self.source_sha256, 'original_yaml': self.source, **notices,
+                'notice': 'original_yaml is the complete requirements file and stays in this message for the whole '
+                    'run: read requirements here, do not fetch them again with read_requirement.'}
         return {'source_sha256': self.source_sha256, 'catalog': self.catalog(), **notices,
-            'notice': 'Read every applicable requirement and its parent constraints with read_requirement. Page the catalogue.'}
+            'notice': 'The requirements are too large to stay in the conversation: what you read leaves it after a '
+                'while. Never read them all before writing. Work one top-level section at a time: read it in one call '
+                '(read_requirement with descendants true), write its code at once, mark its task done with todo_write, '
+                'then take the next section. Independent sections can be given to delegate_tasks. Page the catalogue.'}
 
     def coverage(self, todos):
         claims = {rid: [] for rid in self.nodes}

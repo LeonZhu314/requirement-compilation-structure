@@ -44,7 +44,11 @@ define('delegate_tasks', 'Write independent parts of the application in parallel
 define('run_acceptance_tests', 'Run the host acceptance tests (supplied and generated from the requirements) against '
     'your current application: install, build, start on a fresh database, then every test. Returns each failure with '
     'its requirement id and symptom (the test source is host-owned). Much faster and more precise than testing '
-    'journeys by hand with curl, the database or the browser. Not the final acceptance.', {})
+    'journeys by hand with curl, the database or the browser. Not the final acceptance. When your application '
+    'already does what a requirement states and a failure shows the TEST is wrong (it enters data a requirement '
+    'rejects, or demands something no requirement states), name it in disputes: the host has that test reviewed '
+    'against the requirements with your reason before running the suite.',
+    {'disputes': array(obj({'scenario': text(), 'reason': text()}, ['scenario', 'reason']), 8)})
 define('edit_file','Create, replace one exact span, append or prepend application text.',
     {'path': text(), 'operation': text(enum=['create', 'replace', 'append', 'prepend']),
      'new_content': text(), 'old_content': text()}, ['path', 'operation', 'new_content'])
@@ -60,8 +64,9 @@ define('search_text', 'Find literal text in application sources; page through ex
 define('read_artifact', 'Retrieve exact characters from a long observation or archived conversation.',
     {'identity': text(), 'offset': integer(), 'limit': integer(1, 12000)}, ['identity'])
 define('requirement_catalog', 'Page all requirements, including non-leaf requirements and resource identifiers.', PAGING)
-define('read_requirement', 'Read one original requirement/scenario/step with parent constraints and scenarios.',
-    {'identity': text()}, ['identity'])
+define('read_requirement', 'Read one original requirement/scenario/step with parent constraints and scenarios. '
+    'descendants true returns its whole section (every requirement below it) in the same answer.',
+    {'identity': text(), 'descendants': {'type': 'boolean'}}, ['identity'])
 define('coverage', 'Inspect coverage per requirement: your declarations next to independent host verification.', PAGING)
 define('todo_write', 'Replace the adaptable task list. Done is an implementation claim, never acceptance.',
     {'items': array(obj({'id': text(minLength=1), 'task': text(minLength=1),

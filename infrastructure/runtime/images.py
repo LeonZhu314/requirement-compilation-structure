@@ -12,6 +12,9 @@ from .model import ProviderError
 async def view_image(registry, identity, question='Describe visible layout, text, controls and styling. Do not infer hidden behavior.'):
     if registry.profile.image_mode == 'disabled':
         raise ValueError('Image inspection is disabled by this profile')
+    cache = getattr(registry, 'image_cache', None)
+    if registry.profile.image_mode == 'fallback' and cache is not None and (identity, question) in cache:
+        return {**cache[(identity, question)], 'cached': True}
     if registry.catalog and identity in registry.catalog.images:
         raw = registry.catalog.resource_data[identity]
     else:
@@ -47,6 +50,8 @@ async def view_image(registry, identity, question='Describe visible layout, text
                 raise ProviderError('Visual fallback did not produce a complete observation')
             result = {'identity': identity, 'artifact': artifact, 'mode': 'fallback',
                 'description': response.content, 'usage': vars(response.usage), 'accepted': False}
+            if cache is not None:
+                cache[(identity, question)] = {key: value for key, value in result.items() if key != 'usage'}
         finally:
             await model.aclose()
     if registry.catalog and identity in registry.catalog.images:

@@ -19,6 +19,18 @@ class TurnResult:
     limit: str | None = None  # Which budget stopped the turn, when status is budget_exceeded.
 
 
+# Calls that produce or check the application; anything else only looks.
+PRODUCING = {'write_file', 'write_files', 'edit_file', 'apply_patch', 'delegate_tasks', 'run_acceptance_tests',
+    'verify_application', 'interface_write'}
+LOOKING_STEPS = 12
+# Past this many steps without writing, the turn ends and the host verifies the application as it
+# is: its feedback replaces the reading (real run: 96 steps, about an hour, without a write).
+LOOKING_LIMIT = 48
+LOOKING_NOTICE = ('{steps} steps in a row without writing a file. Reading more does not help: older observations '
+    'leave the conversation, so what is not written into code is lost. Write the code of one feature now with '
+    'write_files (several files in one call), from what you already know, then continue with the next feature.')
+
+
 class AgentLoop:
     def __init__(self, state, model, tools, profile):
         self.state, self.model, self.tools, self.profile = state, model, tools, profile
@@ -29,6 +41,7 @@ class AgentLoop:
         # One budget and one progress history for the whole session, repairs included.
         self.budget = Budget(state, profile.max_requests, profile.budget)
         self.progress = ProgressMonitor(profile.budget.stagnation_repeats)
+        self.looking = 0
         self.limit = None
         tools.budget = self.budget
         self.on_event = self.on_save = None  # Persistence hooks set by the session owner.
@@ -42,7 +55,7 @@ class AgentLoop:
         if self._active is not None:
             self._active.cancel()
 
-    async def run(self, prompt):
+    async def run(self, prompt, attachments=None):
         if self._closed or self._active is not None:
             raise RuntimeError('Session is closed or already running')
         if not isinstance(prompt, str) or not prompt.strip():
@@ -51,6 +64,10 @@ class AgentLoop:
         self._active = asyncio.current_task()
         self.state.status = 'running'
         self.state.messages.append(Message('user', prompt))
+        if attachments:
+            # A separate message: compaction may drop it, never the task itself.
+            text, images = attachments
+            self.state.messages.append(Message('user', text, images=tuple(images)))
         pending = []
         content = ''
         stagnated = False
@@ -73,7 +90,7 @@ class AgentLoop:
                 if compacted:
                     self.emit('compacted', **compacted)
                 context_bytes = size(self.state.messages) + len(json.dumps(self.tools.schemas()).encode())
-                if context_bytes > self.profile.max_context_bytes:
+                if context_bytes > self.context.limit():
                     self.state.status = 'context_limit'
                     self.emit('error', code='context_limit', bytes=context_bytes)
                     break
@@ -102,6 +119,21 @@ class AgentLoop:
                     raise ProviderError(str(error)) from error
                 self.state.messages.append(message)
                 pending = list(response.tool_calls)
+                # Steps in a row that only look (reads, listings, commands) without producing
+                # anything. Real runs read for an hour and wrote three files.
+                nudge = None
+                if pending and not any(call.name in PRODUCING for call in pending):
+                    self.looking += 1
+                    if self.looking % LOOKING_STEPS == 0:
+                        nudge = LOOKING_NOTICE.format(steps=self.looking)
+                        self.emit('looking', steps=self.looking)
+                    if self.looking >= LOOKING_LIMIT and getattr(self.tools, 'acceptance_runner', None):
+                        self.tools.finish_requested = True
+                        self.tools.finish_note = (f'{self.looking} steps in a row without writing a file; the host '
+                            'ended the work turn to verify the application as it is.')
+                        self.looking = 0
+                elif pending:
+                    self.looking = 0
                 if content:
                     self.emit('text', content=content)
                 if not pending:
@@ -148,6 +180,11 @@ class AgentLoop:
                             self.emit('stagnation', call_id=call.id, name=call.name)
                             result = ToolResult(result.call_id, result.name, result.value,
                                 (result.error + ' | ' if result.error else '') + verdict)
+                        if nudge and len(pending) == 1:
+                            # On the last observation of the step, where the model reads next.
+                            value = {**result.value, 'host_notice': nudge} if isinstance(result.value, dict) \
+                                else {'result': result.value, 'host_notice': nudge}
+                            result = ToolResult(result.call_id, result.name, value, result.error)
                         self.state.messages.append(result.message())
                         pending.pop(0)
                         self.emit('tool_finished', **asdict(result))
@@ -167,6 +204,14 @@ class AgentLoop:
                 self.tools.observations.clear()
                 if self.on_save:
                     self.on_save()  # A complete, balanced transcript.
+                if getattr(self.tools, 'finish_requested', False):
+                    self.tools.finish_requested = False
+                    content = getattr(self.tools, 'finish_note', None) or \
+                        'All host acceptance tests passed; the host ended the work turn for final verification.'
+                    self.tools.finish_note = None
+                    self.state.status = 'proposed'
+                    self.emit('final', content=content, accepted=False, ended_by='acceptance')
+                    break
         except asyncio.CancelledError:
             self.state.status = 'cancelled'
             self.emit('cancelled', note='Completed file writes are retained')

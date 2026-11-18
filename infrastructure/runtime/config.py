@@ -40,6 +40,8 @@ class AcceptanceSettings:
     startup_timeout_seconds: int = 90
     clean_install: bool = False     # True reinstalls dependencies for the delivery validation.
     workers: int = 1                # Parallel Playwright workers, as external evaluators run their tests.
+    finish_on_pass: bool = False    # A passing, complete run_acceptance_tests ends the agent's work turn.
+    visual_feedback: bool = False   # A passing run_acceptance_tests first returns, once, the visual differences.
 
 
 @dataclass(frozen=True)
@@ -65,6 +67,13 @@ class Profile:
     prune_min_bytes: int = 24000
     # Tool batches whose observations stay complete; older ones are masked. 0 disables.
     observation_window: int = 0
+    # Largest request the model accepts. When set, max_context_bytes is the working window
+    # on top of the task message (requirements, reference descriptions), up to this ceiling.
+    # 0: max_context_bytes is the whole context, task included.
+    context_ceiling_bytes: int = 0
+    # Reference images: "describe" gives their text description only, "attach" also gives the
+    # images themselves at the start of the conversation.
+    reference_images: str = 'describe'
 
 
 def _keys(data, allowed, label):
@@ -134,13 +143,13 @@ def load_profile(path=DEFAULT_PROFILE, *, env_file=None, environment=None, overr
     path = Path(path).resolve()
     data = _document(path)
     _keys(data, {'name', 'llm', 'tools', 'instructions', 'loop', 'capabilities', 'execution', 'image_mode',
-        'budget', 'acceptance', 'skills'}, 'profile')
+        'budget', 'acceptance', 'skills', 'reference_images'}, 'profile')
     _keys(data.get('llm', {}), {f.name for f in fields(ModelSettings)} - {'api_key'}, 'llm')
     instructions = data.get('instructions', {})
     _keys(instructions, {'role', 'workflow'}, 'instructions')
     loop = data.get('loop', {})
     _keys(loop, {'max_requests', 'max_context_bytes', 'max_tools_per_response', 'compact_ratio', 'observation_chars',
-        'prune_min_bytes', 'observation_window'}, 'loop')
+        'prune_min_bytes', 'observation_window', 'context_ceiling_bytes'}, 'loop')
     capabilities = data.get('capabilities', {})
     _keys(capabilities, {'native_tools', 'streaming', 'images', 'prompt_cache'}, 'capabilities')
     if any(type(v) is not bool for v in capabilities.values()):
@@ -150,6 +159,9 @@ def load_profile(path=DEFAULT_PROFILE, *, env_file=None, environment=None, overr
     if capabilities.get('streaming', False):
         raise ValueError('Streaming is not implemented')
     image_mode = data.get('image_mode', 'disabled')
+    reference_images = data.get('reference_images', 'describe')
+    if reference_images not in {'describe', 'attach'} or (reference_images == 'attach' and image_mode == 'disabled'):
+        raise ValueError('reference_images is describe or attach (attach needs an image_mode)')
     if image_mode not in {'disabled', 'native', 'fallback'} or capabilities.get('images', False) != (image_mode != 'disabled'):
         raise ValueError('images capability must match image_mode: disabled/native/fallback')
     tools = data.get('tools')
@@ -217,7 +229,8 @@ def load_profile(path=DEFAULT_PROFILE, *, env_file=None, environment=None, overr
     acceptance = dict(data.get('acceptance', {}))
     _keys(acceptance, {f.name for f in fields(AcceptanceSettings)}, 'acceptance')
     acceptance = {**vars(AcceptanceSettings()), **acceptance}
-    if any(type(acceptance[key]) is not bool for key in ('external_tests', 'generate', 'clean_install')):
+    if any(type(acceptance[key]) is not bool for key in ('external_tests', 'generate', 'clean_install', 'finish_on_pass',
+            'visual_feedback')):
         raise ValueError('acceptance external_tests/generate/clean_install must be booleans')
     if acceptance['visual'] not in {'off', 'report', 'require'}:
         raise ValueError('acceptance.visual must be off, report or require')
@@ -237,4 +250,5 @@ def load_profile(path=DEFAULT_PROFILE, *, env_file=None, environment=None, overr
         _positive(loop.get('observation_chars', 12000), 'observation_chars'),
         BudgetSettings(**budget), AcceptanceSettings(**acceptance), skills,
         _positive(loop.get('prune_min_bytes', 24000), 'prune_min_bytes', zero=True),
-        _positive(loop.get('observation_window', 0), 'observation_window', zero=True))
+        _positive(loop.get('observation_window', 0), 'observation_window', zero=True),
+        _positive(loop.get('context_ceiling_bytes', 0), 'context_ceiling_bytes', zero=True), reference_images)

@@ -69,12 +69,18 @@ class ToolRegistry:
         self.checks = ApplicationChecks(self.processes, self.dependencies, self.artifacts, state)
         self.coverage = CoverageRegistry(catalog) if catalog else None
         self.observations = []
+        # Requirement ids whose text this conversation currently holds; emptied by compaction.
+        self.requirements_shown = set()
+        self.requirements_inline = False  # The whole requirements file is in the task message.
         self.budget = None  # Attached by the session loop; shared with host verification.
         self.vision_factory = OpenAIModel
         # Sub-agents get their own client so their requests run concurrently.
         self.model_factory = lambda: OpenAIModel(profile.llm)
         self.event_sink = None  # Session event log, set by the application agent.
         self.acceptance_runner = None  # Set by the application agent once the host verifier exists.
+        self.finish_requested = False
+        self.finish_note = None
+        self.image_cache = {}  # (image id, question) -> description: the vision model answers once.
         self.build_passed = False
         self.manual_checks = 0
 
@@ -172,7 +178,14 @@ class ToolRegistry:
             if name == 'requirement_catalog':
                 return self.catalog.catalog(**args)
             if name == 'read_requirement':
-                return self.catalog.read(**args)
+                if self.requirements_inline:
+                    self.requirements_shown.update(self.catalog.nodes)
+                found = self.catalog.read(args['identity'], shown=self.requirements_shown,
+                    descendants=bool(args.get('descendants')))
+                if self.requirements_inline:
+                    found['notice'] = ('The complete requirements are already in your first message (original_yaml): '
+                        'read them there instead of calling read_requirement.')
+                return found
             result = self.coverage.view(self.state.todos, self.processes.mirror.revision())
             rows = result['requirements']
             offset, limit = args.get('offset', 0), args.get('limit', 50)
@@ -277,7 +290,8 @@ class ToolRegistry:
             if self.acceptance_runner is None:
                 raise ValueError('Host acceptance is not available in this session')
             self.manual_checks = 0
-            return await self.acceptance_runner()
+            disputes = args.get('disputes') or []
+            return await (self.acceptance_runner(disputes) if disputes else self.acceptance_runner())
         if name == 'delegate_tasks':
             from .delegation import delegate
             return await delegate(self, args['contract'], args['tasks'])

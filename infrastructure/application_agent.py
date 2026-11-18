@@ -17,6 +17,29 @@ from infrastructure.runtime.tools import ToolContext, ToolRegistry
 from infrastructure.runtime.requirements import RequirementCatalog
 from infrastructure.shared.project.initialize import initialize_project
 
+def visual_differences(report):
+    """Structural differences between captured pages and their references, as one instruction."""
+    lines = []
+    for image, item in (report.get('visual') or {}).items():
+        if item.get('status') == 'divergent' and item.get('differences'):
+            lines.append(f'- {image} ({item.get("path")}): ' + ' | '.join(item['differences'][:6]))
+        elif item.get('status') == 'missing_interface':
+            lines.append(f'- {image}: no page declared for it with interface_write.')
+    if not lines:
+        return ''
+    return ('Every acceptance test passed. Your pages still differ from the reference images:\n' + '\n'.join(lines[:10])
+        + '\nFix the structure and visible texts that differ (layout regions, navigation, section order, labels), '
+        'without changing behavior the tests verified, then call run_acceptance_tests again. Ignore differences in '
+        'photos, icons or exact colors.')
+
+
+REPEATED_FAILURE = ('\nThis exact failure has now come back {count} times in a row. Re-read the requirement it '
+    'names. If your application already does what the requirement states, the generated test is probably wrong: '
+    'do not change correct behavior or the requirement\'s controls (for example a password field must stay '
+    'hidden) to satisfy it. Look at what the page showed when it failed (page_alerts, the page in the evidence): if '
+    'the test entered data a requirement rejects or demands something no requirement states, call '
+    'run_acceptance_tests with disputes naming the scenario and the requirement text the test contradicts.')
+
 DEFAULT_TASK = ('Implement the complete application from the original requirements. Choose the '
     'order of work, maintain an adaptable todo list, preserve parent constraints, and verify usable '
     'workflows. Changes may span SQL, API, UI, styles and navigation in one task.')
@@ -61,6 +84,11 @@ class ApplicationAgent:
         self._initial_context_sent = False
         self._resume_notice = None
         self._saved_acceptance = None
+        self._last_failure, self._same_failure = None, 0
+        self._pending_attachments = None
+        self._visual_feedback_given = False
+        self._disputed_shown = False
+        self.stuck = False
         self.verifier = None
         if resume:
             self._restore()
@@ -155,16 +183,77 @@ class ApplicationAgent:
                 warm.cancel()
                 await asyncio.gather(warm, return_exceptions=True)
 
-    async def acceptance_now(self):
+    async def acceptance_now(self, disputes=()):
         """A host verification round on request of the agent (fresh database, all tests,
-        generated tests reviewed). The final acceptance still comes from the driver."""
-        from infrastructure.verification.driver import feedback
-        report = await self.verifier.verify(clean_state=False)
+        generated tests reviewed). The final acceptance still comes from the driver.
+        `disputes`: the agent's arguments that some generated tests are wrong; each is judged
+        by a review before the round, and a corrected test is run even on unchanged sources."""
+        from infrastructure.verification.driver import (NO_PROGRESS_REQUESTS, disputed_review, feedback,
+            requests_without_progress, rounds_without_progress)
+        settings = self.profile.acceptance
+        claims = await self.verifier.review_claims(list(disputes)) if disputes else []
+        corrected = any(claim['outcome'] == 'test corrected' for claim in claims)
+        last = self.verifier.last_report
+        if last and last['status'] in {'failed', 'candidate'} and not corrected \
+                and last['source_revision'] == self.tools.processes.mirror.revision():
+            # No source changed since that round: its tests would fail the same way (real run:
+            # three rounds of 7 minutes on one revision). The report is given again at once.
+            report, unchanged = last, True
+        else:
+            # The first round deploys as the benchmark does (sources only, rebuilt, default
+            # database): a defect of the delivery itself shows up while it can still be fixed.
+            first = not any(past['clean_state'] for past in self.verifier.reports)
+            visual = settings.visual_feedback and not self._visual_feedback_given
+            report = await self.verifier.verify(clean_state=first, visual=visual)
+            unchanged = False
         self.save()
         passed = report['status'] in {'passed', 'candidate'}
+        # A real run repeated the same failing result 8 times in a row, changing the application
+        # in ways the requirements forbid to satisfy one generated test.
+        fingerprint = report.get('fingerprint')
+        self._same_failure = (self._same_failure + 1) if not passed and fingerprint == self._last_failure else 0
+        self._last_failure = None if passed else fingerprint
+        coverage = report.get('coverage') or {}
+        complete = passed and not coverage.get('omissions') \
+            and set(coverage.get('functional', {})) <= {'passed', 'disputed'}
+        differences = visual_differences(report) if passed and settings.visual_feedback \
+            and not self._visual_feedback_given else ''
+        if passed and not differences and report.get('disputed') and not self._disputed_shown:
+            # Set-aside tests are shown once before the end: in a real run 2 of 4 of them were
+            # application defects (a missing avatar, a duplicate "Log in" button).
+            self._disputed_shown = True
+            differences = disputed_review(report)
+        if passed and report.get('visual') is not None:
+            self._visual_feedback_given = True
+        if complete and self.profile.acceptance.finish_on_pass and not differences:
+            # Every scenario has a passing test: the host takes over for the final clean round.
+            self.tools.finish_requested = True
+        # The same failures for the fifth time in a row: more rounds do not change them (real
+        # run: 17 rounds on a defect of the generated test). The application is delivered as it is.
+        stuck = not passed and self._same_failure > self.profile.budget.stagnation_repeats
+        # Failures that change a little every round (16, 17, 16, 17, 18 passing) never repeat
+        # exactly: the run went on for 99 minutes. No new passing test for a few rounds stops it.
+        idle = rounds_without_progress(self.verifier.reports)
+        stalled = not passed and not unchanged and (idle >= self.profile.budget.stagnation_repeats or (idle and
+            requests_without_progress(self.verifier.reports, self.state.requests) >= NO_PROGRESS_REQUESTS))
+        if stuck or stalled:
+            self.stuck = True
+            self.tools.finish_requested = True
+            self.tools.finish_note = (f'The same acceptance failures came back {self._same_failure + 1} times in a row'
+                if stuck else f'No new acceptance test passed in the last {idle} verification rounds') \
+                + '; the host ended the work turn.'
+            stuck = True
         return {'status': 'passed' if passed else report['status'], 'stage': report['stage'],
-            'report': 'Every acceptance test passed. Reply with your completion summary.' if passed
-                else feedback(report, repeated=False, remaining={}), 'accepted': False}
+            **({'disputes': claims} if claims else {}),
+            'report': ('Every acceptance test passed and every scenario is covered. The host now ends your work '
+                'turn and runs the final verification from a clean state.' if self.tools.finish_requested
+                else differences or 'Every acceptance test passed. Reply with your completion summary.') if passed
+                else (f'No source file changed since verification round {report["round"]}: the host did not run the '
+                    'tests again. Change the application before calling run_acceptance_tests.\n' if unchanged else '')
+                    + feedback(report, repeated=self._same_failure > 0, remaining={})
+                    + (REPEATED_FAILURE.format(count=self._same_failure + 1) if self._same_failure >= 2 else '')
+                    + ('\nThe host now ends your work turn and delivers the application as it is.' if stuck else ''),
+            'accepted': False}
 
     async def warm_up(self):
         """Act while thinking (cf. PASTE, 2026): work the host will need anyway starts at
@@ -197,18 +286,82 @@ class ApplicationAgent:
             return ''
         return f'\n\nWorkspace building blocks (BUILDING_BLOCKS.md):\n{text[:8000]}' if text else ''
 
+    async def describe_references(self):
+        """All reference images described at once, before the first request: the agent used
+        to spend its first minutes viewing them one response at a time."""
+        from infrastructure.runtime.images import view_image
+        images = list(self.catalog.images)[:12] if self.catalog else []
+        if not images or self.profile.image_mode != 'fallback' or 'view_image' not in self.profile.tools:
+            return ''
+        before = len(self.state.usage)
+        with self.loop.budget.timed('tools'):
+            results = await asyncio.gather(*(view_image(self.tools, identity) for identity in images),
+                return_exceptions=True)
+        for usage in self.state.usage[before:]:
+            self.loop.budget.record_usage(usage)
+        lines = []
+        for identity, result in zip(images, results):
+            if isinstance(result, dict) and result.get('description'):
+                page = (self.catalog.images[identity][1] or {}).get('page', '')
+                lines.append(f'- {identity}' + (f' (page {page})' if page else '') + f': {result["description"][:3000]}')
+        self._event('references_described', {'images': len(images), 'described': len(lines)})
+        return ('\n\nReference images, already described by the vision model (view_image returns the same '
+            'description; ask it a specific question only for a detail missing here):\n' + '\n'.join(lines)) if lines else ''
+
     async def run(self, task=None):
         if self.catalog and not self._initial_context_sent:
             task = (task or DEFAULT_TASK) + (
                 '\nDelivery contract: from a clean copy, `npm install`, `npm run build` and `npm run start` must '
                 f'serve the UI and API on the PORT environment variable (default {self.port}) with a newly '
                 'initialized database that already contains every record the requirements describe as existing.'
-                ) + self._building_blocks() + '\n\nOriginal task context:\n' + json.dumps(self.catalog.initial_context(), ensure_ascii=False)
+                ) + self._building_blocks() + await self.describe_references() + '\n\nOriginal task context:\n' + json.dumps(self.catalog.initial_context(
+                # Kept whole while they fit: a catalogue forces hundreds of reads that compaction erases.
+                max_chars=int((self.profile.context_ceiling_bytes or self.profile.max_context_bytes) * 0.3)), ensure_ascii=False)
+            self.tools.requirements_inline = self.catalog.inline
             self._initial_context_sent = True
+            self._pending_attachments = self.attach_references()
         if self._resume_notice:
             task = self._resume_notice + '\n\n' + (task or 'Continue the work from where it stopped.')
             self._resume_notice = None
-        return await self.loop.run(task)
+        attachments = self._pending_attachments
+        self._pending_attachments = None
+        result = await self.loop.run(task, attachments)
+        if attachments and result.status == 'provider_error' and self.loop.budget.requests['main'] <= 1:
+            # The provider refused images in the main conversation: continue with the descriptions.
+            self.state.messages[:] = [m for m in self.state.messages if not m.images]
+            self._event('reference_images', {'attached': False, 'reason': 'provider refused images'})
+            result = await self.loop.run('Continue the task; the reference images are described above.')
+        return result
+
+    def attach_references(self):
+        """The reference images, reduced, as one message right after the task."""
+        from hashlib import sha256
+        from io import BytesIO
+        from PIL import Image, ImageOps
+        from infrastructure.runtime.messages import ImageAttachment
+        if not self.catalog or self.profile.reference_images != 'attach' or self.profile.image_mode == 'disabled':
+            return None
+        attachments, names = [], []
+        for identity in list(self.catalog.images)[:8]:
+            try:
+                with Image.open(BytesIO(self.catalog.resource_data[identity])) as source:
+                    picture = ImageOps.exif_transpose(source).convert('RGB')
+                    picture.thumbnail((1280, 1280))
+                    output = BytesIO()
+                    picture.save(output, 'JPEG', quality=80)
+            except (OSError, ValueError):
+                continue
+            data = output.getvalue()
+            artifact = self.tools.artifacts.put(data, '.jpg')
+            attachments.append(ImageAttachment(str(self.tools.artifacts.path(artifact)), 'image/jpeg', sha256(data).hexdigest()))
+            page = (self.catalog.images[identity][1] or {}).get('page', '')
+            names.append(identity + (f' (page {page})' if page else ''))
+        if not attachments:
+            return None
+        self._event('reference_images', {'attached': len(attachments)})
+        return ('Reference images, in this order: ' + ', '.join(names) + '. Reproduce their page structure (header, '
+            'navigation, sidebars, columns, ordering of sections) and visible texts where the requirements do not say '
+            'otherwise.', attachments)
 
     def cancel(self):
         self.loop.cancel()

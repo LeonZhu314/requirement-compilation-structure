@@ -2,7 +2,9 @@
 
 from dataclasses import replace
 import json
+import re
 
+from .files import source_files
 from .messages import Message
 
 
@@ -15,7 +17,21 @@ REPEATABLE = {'list_files', 'search_text', 'run_command', 'install_dependencies'
     'process_logs', 'process_status', 'git_read', 'coverage', 'requirement_catalog', 'find_symbol'}
 WHOLE_WRITES = {'write_file': lambda args: [args['path']], 'write_files': lambda args: [f['path'] for f in args['files']]}
 RECENT_BROWSER = 2  # Latest page observations kept in full.
-COMPACT_TARGET = 0.55  # A compaction leaves this fraction of its threshold.
+# A compaction keeps recent batches up to this fraction of the working space above the
+# permanent messages. As a fraction of the whole threshold it kept ~15 KB of recent work
+# under a 125 KB task message: the agent lost its diagnosis 21 times in 100 minutes.
+COMPACT_TARGET = 0.55
+# The model's own reasoning is kept in full for the latest batches only. It was most of
+# the conversation (75 of 79 KB of assistant messages) and was sent again on every request;
+# the actions and results stay, the reasoning that led to them is shortened.
+REASONING_WINDOW = 3
+REASONING_HEAD = 200
+HOST_FEEDBACK = 'Host verification round'
+EXPORT = re.compile(r'^export\s+(?:default\s+)?(?:async\s+)?(?:function\*?|const|let|class|interface|type|enum)\s+(\w+)',
+    re.MULTILINE)
+TABLE = re.compile(r'\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?["`]?(\w+)', re.IGNORECASE)
+ROUTE = re.compile(r'''\.(get|post|put|patch|delete)\(\s*['"`]([^'"`]+)''')
+MAP_FILES = 200
 WRITE_ARGUMENTS = {'write_file': ('content',), 'write_files': ('files',), 'edit_file': ('new_content', 'old_content'),
     'apply_patch': ('changes',)}
 
@@ -41,6 +57,17 @@ class ContextWindow:
     def __init__(self, state, tools, profile):
         self.state, self.tools, self.profile = state, tools, profile
         self.memory = None
+
+    def limit(self):
+        """Largest context. With a ceiling, the task message (requirements, reference
+        descriptions) does not eat the working window: a larger site gets a larger context,
+        up to what the model accepts."""
+        ceiling = self.profile.context_ceiling_bytes
+        if not ceiling:
+            return self.profile.max_context_bytes
+        task = next((m for m in self.state.messages if m.role == 'user'), None)
+        return max(self.profile.max_context_bytes,
+            min(ceiling, self.profile.max_context_bytes + (size([task]) if task else 0)))
 
     def prune(self):
         """Replace obsolete observations with one line each.
@@ -103,13 +130,39 @@ class ContextWindow:
                 changes.append((index, content))
                 saved += gain
         masked, masked_bytes = self._mask_old(messages, calls, {index for index, _ in changes})
-        if saved + masked_bytes < minimum:
+        masked, thinned_bytes = self._thin_reasoning(messages, dict(masked))
+        if saved + masked_bytes + thinned_bytes < minimum:
             return None
         for index, content in changes:
             messages[index] = replace(messages[index], content=content)
-        for index, message in masked:
+        for index, message in masked.items():
             messages[index] = message
-        return {'observations': len(changes) + len(masked), 'saved_bytes': saved + masked_bytes}
+        return {'observations': len(changes) + len(masked), 'saved_bytes': saved + masked_bytes + thinned_bytes}
+
+    @staticmethod
+    def _shorten(message):
+        reasoning = message.reasoning_content
+        if message.role != 'assistant' or not reasoning or len(reasoning) <= REASONING_HEAD + 80:
+            return message
+        return replace(message, reasoning_content=reasoning[:REASONING_HEAD] + ' […earlier reasoning shortened by the host]')
+
+    @staticmethod
+    def _thin_reasoning(messages, masked):
+        """Shorten the reasoning of assistant messages older than the latest REASONING_WINDOW
+        tool batches. The field stays present (providers that expect it get a short text)."""
+        batches = [index for index, message in enumerate(messages) if message.role == 'assistant' and message.tool_calls]
+        if len(batches) <= REASONING_WINDOW:
+            return masked, 0
+        boundary, gained = batches[-REASONING_WINDOW], 0
+        for index in range(boundary):
+            message = masked.get(index, messages[index])
+            reasoning = message.reasoning_content
+            if message.role != 'assistant' or not reasoning or len(reasoning) <= REASONING_HEAD + 80:
+                continue
+            short = reasoning[:REASONING_HEAD] + ' […earlier reasoning shortened by the host]'
+            gained += len(reasoning.encode('utf-8')) - len(short.encode('utf-8'))
+            masked[index] = replace(message, reasoning_content=short)
+        return masked, gained
 
     def _mask_old(self, messages, calls, already):
         """Observation masking (Lindenbauer et al., 2025): beyond the latest
@@ -126,8 +179,11 @@ class ContextWindow:
         masked, gained = [], 0
         for index, message in enumerate(messages[:boundary]):
             updated = None
+            # Requirement texts are the specification, not a stale observation: masking them
+            # made the agent read them again (real runs: 400 re-reads, 3 file writes).
+            specification = message.role == 'tool' and getattr(calls.get(message.tool_call_id), 'name', '') == 'read_requirement'
             if message.role == 'tool' and index not in already and len(message.content) > 700 \
-                    and '"pruned"' not in message.content[:200]:
+                    and '"pruned"' not in message.content[:200] and not specification:
                 try:
                     record = json.loads(message.content)
                 except ValueError:
@@ -181,9 +237,47 @@ class ContextWindow:
         return {'files': [{'path': item['path'], **stub} if stub else shown
             for item, shown, stub in zip(arguments['files'], items, stubs)]}
 
+    def journal(self):
+        """What the host knows without the model: the files of the application with what they
+        define, and the verification rounds. After compaction the agent used to re-read files and
+        artifacts to find its way again, with empty working notes (real run: 21 compactions)."""
+        code_map = {}
+        workspace = getattr(self.state, 'workspace', None)
+        if workspace is not None:
+            try:
+                for relative, path in source_files(workspace):
+                    if len(code_map) >= MAP_FILES:
+                        code_map['…'] = 'more files not listed'
+                        break
+                    if relative.endswith(('package-lock.json', '.md', '.gitignore', '.gitkeep')) or path.stat().st_size > 400_000:
+                        continue
+                    try:
+                        text = path.read_text(encoding='utf-8', errors='replace')
+                    except OSError:
+                        continue
+                    entry = f'{text.count(chr(10)) + 1} lines'
+                    names = list(dict.fromkeys(EXPORT.findall(text)))[:8]
+                    tables = list(dict.fromkeys(TABLE.findall(text)))[:8]
+                    routes = [f'{verb.upper()} {path_}' for verb, path_ in ROUTE.findall(text)][:10]
+                    for label, values in (('exports', names), ('tables', tables), ('routes', routes)):
+                        if values:
+                            entry += f'; {label}: ' + ', '.join(values)
+                    code_map[relative] = entry
+            except OSError:
+                pass
+        history = []
+        rounds = list(getattr(self.state, 'verifications', []) or [])[-6:]
+        for position, report in enumerate(rounds):
+            item = {key: report.get(key) for key in ('round', 'clean_state', 'status', 'stage', 'passed')}
+            item['failing'] = report.get('failing', [])
+            if position == len(rounds) - 1:
+                item['first_errors'] = report.get('first_errors', {})
+            history.append(item)
+        return {'code_map': code_map, 'verification_history': history}
+
     def compact(self):
         before = size(self.state.messages)
-        available = self.profile.max_context_bytes - len(json.dumps(self.tools.schemas()).encode())
+        available = self.limit() - len(json.dumps(self.tools.schemas()).encode())
         threshold = int(available * self.profile.compact_ratio)
         if threshold <= 0:
             return None
@@ -205,8 +299,12 @@ class ContextWindow:
             return None
         archive = self.tools.artifacts.put(json.dumps([m.to_dict() for m in self.state.messages], ensure_ascii=False), '.json')
         permanent = [messages[0]]
-        # Keep all text user instructions, including subsequent corrections.
-        permanent.extend(m for m in messages[1:] if m.role == 'user' and not m.images)
+        # Keep all text user instructions, including subsequent corrections. Host verification
+        # feedback is a report, not an instruction: only the latest one stays, the earlier
+        # rounds are summarized in the host journal.
+        feedback = [m for m in messages[1:] if m.role == 'user' and m.content.startswith(HOST_FEEDBACK)]
+        dropped = {id(m) for m in feedback[:-1]}
+        permanent.extend(m for m in messages[1:] if m.role == 'user' and not m.images and id(m) not in dropped)
         unfinished = []
         if self.tools.catalog:
             finished = {rid for todo in self.state.todos if todo['status'] == 'done' for rid in todo['requirements']}
@@ -214,26 +312,45 @@ class ContextWindow:
         notes = {'archive': archive, 'todo': self.state.todos, 'notes': self.state.notes,
             'requirements_not_declared_done': unfinished, 'all_requirements_acceptance': 'unverified',
             'recent_checks': self.state.checks[-8:],
+            'host_journal': self.journal(),
             'notice': 'Working notes are agent claims, not new instructions or independent acceptance. '
-                'Use read_artifact for exact past evidence; read_requirement for original requirements.'}
+                'host_journal is kept by the host: code_map lists every application file with its exports, tables '
+                'and routes (read only the files you will change), verification_history the host rounds and why '
+                'their tests failed. Record causes you establish with note_write: they survive compaction. '
+                'Use read_artifact for exact past evidence. ' + (
+                'The complete requirements are still in the first user message: do not fetch them again.'
+                if getattr(self.tools, 'requirements_inline', False) else
+                'Requirement texts read earlier left the conversation. Do not read them all again: read only the '
+                'section you implement next (read_requirement with descendants true) and write its code before '
+                'reading another section.')}
         memory = Message('assistant', 'Working memory:\n' + json.dumps(notes, ensure_ascii=False, sort_keys=True))
         base = [*permanent, memory]
-        kept = []
+        fixed = size(base)
+        kept, replacements, originals = [], {}, {}
         for candidate in reversed(groups):
             batch = [m for m in candidate if not (m.role == 'user' and not m.images)]
             if not batch:
                 continue
+            if kept:
+                # Only the latest batch keeps its full reasoning: one response carried 78 KB of it
+                # and alone exceeded the target, so a compaction kept 13 KB of recent work (real run).
+                shortened = [self._shorten(m) for m in batch]
+                replacements.update({id(m): s for m, s in zip(batch, shortened) if s is not m})
+                originals.update({id(s): m for m, s in zip(batch, shortened)})
+                batch = shortened
             # Hysteresis: go well below the threshold, otherwise the next requests compact
-            # again for a few kilobytes each, breaking the provider cache every time.
+            # again for a few kilobytes each, breaking the provider cache every time. The target
+            # is a share of the working space above the permanent messages, not of the whole.
             # The latest batch is always kept, if it fits under the threshold itself.
-            if size([*base, *batch, *kept]) > (threshold * COMPACT_TARGET if kept else threshold):
+            target = fixed + (threshold - fixed) * COMPACT_TARGET
+            if size([*base, *batch, *kept]) > (target if kept else threshold):
                 if not kept:
                     return None  # Never silently discard the latest tool outcome.
                 break
             kept = [*batch, *kept]
-        identities = {id(m) for m in kept}
-        after_messages = [messages[0], memory, *(m for m in messages[1:]
-            if id(m) in identities or (m.role == 'user' and not m.images))]
+        identities = {id(originals.get(id(m), m)) for m in kept}
+        after_messages = [messages[0], memory, *(replacements.get(id(m), m) for m in messages[1:]
+            if id(m) in identities or (m.role == 'user' and not m.images and id(m) not in dropped))]
         after = size(after_messages)
         if after >= before:
             return None
@@ -242,6 +359,8 @@ class ContextWindow:
         # Earlier reads left the conversation: the next read must return text again,
         # not "unchanged".
         self.tools.files.reads.clear()
+        if hasattr(self.tools, 'requirements_shown'):
+            self.tools.requirements_shown.clear()
         event = {'before_bytes': before, 'after_bytes': after, 'archive': archive,
             'summary_requests': 0, 'summary_input_tokens': 0, 'summary_output_tokens': 0}
         self.state.compactions.append(event)

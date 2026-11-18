@@ -15,7 +15,10 @@ export function createApp(connection?: Database.Database) {
   const frontend = fileURLToPath(new URL("../../frontend/dist/", import.meta.url));
   if (existsSync(frontend)) {
     app.use(express.static(frontend));
-    app.get("/{*path}", (_request, response) => response.sendFile(`${frontend}/index.html`));
+    // Any other GET is a client-side route: serve the page shell, so a reload or a direct visit
+    // works. `root` matters: with an absolute path, a directory starting with a dot anywhere
+    // above the application (".agent-state", "~/.cache") makes sendFile answer 404.
+    app.get("/{*path}", (_request, response) => response.sendFile("index.html", { root: frontend }));
   }
   // Errors thrown by any route above become uniform JSON answers (lib/http.ts).
   app.use(apiErrors);

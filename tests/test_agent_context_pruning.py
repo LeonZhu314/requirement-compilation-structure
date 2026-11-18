@@ -141,7 +141,7 @@ class ContextPruningTests(unittest.IsolatedAsyncioTestCase):
         agent = self.agent
         await agent.tools.execute(call('write_file', path='app.ts', content='export const kept = true;\n'))
         self.assertIn('content', (await agent.tools.execute(call('read_file', path='app.ts'))).value)
-        agent.loop.context.profile = replace(agent.profile, max_context_bytes=34000, prune_min_bytes=0)
+        agent.loop.context.profile = replace(agent.profile, max_context_bytes=40000, prune_min_bytes=0)
         for index in range(12):
             request = ToolCall(f'c{index}', 'list_files', json.dumps({'offset': index}))
             agent.state.messages += [Message('assistant', tool_calls=(request,)),

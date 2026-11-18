@@ -115,7 +115,7 @@ class RequirementSessionTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaisesRegex(ValueError, 'disjoint'):
                 ApplicationAgent(source / 'app', input_dir=source, model=ScriptedModel([]))
 
-    async def test_images_are_only_requested_on_demand_and_fallback_usage_counts(self):
+    async def test_references_are_described_once_before_work_and_later_views_use_that_description(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = root / 'input'
@@ -128,12 +128,18 @@ class RequirementSessionTests(unittest.IsolatedAsyncioTestCase):
             async with ApplicationAgent(root / 'app', input_dir=source, model=model, profile=profile) as agent:
                 agent.tools.vision_factory = lambda settings: vision
                 await agent.run()
-                self.assertEqual(len(vision.requests), 0)
+                # Described before the first request, and given in the first message.
+                self.assertEqual(len(vision.requests), 1)
+                first = [m.content for m in model.requests[0][0] if m.role == 'user'][0]
+                self.assertIn('I: A blue rectangle', first)
+                # The same question later is answered without a new vision request.
                 result = await agent.tools.execute(ToolCall('view', 'view_image', '{"identity":"I"}'))
                 self.assertIsNone(result.error)
-                self.assertEqual(result.value['description'], 'A blue rectangle')
+                self.assertEqual((result.value['description'], result.value['cached']), ('A blue rectangle', True))
+                self.assertEqual(len(vision.requests), 1)
                 self.assertEqual(agent.state.requests, 2)
                 self.assertEqual(agent.state.auxiliary_requests, 1)
+                self.assertEqual(agent.loop.budget.report()['requests']['visual_fallback'], 1)
                 self.assertTrue(vision.closed)
                 self.assertEqual(agent.catalog.viewed, {'I'})
                 self.assertTrue(vision.requests[0][0][1].to_wire()['content'][1]['image_url']['url'].startswith('data:image/jpeg'))
